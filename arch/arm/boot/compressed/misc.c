@@ -23,10 +23,6 @@ unsigned int __machine_arch_type;
 #include <linux/stddef.h>	/* for NULL */
 #include <asm/string.h>
 
-#ifdef STANDALONE_DEBUG
-#define putstr printf
-#else
-
 static void putstr(const char *ptr);
 
 #include <mach/uncompress.h>
@@ -98,8 +94,6 @@ static void putstr(const char *ptr)
 
 	flush();
 }
-
-#endif
 
 #define __ptr_t void *
 
@@ -314,8 +308,6 @@ static void error(char *x)
 	while(1);	/* Halt */
 }
 
-#ifndef STANDALONE_DEBUG
-
 ulg
 decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p,
 		  int arch_id)
@@ -333,19 +325,3 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p,
 	putstr(" done, booting the kernel.\n");
 	return output_ptr;
 }
-#else
-
-char output_buffer[1500*1024];
-
-int main()
-{
-	output_data = output_buffer;
-
-	makecrc();
-	putstr("Uncompressing Linux...");
-	gunzip();
-	putstr("done.\n");
-	return 0;
-}
-#endif
-	
