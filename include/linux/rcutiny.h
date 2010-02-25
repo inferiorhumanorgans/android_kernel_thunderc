@@ -93,10 +93,6 @@ static inline void rcu_exit_nohz(void)
 
 #endif /* #else #ifdef CONFIG_NO_HZ */
 
-static inline void rcu_scheduler_starting(void)
-{
-}
-
 static inline void exit_rcu(void)
 {
 }
