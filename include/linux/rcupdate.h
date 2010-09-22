@@ -650,13 +650,25 @@ static inline notrace void rcu_read_unlock_sched_notrace(void)
 }
 
 /**
- * rcu_assign_pointer() - assign to RCU-protected pointer
- * @p: pointer to assign to
- * @v: value to assign (publish)
+ * rcu_dereference_bh - fetch an RCU-protected pointer, checking for RCU-bh
  *
- * Assigns the specified value to the specified RCU-protected
- * pointer, ensuring that any concurrent RCU readers will see
- * any prior initialization.  Returns the value assigned.
+ * Makes rcu_dereference_check() do the dirty work.
+ */
+#define rcu_dereference_bh(p) \
+		rcu_dereference_check(p, rcu_read_lock_bh_held() || irqs_disabled())
+
+/**
+ * rcu_dereference_sched - fetch RCU-protected pointer, checking for RCU-sched
+ *
+ * Makes rcu_dereference_check() do the dirty work.
+ */
+#define rcu_dereference_sched(p) \
+		rcu_dereference_check(p, rcu_read_lock_sched_held())
+
+/**
+ * rcu_assign_pointer - assign (publicize) a pointer to a newly
+ * initialized structure that will be dereferenced by RCU read-side
+ * critical sections.  Returns the value assigned.
  *
  * Inserts memory barriers on architectures that require them
  * (pretty much all of them other than x86), and also prevents
