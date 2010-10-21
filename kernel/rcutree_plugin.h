@@ -24,6 +24,47 @@
  *	   Paul E. McKenney <paulmck@linux.vnet.ibm.com>
  */
 
+#include <linux/delay.h>
+#include <linux/stop_machine.h>
+
+/*
+ * Check the RCU kernel configuration parameters and print informative
+ * messages about anything out of the ordinary.  If you like #ifdef, you
+ * will love this function.
+ */
+static void __init rcu_bootup_announce_oddness(void)
+{
+#ifdef CONFIG_RCU_TRACE
+	printk(KERN_INFO "\tRCU debugfs-based tracing is enabled.\n");
+#endif
+#if (defined(CONFIG_64BIT) && CONFIG_RCU_FANOUT != 64) || (!defined(CONFIG_64BIT) && CONFIG_RCU_FANOUT != 32)
+	printk(KERN_INFO "\tCONFIG_RCU_FANOUT set to non-default value of %d\n",
+	       CONFIG_RCU_FANOUT);
+#endif
+#ifdef CONFIG_RCU_FANOUT_EXACT
+	printk(KERN_INFO "\tHierarchical RCU autobalancing is disabled.\n");
+#endif
+#ifdef CONFIG_RCU_FAST_NO_HZ
+	printk(KERN_INFO
+	       "\tRCU dyntick-idle grace-period acceleration is enabled.\n");
+#endif
+#ifdef CONFIG_PROVE_RCU
+	printk(KERN_INFO "\tRCU lockdep checking is enabled.\n");
+#endif
+#ifdef CONFIG_RCU_TORTURE_TEST_RUNNABLE
+	printk(KERN_INFO "\tRCU torture testing starts during boot.\n");
+#endif
+#ifndef CONFIG_RCU_CPU_STALL_DETECTOR
+	printk(KERN_INFO
+	       "\tRCU-based detection of stalled CPUs is disabled.\n");
+#endif
+#if defined(CONFIG_TREE_PREEMPT_RCU) && !defined(CONFIG_RCU_CPU_STALL_VERBOSE)
+	printk(KERN_INFO "\tVerbose stalled-CPUs detection is disabled.\n");
+#endif
+#if NUM_RCU_LVL_4 != 0
+	printk(KERN_INFO "\tExperimental four-level hierarchy is enabled.\n");
+#endif
+}
 
 #ifdef CONFIG_TREE_PREEMPT_RCU
 
@@ -685,3 +726,193 @@ static void __init __rcu_init_preempt(void)
 }
 
 #endif /* #else #ifdef CONFIG_TREE_PREEMPT_RCU */
+
+#ifndef CONFIG_SMP
+
+void synchronize_sched_expedited(void)
+{
+	cond_resched();
+}
+EXPORT_SYMBOL_GPL(synchronize_sched_expedited);
+
+#else /* #ifndef CONFIG_SMP */
+
+static atomic_t synchronize_sched_expedited_count = ATOMIC_INIT(0);
+
+static int synchronize_sched_expedited_cpu_stop(void *data)
+{
+	/*
+	 * There must be a full memory barrier on each affected CPU
+	 * between the time that try_stop_cpus() is called and the
+	 * time that it returns.
+	 *
+	 * In the current initial implementation of cpu_stop, the
+	 * above condition is already met when the control reaches
+	 * this point and the following smp_mb() is not strictly
+	 * necessary.  Do smp_mb() anyway for documentation and
+	 * robustness against future implementation changes.
+	 */
+	smp_mb(); /* See above comment block. */
+	return 0;
+}
+
+/*
+ * Wait for an rcu-sched grace period to elapse, but use "big hammer"
+ * approach to force grace period to end quickly.  This consumes
+ * significant time on all CPUs, and is thus not recommended for
+ * any sort of common-case code.
+ *
+ * Note that it is illegal to call this function while holding any
+ * lock that is acquired by a CPU-hotplug notifier.  Failing to
+ * observe this restriction will result in deadlock.
+ */
+void synchronize_sched_expedited(void)
+{
+	int snap, trycount = 0;
+
+	smp_mb();  /* ensure prior mod happens before capturing snap. */
+	snap = atomic_read(&synchronize_sched_expedited_count) + 1;
+	get_online_cpus();
+	while (try_stop_cpus(cpu_online_mask,
+			     synchronize_sched_expedited_cpu_stop,
+			     NULL) == -EAGAIN) {
+		put_online_cpus();
+		if (trycount++ < 10)
+			udelay(trycount * num_online_cpus());
+		else {
+			synchronize_sched();
+			return;
+		}
+		if (atomic_read(&synchronize_sched_expedited_count) - snap > 0) {
+			smp_mb(); /* ensure test happens before caller kfree */
+			return;
+		}
+		get_online_cpus();
+	}
+	atomic_inc(&synchronize_sched_expedited_count);
+	smp_mb__after_atomic_inc(); /* ensure post-GP actions seen after GP. */
+	put_online_cpus();
+}
+EXPORT_SYMBOL_GPL(synchronize_sched_expedited);
+
+#endif /* #else #ifndef CONFIG_SMP */
+
+#if !defined(CONFIG_RCU_FAST_NO_HZ)
+
+/*
+ * Check to see if any future RCU-related work will need to be done
+ * by the current CPU, even if none need be done immediately, returning
+ * 1 if so.  This function is part of the RCU implementation; it is -not-
+ * an exported member of the RCU API.
+ *
+ * Because we have preemptible RCU, just check whether this CPU needs
+ * any flavor of RCU.  Do not chew up lots of CPU cycles with preemption
+ * disabled in a most-likely vain attempt to cause RCU not to need this CPU.
+ */
+int rcu_needs_cpu(int cpu)
+{
+	return rcu_needs_cpu_quick_check(cpu);
+}
+
+/*
+ * Check to see if we need to continue a callback-flush operations to
+ * allow the last CPU to enter dyntick-idle mode.  But fast dyntick-idle
+ * entry is not configured, so we never do need to.
+ */
+static void rcu_needs_cpu_flush(void)
+{
+}
+
+#else /* #if !defined(CONFIG_RCU_FAST_NO_HZ) */
+
+#define RCU_NEEDS_CPU_FLUSHES 5
+static DEFINE_PER_CPU(int, rcu_dyntick_drain);
+static DEFINE_PER_CPU(unsigned long, rcu_dyntick_holdoff);
+
+/*
+ * Check to see if any future RCU-related work will need to be done
+ * by the current CPU, even if none need be done immediately, returning
+ * 1 if so.  This function is part of the RCU implementation; it is -not-
+ * an exported member of the RCU API.
+ *
+ * Because we are not supporting preemptible RCU, attempt to accelerate
+ * any current grace periods so that RCU no longer needs this CPU, but
+ * only if all other CPUs are already in dynticks-idle mode.  This will
+ * allow the CPU cores to be powered down immediately, as opposed to after
+ * waiting many milliseconds for grace periods to elapse.
+ *
+ * Because it is not legal to invoke rcu_process_callbacks() with irqs
+ * disabled, we do one pass of force_quiescent_state(), then do a
+ * raise_softirq() to cause rcu_process_callbacks() to be invoked later.
+ * The per-cpu rcu_dyntick_drain variable controls the sequencing.
+ */
+int rcu_needs_cpu(int cpu)
+{
+	int c = 0;
+	int snap;
+	int snap_nmi;
+	int thatcpu;
+
+	/* Check for being in the holdoff period. */
+	if (per_cpu(rcu_dyntick_holdoff, cpu) == jiffies)
+		return rcu_needs_cpu_quick_check(cpu);
+
+	/* Don't bother unless we are the last non-dyntick-idle CPU. */
+	for_each_online_cpu(thatcpu) {
+		if (thatcpu == cpu)
+			continue;
+		snap = per_cpu(rcu_dynticks, thatcpu).dynticks;
+		snap_nmi = per_cpu(rcu_dynticks, thatcpu).dynticks_nmi;
+		smp_mb(); /* Order sampling of snap with end of grace period. */
+		if (((snap & 0x1) != 0) || ((snap_nmi & 0x1) != 0)) {
+			per_cpu(rcu_dyntick_drain, cpu) = 0;
+			per_cpu(rcu_dyntick_holdoff, cpu) = jiffies - 1;
+			return rcu_needs_cpu_quick_check(cpu);
+		}
+	}
+
+	/* Check and update the rcu_dyntick_drain sequencing. */
+	if (per_cpu(rcu_dyntick_drain, cpu) <= 0) {
+		/* First time through, initialize the counter. */
+		per_cpu(rcu_dyntick_drain, cpu) = RCU_NEEDS_CPU_FLUSHES;
+	} else if (--per_cpu(rcu_dyntick_drain, cpu) <= 0) {
+		/* We have hit the limit, so time to give up. */
+		per_cpu(rcu_dyntick_holdoff, cpu) = jiffies;
+		return rcu_needs_cpu_quick_check(cpu);
+	}
+
+	/* Do one step pushing remaining RCU callbacks through. */
+	if (per_cpu(rcu_sched_data, cpu).nxtlist) {
+		rcu_sched_qs(cpu);
+		force_quiescent_state(&rcu_sched_state, 0);
+		c = c || per_cpu(rcu_sched_data, cpu).nxtlist;
+	}
+	if (per_cpu(rcu_bh_data, cpu).nxtlist) {
+		rcu_bh_qs(cpu);
+		force_quiescent_state(&rcu_bh_state, 0);
+		c = c || per_cpu(rcu_bh_data, cpu).nxtlist;
+	}
+
+	/* If RCU callbacks are still pending, RCU still needs this CPU. */
+	if (c)
+		raise_softirq(RCU_SOFTIRQ);
+	return c;
+}
+
+/*
+ * Check to see if we need to continue a callback-flush operations to
+ * allow the last CPU to enter dyntick-idle mode.
+ */
+static void rcu_needs_cpu_flush(void)
+{
+	int cpu = smp_processor_id();
+	unsigned long flags;
+
+	if (per_cpu(rcu_dyntick_drain, cpu) <= 0)
+		return;
+	local_irq_save(flags);
+	(void)rcu_needs_cpu(cpu);
+	local_irq_restore(flags);
+}
+
+#endif /* #else #if !defined(CONFIG_RCU_FAST_NO_HZ) */
