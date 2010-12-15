@@ -242,7 +242,7 @@ static inline void list_splice_init_rcu(struct list_head *list,
 #define __list_for_each_rcu(pos, head) \
 	for (pos = rcu_dereference_raw((head)->next); \
 		pos != (head); \
-		pos = rcu_dereference_raw(pos->next))
+		pos = rcu_dereference_raw(list_next_rcu(pos)))
 
 /**
  * list_for_each_entry_rcu	-	iterate over rcu list of given type
