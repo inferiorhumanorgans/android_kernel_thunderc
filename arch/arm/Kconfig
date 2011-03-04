@@ -46,6 +46,10 @@ config GENERIC_CLOCKEVENTS_BROADCAST
 	depends on GENERIC_CLOCKEVENTS
 	default y if SMP && !LOCAL_TIMERS
 
+config KTIME_SCALAR
+	bool
+	default y
+
 config HAVE_TCM
 	bool
 	select GENERIC_ALLOCATOR
