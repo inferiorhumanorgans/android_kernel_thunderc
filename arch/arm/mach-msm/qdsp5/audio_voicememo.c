@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2008 Google, Inc.
  * Copyright (C) 2008 HTC Corporation
- * Copyright (c) 2009-2010, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2009-2011, Code Aurora Forum. All rights reserved.
  *
  * This code is based in part on arch/arm/mach-msm/qdsp5/audio_mp3.c
  *
@@ -856,7 +856,8 @@ static int audio_voicememo_probe(struct platform_device *pdev)
 {
 	int rc;
 
-	if (pdev->id != (SND_VERS_COMP & RPC_VERSION_MAJOR_MASK))
+	if ((pdev->id != (SND_VERS_COMP & RPC_VERSION_MAJOR_MASK)) &&
+	    (pdev->id != (SND_VERS2_COMP & RPC_VERSION_MAJOR_MASK)))
 		return -EINVAL;
 
 	mutex_init(&the_audio_voicememo.lock);
