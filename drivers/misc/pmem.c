@@ -1018,18 +1018,25 @@ static void bitmap_bits_set_all(uint32_t *bitp, int bit_start, int bit_end)
 
 static int
 bitmap_allocate_contiguous(uint32_t *bitp, int num_bits_to_alloc,
-		int total_bits, int spacing)
+		int total_bits, int spacing, int start_bit)
 {
 	int bit_start, last_bit, word_index;
 
 	if (num_bits_to_alloc <= 0)
 		return -1;
+	/*
+	 * a spacing of n means that every nth bit points to a block of
+	 * memory aligned to n times the quantum. Since bits are numbered
+	 * from 0, all spacing needs to be calculated one off (e.g. bit
+	 * n - 1 will point to a block aligned to n times the quantum)
+	 */
+	for (bit_start = start_bit; ;
+		bit_start = last_bit + (word_index << PMEM_32BIT_WORD_ORDER)) {
+		int bit_end, total_words;
+		if ((bit_start & (spacing - 1)) != (spacing - 1))
+			bit_start += spacing - (bit_start & (spacing - 1)) - 1;
 
-	for (bit_start = 0; ;
-		bit_start = (last_bit +
-			(word_index << PMEM_32BIT_WORD_ORDER) + spacing - 1)
-			& ~(spacing - 1)) {
-		int bit_end = bit_start + num_bits_to_alloc, total_words;
+		bit_end = bit_start + num_bits_to_alloc, total_words;
 
 		if (bit_end > total_bits)
 			return -1; /* out of contiguous memory */
@@ -1106,7 +1113,8 @@ static int reserve_quanta(const unsigned int quanta_needed,
 	ret = bitmap_allocate_contiguous(pmem[id].allocator.bitmap.bitmap,
 		quanta_needed,
 		(pmem[id].size + pmem[id].quantum - 1) / pmem[id].quantum,
-		spacing);
+		spacing,
+		start_bit);
 
 #if PMEM_DEBUG
 	if (ret < 0)
