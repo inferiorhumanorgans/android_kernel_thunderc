@@ -48,6 +48,9 @@
 #define dprintk(msg...) \
 	cpufreq_debug_printk(CPUFREQ_DEBUG_DRIVER, "cpufreq-msm", msg)
 
+/* Max CPU frequency allowed by hardware while in standby waiting for an irq. */
+#define MAX_WAIT_FOR_IRQ_KHZ 128000
+
 enum {
 	ACPU_PLL_TCXO	= -1,
 	ACPU_PLL_0	= 0,
@@ -65,6 +68,7 @@ struct clock_state
 	uint32_t			max_speed_delta_khz;
 	uint32_t			vdd_switch_time_us;
 	unsigned long			max_axi_khz;
+	unsigned long			wait_for_irq_khz;
 };
 
 #define PLL_BASE	7
@@ -369,12 +373,13 @@ unsigned long acpuclk_power_collapse(void)
 	return ret;
 }
 
-#define WAIT_FOR_IRQ_KHZ 128000
 unsigned long acpuclk_wait_for_irq(void)
 {
-	int ret = acpuclk_get_rate(smp_processor_id());
-	acpuclk_set_rate(smp_processor_id(), WAIT_FOR_IRQ_KHZ, SETRATE_SWFI);
-	return ret;
+	int rate = acpuclk_get_rate(smp_processor_id());
+	if (rate > MAX_WAIT_FOR_IRQ_KHZ)
+		acpuclk_set_rate(smp_processor_id(), drv_state.wait_for_irq_khz,
+				 SETRATE_SWFI);
+	return rate;
 }
 
 static int acpuclk_set_vdd_level(int vdd)
@@ -793,6 +798,22 @@ static void __init acpu_freq_tbl_fixup(void)
 		pr_info("Turbo mode supported but not enabled.\n");
 }
 
+/*
+ * Hardware requires the CPU to be dropped to less than MAX_WAIT_FOR_IRQ_KHZ
+ * before entering a wait for irq low-power mode. Find a suitable rate.
+ */
+static unsigned long __init find_wait_for_irq_khz(void)
+{
+	unsigned long found_khz = 0;
+	int i;
+
+	for (i = 0; acpu_freq_tbl[i].a11clk_khz &&
+		    acpu_freq_tbl[i].a11clk_khz <= MAX_WAIT_FOR_IRQ_KHZ; i++)
+		found_khz = acpu_freq_tbl[i].a11clk_khz;
+
+	return found_khz;
+}
+
 /* Initalize the lpj field in the acpu_freq_tbl. */
 static void __init lpj_init(void)
 {
@@ -927,6 +948,7 @@ void __init msm_acpu_clock_init(struct msm_acpu_clock_platform_data *clkdata)
 	drv_state.vdd_switch_time_us = clkdata->vdd_switch_time_us;
 	drv_state.max_axi_khz = clkdata->max_axi_khz;
 	acpu_freq_tbl_fixup();
+	drv_state.wait_for_irq_khz = find_wait_for_irq_khz();
 	precompute_stepping();
 	if (cpu_is_msm7x25())
 		msm7x25_acpu_pll_hw_bug_fix();
