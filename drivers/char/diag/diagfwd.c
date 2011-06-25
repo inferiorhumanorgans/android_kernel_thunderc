@@ -31,10 +31,6 @@
 #include "diagchar_hdlc.h"
 
 
-MODULE_DESCRIPTION("Diag Char Driver");
-MODULE_LICENSE("GPL v2");
-MODULE_VERSION("1.0");
-
 int diag_debug_buf_idx;
 unsigned char diag_debug_buf[1024];
 
