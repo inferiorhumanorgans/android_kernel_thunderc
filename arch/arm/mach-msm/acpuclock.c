@@ -605,10 +605,6 @@ int acpuclk_set_rate(int cpu, unsigned long rate, enum setrate_reason reason)
 			pr_warning("Setting AXI min rate failed (%d)\n", res);
 	}
 
-	/* Nothing else to do for power collapse if not 7x27. */
-	if (reason == SETRATE_PC && !cpu_is_msm7x27())
-		goto out;
-
 	/* Disable PLLs we are not using anymore. */
 	if (tgt_s->pll != ACPU_PLL_TCXO)
 		plls_enabled &= ~(1 << tgt_s->pll);
