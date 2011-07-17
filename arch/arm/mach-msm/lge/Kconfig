@@ -9,25 +9,9 @@ config MACH_MSM7X27_THUNDERC
 	depends on ARCH_MSM7X27
 	depends on !MSM_STACKED_MEMORY
 	select MACH_LGE
-	bool "MSM7x27 THUNDER CDMA"
+	bool "MSM7x27 THUNDER Verizone"
 	help
-	  Support for the LGE MSM7x27 THUNDER CDMA board.
-
-choice
-	prompt "MSM7X27 THUNDER CDMA Selection"
-	depends on MACH_MSM7X27_THUNDERC
-	default MACH_MSM7X27_THUNDERC_VERIZON
- 
-config MACH_MSM7X27_THUNDERC_VERIZON
-	bool "MSM7x27 THUNDER CDMA Verizon"
-	help
-	  Support for the LGE MSM7x27 THUNDER CDMA Verizon board.
- 
-config MACH_MSM7X27_THUNDERC_SPRINT
-	bool "MSM7x27 THUNDER CDMA Sprint"
-	help
-	  Support for the LGE MSM7x27 THUNDER CDMA Sprint board.
-endchoice
+	  Support for the LGE MSM7x27 THUNDER Verizone board.
 
 config MACH_MSM7X27_THUNDERG
 	depends on ARCH_MSM7X27
@@ -36,6 +20,14 @@ config MACH_MSM7X27_THUNDERG
 	bool "MSM7x27 THUNDER Global"
 	help
 	  Support for the LGE MSM7x27 THUNDER Global board.
+
+config MACH_MSM7X27_THUNDERA
+	depends on ARCH_MSM7X27
+	depends on !MSM_STACKED_MEMORY
+	select MACH_LGE
+	bool "MSM7x27 THUNDER AT&T"
+	help
+	  Support for the LGE MSM7x27 THUNDER AT&T board.
 
 endmenu
 
@@ -161,12 +153,19 @@ config LGE_ATS_INPUT_DEVICE
 	help
 	 Choose if use ATS input device used for generating input event from user space
 
-config LGE_PCB_VERSION
-	bool "Support LGE PCB Version RAPI"
-	default n 
+config LGE_FBCON_INACTIVE_CONSOLE
+	bool "Support LGE FBCON inactive console"
+	default n
 	depends on MACH_LGE
 	help
-	  Choose if use PCB Version RAPI
+	 Choose if inactive console
+
+config LGE_PWRSINK
+	bool "Support LGE Power Sink Driver"
+	default n
+	depends on MACH_LGE
+	help
+	 Choose if use Power sink driver
 
 menu "LGE specific patches"
 	depends on MACH_LGE
@@ -177,13 +176,6 @@ config LGE_TCP_IMPROVEMENT_PATCH
 	help
 	  This patch is used to improve tcp performance of vs740 model
 	  Disable tcp delayed ack for evdo networks
-
-# LGE_CHANGE [dojip.kim@lge.com] 2010-07-30, sprint
-config LGE_TCP_MTU_1472
-	bool "tcp mtu patch for sprint"
-	default n
-	help
-	  This patch is used to tcp mtu 1472 for sprint
 
 config LGE_UMS_WORKAROUND_PATCH
 	bool "Workaround patch about USB mass storage for vs740"
@@ -241,50 +233,12 @@ config LGE_DETECT_PIF_PATCH
 	  This patch is added for detection of pif cable of factory
 	  If pif is once detected, that information will be passed through
 	  sysfs in battery driver
-
 config LGE_DIAG_WMC
 	bool "Support LGE diag WMC"
 	default n
 	depends on LGE_DIAGTEST
 	help
 	  LGE diag WMC enable
-
-# LGE_CHANGE [dojip.kim@lge.com] 2010-08-04
-config LGE_GET_POWER_ON_STATUS
-	bool "LGE Getting Power On Status"
-	select LGE_PROC_COMM 
-	default n
-	help
-	  This patch is added for getting the power on status
-
-# LGE_CHANGE [dojip.kim@lge.com] 2010-08-04
-config LGE_RAM_CONSOLE_CLEAN
-	bool "LGE clean the ram console buffer when normal shutdown"
-	depends on ANDROID_RAM_CONSOLE
-	default n
-	help
-	  This patch is to clean the ram console buffer when normal shutdown
-
-# LGE_CHANGE [dojip.kim@lge.com] 2010-08-09
-config LGE_THERM_NO_STOP_CHARGING
-	bool "LGE no stop charging even if hot or cold battery"
-	default n
-	help
-	  This patch is no stop charging even if hot or cold battery only for testing
-
-# LGE_CHANGE [dojip.kim@lge.com] 2010-08-17
-config LGE_RTC_INTF_ALARM_SYNC
-	bool "LGE alarm sync (fix the elapsed time)"
-	default n
-	help
-	  This patch is alarm sync to fix the wrong elapsed time 
-
-# LGE_CHANGE [dojip.kim@lge.com] 2010-09-05, avoid the rooting via hotplug
-config LGE_BLOCK_HOTPLUG
-	bool "LGE block the hotplug"
-	default n
-	help
-	  Android doesn't need a hotplug. So, block the hotplug to avoid the rooting
 
 config LGE_GRAM_REFRESH_PATCH
 	bool "LGE gram refresh patch"
@@ -296,7 +250,6 @@ config LGE_GRAM_REFRESH_PATCH
 	  this can cause displaying broken screen in time of turning backlight on.
 	  for preventing this problem, add refreshing routine before turning 
 	  backlight on by using late resume mechanism.
-
 endmenu
 
 endmenu

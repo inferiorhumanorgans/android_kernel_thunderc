@@ -30,11 +30,11 @@
 
 struct ats_data {
 	struct atcmd_dev *atdev;
-	int (*handle_atcmd) (struct msm_rpc_server * server,
-			     struct rpc_request_hdr * req, unsigned len,
-			     void (*update_atcmd_state) (char *cmd, int state));
-	int (*handle_atcmd_eta) (struct msm_rpc_server * server,
-				 struct rpc_request_hdr * req, unsigned len);
+	int (*handle_atcmd) (struct msm_rpc_server *server,
+						 struct rpc_request_hdr *req, unsigned len,
+						 void (*update_atcmd_state)(char *cmd, int state) );
+	int (*handle_atcmd_eta) (struct msm_rpc_server *server,
+							 struct rpc_request_hdr *req, unsigned len);
 	void (*update_atcmd_state) (char *cmd, int state);
 };
 
@@ -45,33 +45,32 @@ static void lge_ats_update_atcmd_state(char *cmd, int state)
 #if defined (CONFIG_LGE_AT_CMD_DEVICE)
 	struct ats_data *data = &lge_ats_data;
 
-	if (!data->atdev)
+	if(!data->atdev)
 		data->atdev = atcmd_get_dev();
-	if (data->atdev)
+	if(data->atdev)
 		update_atcmd_state(data->atdev, cmd, state);
 #endif
 }
 
 static int handle_ats_rpc_call(struct msm_rpc_server *server,
-			       struct rpc_request_hdr *req, unsigned len)
+							   struct rpc_request_hdr *req, unsigned len)
 {
 	struct ats_data *data = &lge_ats_data;
 
-	switch (req->procedure) {
-	case ONCRPC_LGE_ATCMD_ATS_ETA_PROC:
-		printk(KERN_INFO "%s: ONCRPC_LGE_ATCMD_ATS_ETA_PROC\n",
-		       __func__);
-		if (data->handle_atcmd_eta)
-			return data->handle_atcmd_eta(server, req, len);
-		break;
-	case ONCRPC_LGE_ATCMD_ATS_PROC:
-		printk(KERN_INFO "%s: ONCRPC_LGE_ATCMD_ATS_PROC\n", __func__);
-		if (data->handle_atcmd)
-			return data->handle_atcmd(server, req, len,
-						  data->update_atcmd_state);
-		break;
-	default:
-		return -ENODEV;
+	switch (req->procedure)
+	{
+		case ONCRPC_LGE_ATCMD_ATS_ETA_PROC:
+			printk(KERN_INFO"%s: ONCRPC_LGE_ATCMD_ATS_ETA_PROC\n", __func__);
+			if(data->handle_atcmd_eta)
+				return data->handle_atcmd_eta(server, req, len);
+			break;
+		case ONCRPC_LGE_ATCMD_ATS_PROC:
+			printk(KERN_INFO"%s: ONCRPC_LGE_ATCMD_ATS_PROC\n", __func__);
+			if(data->handle_atcmd)
+				return data->handle_atcmd(server, req, len, data->update_atcmd_state);
+			break;
+		default:
+			return -ENODEV;
 	}
 
 	return 0;
@@ -85,10 +84,10 @@ static struct atcmd_platform_data ats_atcmd_pdata = {
 static struct platform_device ats_atcmd_device = {
 	.name = "alohag_atcmd",
 	.id = -1,
-	.dev = {
+	.dev    = {
 		.platform_data = &ats_atcmd_pdata
 	},
-};
+}; 
 #endif
 
 #ifdef CONFIG_LGE_ATS_INPUT_DEVICE
@@ -107,10 +106,8 @@ static int __init lge_ats_init(void)
 {
 	int err;
 
-	if ((err = msm_rpc_create_server(&ats_rpc_server)) != 0) {
-		printk(KERN_ERR
-		       "%s: Error during creating rpc server for ats atcmd\n",
-		       __func__);
+	if((err = msm_rpc_create_server(&ats_rpc_server)) != 0) {
+		printk(KERN_ERR"%s: Error during creating rpc server for ats atcmd\n", __func__);
 		return err;
 	}
 
@@ -130,3 +127,4 @@ static int __init lge_ats_init(void)
 }
 
 module_init(lge_ats_init);
+

@@ -62,9 +62,19 @@ int msm_fsusb_remote_dev_disconnected(void);
 int msm_fsusb_set_remote_wakeup(void);
 void msm_fsusb_rpc_deinit(void);
 #if defined(CONFIG_MACH_MSM7X27_ALOHAV) || defined(CONFIG_MACH_MSM7X27_THUNDERC)
-
+/* ADD THUNDER feature TO USE VS740 BATT DRIVER
+ * 2010-05-13, taehung.kim@lge.com
+ */
+/* woonghee@lge.com 2009-09-25, battery charging */
 int msm_hsusb_get_charger_type(void);
 #endif
+
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2009-04-21, Detect charger type using RPC  */
+#if defined(CONFIG_USB_SUPPORT_LGDRIVER_GSM) || \
+	defined(CONFIG_USB_SUPPORT_LGE_GADGET_GSM)
+int msm_hsusb_detect_chg_type(void);
+#endif
+/* LGE_CHANGE_E [hyunhui.park@lge.com] 2009-04-21 */
 
 #if defined(CONFIG_USB_SUPPORT_LGE_SERIAL_FROM_ARM9_IMEI)
 /* Type to hold UE IMEI */
@@ -156,5 +166,6 @@ static inline int msm_fsusb_rpc_close(void) { return 0; }
 static inline int msm_fsusb_remote_dev_disconnected(void) { return 0; }
 static inline int msm_fsusb_set_remote_wakeup(void) { return 0; }
 static inline void msm_fsusb_rpc_deinit(void) { }
-#endif
+#endif /* CONFIG_MSM_ONCRPCROUTER && !CONFIG_ARCH_MSM8X60 */
+
 #endif

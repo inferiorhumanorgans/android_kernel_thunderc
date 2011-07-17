@@ -23,7 +23,6 @@
 #include <mach/board.h>
 #include <mach/board_lge.h>
 #include <mach/rpc_server_handset.h>
-#include <mach/board_lge.h>
 
 #include "board-thunderc.h"
 
@@ -43,33 +42,17 @@ static struct platform_device hs_device = {
 	},
 };
 
-#if defined(CONFIG_MACH_MSM7X27_THUNDERC_SPRINT)
-static unsigned int keypad_row_gpios[] = {
-	32, 33, 34
-};
-#else
+/* None qwerty keypad device
+ * For Thunder CDMA Keypad  [ youngchul.park@lge.com ]
+ * gpio key pad device - from keypad-surf-ffa */
 static unsigned int keypad_row_gpios[] = {
 	32, 33
 };
-#endif
 
 static unsigned int keypad_col_gpios[] = {38, 37,36};
 
 #define KEYMAP_INDEX(row, col) ((row)*ARRAY_SIZE(keypad_col_gpios) + (col))
 
-#if defined(CONFIG_MACH_MSM7X27_THUNDERC_SPRINT)
-static const unsigned short keypad_keymap_thunder[9] = {
-    [KEYMAP_INDEX(0, 0)] = KEY_MENU,
-    [KEYMAP_INDEX(0, 1)] = KEY_HOME,
-	[KEYMAP_INDEX(0, 2)] = KEY_VOLUMEUP,
-	[KEYMAP_INDEX(1, 0)] = KEY_SEARCH,
-	[KEYMAP_INDEX(1, 1)] = KEY_BACK,
-	[KEYMAP_INDEX(1, 2)] = KEY_VOLUMEDOWN,
-	[KEYMAP_INDEX(2, 0)] = KEY_CAMERA,
-	[KEYMAP_INDEX(2, 1)] = KEY_FOCUS,
-	[KEYMAP_INDEX(2, 2)] = KEY_CHAT,
-};
-#else
 /* change key map for H/W Rev.B -> Rev.C  2010-06-13 younchan,kim
 	[Rev.B key map]
 static const unsigned short keypad_keymap_thunder[6] = {
@@ -90,7 +73,6 @@ static const unsigned short keypad_keymap_thunder[6] = {
 	[KEYMAP_INDEX(1, 1)] = KEY_BACK,
 	[KEYMAP_INDEX(1, 2)] = KEY_VOLUMEDOWN,
 };
-#endif
 static struct gpio_event_matrix_info thunder_keypad_matrix_info = {
 	.info.func	= gpio_event_matrix_func,
 	.keymap		= keypad_keymap_thunder,
@@ -169,20 +151,12 @@ static struct platform_device ts_i2c_device = {
 	.dev.platform_data = &ts_i2c_pdata,
 };
 
-#ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
-int ts_set_vreg(unsigned char onoff)
-#else
 static int ts_set_vreg(unsigned char onoff)
-#endif
 {
 	struct vreg *vreg_touch;
 	int rc;
-	static int old_onoff = 0;
 
 	printk("[Touch] %s() onoff:%d\n",__FUNCTION__, onoff);
-
-	if (old_onoff == onoff)
-		return 0;
 
 	vreg_touch = vreg_get(0, "synt");
 
@@ -198,17 +172,11 @@ static int ts_set_vreg(unsigned char onoff)
 			return -1;
 		}
 		vreg_enable(vreg_touch);
-		old_onoff = onoff;
-	} else {
+	} else
 		vreg_disable(vreg_touch);
-		old_onoff = onoff;
-	}
 
 	return 0;
 }
-#ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
-EXPORT_SYMBOL(ts_set_vreg);
-#endif
 
 static struct touch_platform_data ts_pdata = {
 	.ts_x_min = TS_X_MIN,
@@ -241,9 +209,11 @@ static void __init thunderc_init_i2c_touch(int bus_num)
 /* accelerometer */
 static int kr3dh_config_gpio(int config)
 {
-	if (config) { /* for wake state */
+	if (config)
+	{		/* for wake state */
 	}
-	else { /* for sleep state */
+	else
+	{		/* for sleep state */
 		gpio_tlmm_config(GPIO_CFG(ACCEL_GPIO_INT, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), GPIO_ENABLE);
 	}
 
@@ -259,14 +229,29 @@ static void kr_exit(void)
 {
 }
 
-static int power_on(void)
+static int accel_power_on(void)
 {
-	return 0;
+	int ret = 0;
+	struct vreg *gp3_vreg = vreg_get(0, "gp3");
+
+	printk("[Accelerometer] %s() : Power On\n",__FUNCTION__);
+
+	vreg_set_level(gp3_vreg, 3000);
+	vreg_enable(gp3_vreg);
+
+	return ret;
 }
 
-static int power_off(void)
+static int accel_power_off(void)
 {
-	return 0;
+	int ret = 0;
+	struct vreg *gp3_vreg = vreg_get(0, "gp3");
+
+	printk("[Accelerometer] %s() : Power Off\n",__FUNCTION__);
+
+	vreg_disable(gp3_vreg);
+
+	return ret;
 }
 
 struct kr3dh_platform_data kr3dh_data = {
@@ -281,8 +266,8 @@ struct kr3dh_platform_data kr3dh_data = {
 	.negate_y = 0,
 	.negate_z = 0,
 
-	.power_on = power_on,
-	.power_off = power_off,
+	.power_on = accel_power_on,
+	.power_off = accel_power_off,
 	.kr_init = kr_init,
 	.kr_exit = kr_exit,
 	.gpio_config = kr3dh_config_gpio,
@@ -309,12 +294,12 @@ static struct platform_device accel_i2c_device = {
 };
 
 static struct i2c_board_info accel_i2c_bdinfo[] = {
-	[0] = {
+	[1] = {
 		I2C_BOARD_INFO("KR3DH", ACCEL_I2C_ADDRESS_H),
 		.type = "KR3DH",
 		.platform_data = &kr3dh_data,
 	},
-	[1] = {
+	[0] = {
 		I2C_BOARD_INFO("KR3DM", ACCEL_I2C_ADDRESS),
 		.type = "KR3DM",
 		.platform_data = &kr3dh_data,
@@ -327,56 +312,35 @@ static void __init thunderc_init_i2c_acceleration(int bus_num)
 
 	init_gpio_i2c_pin(&accel_i2c_pdata, accel_i2c_pin[0], &accel_i2c_bdinfo[0]);
 
-	if (lge_bd_rev >= 9) /* KR_3DH >= Rev. 1.1 */
-		i2c_register_board_info(bus_num, &accel_i2c_bdinfo[0], 1);
+	if(lge_bd_rev >= LGE_REV_F)
+		i2c_register_board_info(bus_num, &accel_i2c_bdinfo[1], 1);	/* KR3DH */
 	else
-		i2c_register_board_info(bus_num, &accel_i2c_bdinfo[1], 1);
+		i2c_register_board_info(bus_num, &accel_i2c_bdinfo[0], 1);	/* KR3DM */
+
 	platform_device_register(&accel_i2c_device);
 }
 
 /* proximity & ecompass */
-
-#define ECOM_POWER_OFF		0
-#define ECOM_POWER_ON		1
-
-static int ecom_is_power_on = ECOM_POWER_OFF;
-
 static int ecom_power_set(unsigned char onoff)
 {
 	int ret = 0;
 	struct vreg *gp3_vreg = vreg_get(0, "gp3");
-	struct vreg *gp6_vreg = vreg_get(0, "gp6"); /* prox */
+	struct vreg *gp6_vreg = vreg_get(0, "gp6");
 
-	printk("[Ecompass] %s() onoff %d, prev_status %d\n",__FUNCTION__, 
-			onoff, ecom_is_power_on);
+	printk("[Ecompass] %s() : Power %s\n",__FUNCTION__, onoff ? "On" : "Off");
 
 	if (onoff) {
-		if (ecom_is_power_on == ECOM_POWER_OFF) {
-			vreg_set_level(gp3_vreg, 3000);
-			vreg_enable(gp3_vreg);
-			/* proximity power on , 
-			 * when we turn off I2C line be set to low caues sensor H/W characteristic 
-			 */
-#ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
-			vreg_set_level(gp6_vreg, 2900);
-#else
-			vreg_set_level(gp6_vreg, 2800);
-#endif
-			vreg_enable(gp6_vreg);
+		vreg_set_level(gp3_vreg, 3000);
+		vreg_enable(gp3_vreg);
 
-			ecom_is_power_on = ECOM_POWER_ON;
-		}
+		/* proximity power on , when we turn off I2C line be set to low caues sensor H/W characteristic */
+		vreg_set_level(gp6_vreg, 2800);
+		vreg_enable(gp6_vreg);
 	} else {
-		if (ecom_is_power_on == ECOM_POWER_ON) {
-			vreg_disable(gp3_vreg);
+		vreg_disable(gp3_vreg);
 
-			/* proximity power on , 
-			 * when we turn off I2C line be set to low caues sensor H/W characteristic 
-			 */
-			vreg_disable(gp6_vreg);
-
-			ecom_is_power_on = ECOM_POWER_OFF;
-		}
+		/* proximity power off */
+		vreg_disable(gp6_vreg);
 	}
 
 	return ret;
@@ -388,37 +352,18 @@ static struct ecom_platform_data ecom_pdata = {
 	.power          	= ecom_power_set,
 };
 
-#define PROX_POWER_OFF		0
-#define PROX_POWER_ON		1
-
-static int prox_is_power_on = PROX_POWER_OFF;
-
 static int prox_power_set(unsigned char onoff)
 {
 	int ret = 0;
 	struct vreg *gp6_vreg = vreg_get(0, "gp6");
 
-	printk("[Proxi] %s() onoff %d, prev_status %d\n",__FUNCTION__, 
-			onoff, prox_is_power_on);
+	printk("[Proximity] %s() : Power %s\n",__FUNCTION__, onoff ? "On" : "Off");
 
 	if (onoff) {
-		if (prox_is_power_on == PROX_POWER_OFF) {
-#ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
-			vreg_set_level(gp6_vreg, 2900);
-#else
-			vreg_set_level(gp6_vreg, 2800);
-#endif
-			vreg_enable(gp6_vreg);
-
-			prox_is_power_on = PROX_POWER_ON;
-		}
-	} 
-	else {
-		if (prox_is_power_on == PROX_POWER_ON) {
-			vreg_disable(gp6_vreg);
-
-			prox_is_power_on = PROX_POWER_OFF;
-		}
+		vreg_set_level(gp6_vreg, 2800);
+		vreg_enable(gp6_vreg);
+	} else {
+		vreg_disable(gp6_vreg);
 	}
 
 	return ret;
@@ -427,8 +372,8 @@ static int prox_power_set(unsigned char onoff)
 static struct proximity_platform_data proxi_pdata = {
 	.irq_num	= PROXI_GPIO_DOUT,
 	.power		= prox_power_set,
-	.methods		= 0, // normal mode (1 - interrupt mode)
-	.operation_mode		= 0, // A mode (1 - B1, 2 - B2)
+	.methods		= 0,
+	.operation_mode		= 0,
 	.debounce	 = 0,
 	.cycle = 2,
 };

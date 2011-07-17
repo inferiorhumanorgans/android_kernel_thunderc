@@ -2396,13 +2396,6 @@ config FB_MSM_MDDI_NOVATEK_HVGA
 	---help---
 	  Support for MDDI NOVATEK HVGA(320x480) Panel.
 
-# LGE_CHANGE [james.jang@lge.com] 2010-08-28, Thunder Sprint NOVATEK + Hitachi MDDI I/F LCD 
-config FB_MSM_MDDI_NOVATEK_HITACHI_HVGA
-	bool "MDDI NOVATEK + Hitachi HVGA Panel"
-	select FB_MSM_MDDI
-	---help---
-	  Support for MDDI NOVATEK + HITACHI HVGA(320x480) Panel.
-
 config FB_MSM_PANEL_NONE
 	bool "NONE"
 	---help---

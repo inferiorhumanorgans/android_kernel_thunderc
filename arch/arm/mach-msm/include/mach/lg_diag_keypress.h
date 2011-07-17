@@ -20,6 +20,9 @@ typedef struct DIAG_HS_KEY_F_req_tag
   unsigned char command_code;	// cmd code
   unsigned char hold;		// If true, diag witholds key release
   unsigned char key;		// enumerated key, e.g. HS_DOWN_K
+  unsigned long magic1;	// for security 0xEA2B7BC0
+  unsigned long magic2;	// for security 0xA5B7E0DF
+  unsigned short ext_key;    // 2 byte key code
 }PACKED DIAG_HS_KEY_F_req_type;
 
 typedef DIAG_HS_KEY_F_req_type DIAG_HS_KEY_F_rsp_type;

@@ -41,6 +41,42 @@ struct early_suspend kr3dh_sensor_early_suspend;
 static void kr3dh_early_suspend(struct early_suspend *h);
 static void kr3dh_late_resume(struct early_suspend *h);
 #endif
+
+#define KR3DH_DEBUG_PRINT	(1)
+#define KR3DH_ERROR_PRINT	(1)
+
+/* KR3DH Debug mask value
+ * usage: echo [mask_value] > /sys/module/kr3dh/parameters/debug_mask
+ * All		: 3
+ * No msg	: 0
+ * default	: 0
+ */
+enum {
+	KR3DH_DEBUG_FUNC_TRACE		= 1U << 0,
+	KR3DH_DEBUG_DEV_LOW_DATA		= 1U << 1,
+};
+
+static unsigned int kr3dh_debug_mask = 0;
+
+module_param_named(debug_mask, kr3dh_debug_mask, int,
+		S_IRUGO | S_IWUSR | S_IWGRP);
+
+#if defined(KR3DH_DEBUG_PRINT)
+#define KR3DHD(fmt, args...) \
+			printk(KERN_INFO "D[%-18s:%5d]" \
+				fmt, __FUNCTION__, __LINE__, ##args);
+#else
+#define KR3DHD(fmt, args...)	{};
+#endif
+
+#if defined(KR3DH_ERROR_PRINT)
+#define KR3DHE(fmt, args...) \
+			printk(KERN_ERR "E[%-18s:%5d]" \
+				fmt, __FUNCTION__, __LINE__, ##args);
+#else
+#define KR3DHE(fmt, args...)	{};
+#endif
+
 #define USE_WORK_QUEUE        0
 
 /** Maximum polled-device-reported g value */
@@ -101,16 +137,16 @@ struct {
 	unsigned int cutoff;
 	unsigned int mask;
 } odr_table[] = {
-	{ 3,	PM_NORMAL | ODR1000}, 
-	{ 10,	PM_NORMAL | ODR400}, 
-	{ 20,	PM_NORMAL | ODR100}, 
-	{ 100,	PM_NORMAL | ODR50}, 
-	{ 200,	ODR1000	| ODR10}, 
-	{ 500,	ODR1000 | ODR5}, 
-	{ 1000,	ODR1000 | ODR2}, 
-	{ 2000,	ODR1000 | ODR1}, 
-	{ 0,	ODR1000 | ODRHALF},
-};
+	{
+	3,	PM_NORMAL | ODR1000}, {
+	10,	PM_NORMAL | ODR400}, {
+	20,	PM_NORMAL | ODR100}, {
+	100,	PM_NORMAL | ODR50}, {
+	200,	ODR1000	| ODR10}, {
+	500,	ODR1000 | ODR5}, {
+	1000,	ODR1000 | ODR2}, {
+	2000,	ODR1000 | ODR1}, {
+	0,	ODR1000 | ODRHALF},};
 
 struct kr3dh_data {
 	struct i2c_client *client;
@@ -129,8 +165,6 @@ struct kr3dh_data {
 	u8 resume_state[5];
 };
 
-static unsigned char kr3dh_xyz[3] = {0,};
-
 /*
  * Because misc devices can not carry a pointer from driver register to
  * open, we keep this global.  This limits the driver to a single instance.
@@ -143,17 +177,17 @@ static int kr3dh_i2c_read(struct kr3dh_data *kr, u8 * buf, int len)
 	int tries = 0;
 	struct i2c_msg msgs[] = {
 		{
-			.addr = kr->client->addr,
-			.flags = kr->client->flags & I2C_M_TEN,
-			.len = 1,
-			.buf = buf,
-		},
+		 .addr = kr->client->addr,
+		 .flags = kr->client->flags & I2C_M_TEN,
+		 .len = 1,
+		 .buf = buf,
+		 },
 		{
-			.addr = kr->client->addr,
-			.flags = (kr->client->flags & I2C_M_TEN) | I2C_M_RD,
-			.len = len,
-			.buf = buf,
-		},
+		 .addr = kr->client->addr,
+		 .flags = (kr->client->flags & I2C_M_TEN) | I2C_M_RD,
+		 .len = len,
+		 .buf = buf,
+		 },
 	};
 
 	do {
@@ -194,8 +228,7 @@ static int kr3dh_i2c_write(struct kr3dh_data *kr, u8 * buf, int len)
 	if (err != 1) {
 		dev_err(&kr->client->dev, "write transfer error\n");
 		err = -EIO;
-	} 
-	else {
+	} else {
 		err = 0;
 	}
 
@@ -351,10 +384,6 @@ static int kr3dh_get_acceleration_data(struct kr3dh_data *kr, int *xyz)
 	hw_d[1] = (int) (((acc_data[3]) << 8) | acc_data[2]);
 	hw_d[2] = (int) (((acc_data[5]) << 8) | acc_data[4]);
 
-	kr3dh_xyz[0] = (unsigned char)(hw_d[0] >> 4);
-	kr3dh_xyz[1] = (unsigned char)(hw_d[1] >> 4);
-	kr3dh_xyz[2] = (unsigned char)(hw_d[2] >> 4);
-
 	hw_d[0] = (hw_d[0] & 0x8000) ? (hw_d[0] | 0xFFFF0000) : (hw_d[0]);
 	hw_d[1] = (hw_d[1] & 0x8000) ? (hw_d[1] | 0xFFFF0000) : (hw_d[1]);
 	hw_d[2] = (hw_d[2] & 0x8000) ? (hw_d[2] | 0xFFFF0000) : (hw_d[2]);
@@ -370,7 +399,8 @@ static int kr3dh_get_acceleration_data(struct kr3dh_data *kr, int *xyz)
 	xyz[2] = ((kr->pdata->negate_z) ? (-hw_d[kr->pdata->axis_map_z])
 		  : (hw_d[kr->pdata->axis_map_z]));
 
-	//dev_info(&kr->client->dev, "(x, y ,z) = (%d, %d, %d)\n", xyz[0],xyz[1], xyz[2]);
+	if (KR3DH_DEBUG_DEV_LOW_DATA & kr3dh_debug_mask)
+		KR3DHD("x=%10d, y=%10d, z=%10d\n", xyz[0],xyz[1], xyz[2]);
 
 	return err;
 }
@@ -400,7 +430,8 @@ static int kr3dh_enable(struct kr3dh_data *kr)
 		}
 #if USE_WORK_QUEUE
 		schedule_delayed_work(&kr->input_work,
-			      msecs_to_jiffies(kr->pdata->poll_interval));
+				      msecs_to_jiffies(kr->
+						       pdata->poll_interval));
 #endif
 
 	}
@@ -504,7 +535,7 @@ static int kr3dh_misc_ioctl(struct inode *inode, struct file *file,
 
 		break;
 
-	case AKMD2_TO_ACCEL_IOCTL_READ_XYZ:
+	case AKMD2_TO_ACCEL_IOCTL_READ_XYZ:	/* LGE_CHANGE [hyesung.shin@lge.com] on 2010-1-23, for <Sensor driver structure> */
 		err=kr3dh_get_acceleration_data(kr, buf);
 		if (err < 0)
 				return err;
@@ -659,39 +690,6 @@ static void kr3dh_input_cleanup(struct kr3dh_data *kr)
 	input_free_device(kr->input_dev);
 }
 
-static ssize_t kr3dh_x_show(struct device *dev, struct device_attribute *attr,
-		char *buf)
-{
-	return sprintf(buf, "%d\n", kr3dh_xyz[0]);
-}
-
-static ssize_t kr3dh_y_show(struct device *dev, struct device_attribute *attr,
-		char *buf)
-{
-	return sprintf(buf, "%d\n", kr3dh_xyz[1]);
-}
-
-static ssize_t kr3dh_z_show(struct device *dev, struct device_attribute *attr,
-		char *buf)
-{
-	return sprintf(buf, "%d\n", kr3dh_xyz[2]);
-}
-
-static DEVICE_ATTR(x, S_IRUGO, kr3dh_x_show, NULL);
-static DEVICE_ATTR(y, S_IRUGO, kr3dh_y_show, NULL);
-static DEVICE_ATTR(z, S_IRUGO, kr3dh_z_show, NULL);
-
-static struct attribute *dev_attrs[] = {
-	&dev_attr_x.attr,
-	&dev_attr_y.attr,
-	&dev_attr_z.attr,
-	NULL
-};
-
-static struct attribute_group dev_attr_grp = {
-	.attrs = dev_attrs,
-};
-
 static int kr3dh_probe(struct i2c_client *client,
 			   const struct i2c_device_id *id)
 {
@@ -806,8 +804,6 @@ static int kr3dh_probe(struct i2c_client *client,
 
 	mutex_unlock(&kr->lock);
 
-	sysfs_create_group(&client->dev.kobj, &dev_attr_grp);
-
 	dev_info(&client->dev, "%s kr3dh: Accelerometer chip found\n", client->name);
 
 	return 0;
@@ -832,8 +828,6 @@ static int __devexit kr3dh_remove(struct i2c_client *client)
 {
 	/* TODO: revisit ordering here once _probe order is finalized */
 	struct kr3dh_data *kr = i2c_get_clientdata(client);
-
-	sysfs_remove_group(&client->dev.kobj, &dev_attr_grp);
 
 	misc_deregister(&kr3dh_misc_device);
 	kr3dh_input_cleanup(kr);
@@ -868,7 +862,23 @@ static int kr3dh_resume(struct device *device)
 	struct i2c_client *client = i2c_verify_client(device);
 	struct kr3dh_data *kr = i2c_get_clientdata(client);
 
-	kr->pdata->gpio_config(1);
+#if 0
+	int err = 0;
+
+	if (kr->on_before_suspend){
+
+		kr->pdata->gpio_config(1);
+
+		return kr3dh_enable(kr);
+	}
+
+	err =  kr3dh_hw_init(kr);
+	if (err < 0)
+		printk("%s i2c failed\n", __FUNCTION__);
+
+	return 0;
+#endif
+
 	return kr3dh_enable(kr);
 }
 
@@ -877,7 +887,14 @@ static int kr3dh_suspend(struct device *device)
 	struct i2c_client *client = i2c_verify_client(device);
 	struct kr3dh_data *kr = i2c_get_clientdata(client);
 
-	kr->pdata->gpio_config(0);
+#if 0
+	kr->on_before_suspend = atomic_read(&kr->enabled);
+
+	if (kr->on_before_suspend){
+		kr->pdata->gpio_config(0);
+	}
+#endif
+
 	return kr3dh_disable(kr);
 }
 #endif

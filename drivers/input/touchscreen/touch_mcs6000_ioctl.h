@@ -50,8 +50,7 @@ struct mcs6000_ts_ioctl_diag_emul_type {
 #define MCS6000_TS_I2C_WRITE						_IOWR( MCS6000_TS_IOCTL_MAGIC, 11, struct mcs6000_ioctl_i2c_type)
 #define MCS6000_TS_IOCTL_CHANNEL_DEBUG 				_IO( MCS6000_TS_IOCTL_MAGIC, 12)
 #define MCS6000_TS_I2C_READ_BURST 					_IOWR( MCS6000_TS_IOCTL_MAGIC, 13, struct mcs6000_ioctl_i2c_burst_type)
-#define MCS6000_TS_IOCTL_HW_VER 					_IO( MCS6000_TS_IOCTL_MAGIC, 14)
 
-#define MCS6000_TS_IOCTL_MAXNR 15
+#define MCS6000_TS_IOCTL_MAXNR 14
 
 #endif

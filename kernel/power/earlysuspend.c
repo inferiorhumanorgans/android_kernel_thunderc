@@ -23,6 +23,11 @@
 
 #include "power.h"
 
+#if defined (CONFIG_MACH_MSM7X27_THUNDERC)
+/* LGE_CHANGE [neo.kang@lge.com] 2010-03-28, notify power state to ARM9 */
+#include "../arch/arm/mach-msm/proc_comm.h"
+#endif
+
 enum {
 	DEBUG_USER_STATE = 1U << 0,
 	DEBUG_SUSPEND = 1U << 2,
@@ -94,13 +99,14 @@ static void early_suspend(struct work_struct *work)
 	if (debug_mask & DEBUG_SUSPEND)
 		pr_info("early_suspend: call handlers\n");
 	list_for_each_entry(pos, &early_suspend_handlers, link) {
-		if (pos->suspend != NULL) {
-			pos->suspend(pos);
 #ifdef CONFIG_MACH_LGE
-			printk(KERN_INFO"%s: early suspend funtion [%p]\n",__func__, 
-					pos->suspend);
+		/* FIXME: this is test code for detecting main cause of kthread's sleep
+		 * 2010-04-26, cleaneye.kim@lge.com
+		 */
+		printk(KERN_INFO"%s: early suspend funtion [%x]\n",__func__, pos->suspend);
 #endif
-		}
+		if (pos->suspend != NULL)
+			pos->suspend(pos);
 	}
 	mutex_unlock(&early_suspend_lock);
 
@@ -137,28 +143,30 @@ static void late_resume(struct work_struct *work)
 	if (debug_mask & DEBUG_SUSPEND)
 		pr_info("late_resume: call handlers\n");
 	list_for_each_entry_reverse(pos, &early_suspend_handlers, link) {
-		if (pos->resume != NULL) {
-			pos->resume(pos);
 #ifdef CONFIG_MACH_LGE
-			printk(KERN_INFO"%s: late resume funtion [%p]\n",__func__, 
-					pos->resume);
+		/* FIXME: this is test code for detecting main cause of kthread's sleep
+		 * 2010-04-26, cleaneye.kim@lge.com
+		 */
+		printk(KERN_INFO"%s: late resume funtion [%x]\n",__func__, pos->resume);
 #endif
-		}
+		if (pos->resume != NULL)
+			pos->resume(pos);
 	}
-
 	if (debug_mask & DEBUG_SUSPEND)
 		pr_info("late_resume: done\n");
 abort:
 	mutex_unlock(&early_suspend_lock);
 }
 
-#ifdef CONFIG_LGE_PROC_COMM
-extern int lge_set_sleep_status(int status);
-#endif
 void request_suspend_state(suspend_state_t new_state)
 {
 	unsigned long irqflags;
 	int old_sleep;
+
+#if defined (CONFIG_MACH_MSM7X27_THUNDERC)
+	/* LGE_CHANGE [neo.kang@lge.com] 2010-03-28, notify power state to ARM9 */
+	int cmd_state = 1;
+#endif
 
 	spin_lock_irqsave(&state_lock, irqflags);
 	old_sleep = state & SUSPEND_REQUESTED;
@@ -174,10 +182,15 @@ void request_suspend_state(suspend_state_t new_state)
 			ktime_to_ns(ktime_get()),
 			tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
 			tm.tm_hour, tm.tm_min, tm.tm_sec, ts.tv_nsec);
-#ifdef CONFIG_LGE_PROC_COMM 
-		lge_set_sleep_status(new_state);
-#endif
 	}
+
+#if defined (CONFIG_MACH_MSM7X27_THUNDERC)
+	/* LGE_CHANGE [neo.kang@lge.com] 2010-03-28, notify power state to ARM9 */
+	pr_info("%s:starting notify power state to ARM9\n", __func__);
+	msm_proc_comm(PCOM_CUSTOMER_CMD2, &new_state, &cmd_state);
+	pr_info("%s:end notify power state to ARM9\n", __func__);
+#endif
+
 	if (!old_sleep && new_state != PM_SUSPEND_ON) {
 		state |= SUSPEND_REQUESTED;
 		queue_work(suspend_work_queue, &early_suspend_work);

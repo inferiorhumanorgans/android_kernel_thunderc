@@ -21,17 +21,14 @@
 #define AMI304_H
 
 #include <linux/ioctl.h>
+//#include <asm-arm/arch/regs-gpio.h>
 
-//new Addr=0x0E(Low), old Addr=0x0F(High)
-#define AMI304_I2C_ADDRESS 			0x0E  
-
-//#define AMI304_MAG_OFFSET_ADJ
+#define AMI304_I2C_ADDRESS 			0x0F  //new Addr=0x0E(Low), old Addr=0x0F(High)
 
 /* AMI304 Internal Register Address  (Please refer to AMI304 Specifications) */
 #define AMI304_REG_CTRL1			0x1B
 #define AMI304_REG_CTRL2			0x1C
 #define AMI304_REG_CTRL3			0x1D
-#define AMI304_REG_CTRL4			0x5C
 #define AMI304_REG_DATAXH			0x10
 #define AMI304_REG_DATAXL			0x11
 #define AMI304_REG_DATAYH			0x12
@@ -70,18 +67,14 @@
 #define AMI304MID_IOCTL_SET_CONTROL        _IOW(AMI304MIDIO, 0x04, int)
 #define AMI304MID_IOCTL_GET_CONTROL        _IOR(AMI304MIDIO, 0x05, int)
 #define AMI304MID_IOCTL_SET_MODE           _IOW(AMI304MIDIO, 0x06, int)
-#define AMI304MID_IOCTL_SET_REPORT         _IOW(AMI304MIDIO, 0x07, int)
-#define AMI304MID_IOCTL_MAG_OFFSET_ADJ     _IO(AMI304MIDIO, 0x08)
-#define AMI304MID_IOCTL_GET_MAG_OFFSET     _IOW(AMI304MIDIO, 0x09, int)
-#define AMI304MID_IOCTL_SET_MAG_OFFSET     _IOW(AMI304MIDIO, 0x0a, int)
 
 /* IOCTLs for AMI304 HAL misc. device library */
 #define AMI304HALIO						   0x85
 #define AMI304HAL_IOCTL_GET_SENSORDATA     _IOR(AMI304HALIO, 0x01, int)
 #define AMI304HAL_IOCTL_GET_POSTURE        _IOR(AMI304HALIO, 0x02, int)
 #define AMI304HAL_IOCTL_GET_CALIDATA       _IOR(AMI304HALIO, 0x03, int)
-#define AMI304HAL_IOCTL_SET_ACTIVE         _IOW(AMI304HALIO, 0x04, int)
-#define AMI304HAL_IOCTL_SET_CONTROL        _IOW(AMI304HALIO, 0x05, int)
+#define AMI304HAL_IOCTL_SET_ACTIVE           _IOW(AMI304HALIO, 0x04, int)
+#define AMI304HAL_IOCTL_SET_CONTROL           _IOW(AMI304HALIO, 0x05, int)
 #define AMI304HAL_IOCTL_GET_CONTROL        _IOR(AMI304HALIO, 0x06, int)
 
 #define AMI304_BUFSIZE				256

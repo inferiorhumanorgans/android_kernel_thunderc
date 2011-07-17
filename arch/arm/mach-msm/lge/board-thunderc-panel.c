@@ -22,8 +22,6 @@
 #include "devices.h"
 #include "board-thunderc.h"
 
-#include <mach/board_lge.h>
-
 #define MSM_FB_LCDC_VREG_OP(name, op, level)			\
 do { \
 	vreg = vreg_get(0, name); \
@@ -72,39 +70,11 @@ static struct msm_panel_common_pdata mdp_pdata = {
 
 static void __init msm_fb_add_devices(void)
 {
-	if(lge_bd_rev >= 8) /* >= Rev 1.0 */
-		strcpy(msm_fb_vreg[1], "gp1");
-	
 	msm_fb_register_device("mdp", &mdp_pdata);
 	msm_fb_register_device("pmdh", &mddi_pdata);
 	msm_fb_register_device("lcdc", 0);
 }
 
-#if defined(CONFIG_FB_MSM_MDDI_NOVATEK_HVGA) || \
-	defined(CONFIG_FB_MSM_MDDI_NOVATEK_HITACHI_HVGA)
-static int mddi_novatek_pmic_backlight(int level)
-{
-	/* TODO: Backlight control here */
-	return 0;
-}
-
-static struct msm_panel_novatek_pdata mddi_novatek_panel_data = {
-	.gpio = 102,				/* lcd reset_n */
-	.pmic_backlight = mddi_novatek_pmic_backlight,
-	.initialized = 1,
-};
-
-static struct platform_device mddi_novatek_panel_device = {
-	.name   = "mddi_novatek_hvga",
-	.id     = 0,
-	.dev    = {
-		.platform_data = &mddi_novatek_panel_data,
-	}
-};
-#endif
-
-#if defined(CONFIG_FB_MSM_MDDI_HITACHI_HVGA) || \
-	defined(CONFIG_FB_MSM_MDDI_NOVATEK_HITACHI_HVGA)
 static int mddi_hitachi_pmic_backlight(int level)
 {
 	/* TODO: Backlight control here */
@@ -112,6 +82,10 @@ static int mddi_hitachi_pmic_backlight(int level)
 }
 
 #if 1
+		/* LGE_CHANGE
+		  * Define new structure named 'msm_panel_hitachi_pdata' to use LCD initialization Flag (.initialized).
+		  * 2010-04-21, minjong.gong@lge.com
+		  */
 	static struct msm_panel_hitachi_pdata mddi_hitachi_panel_data = {
 		.gpio = 102,				/* lcd reset_n */
 		.pmic_backlight = mddi_hitachi_pmic_backlight,
@@ -130,7 +104,6 @@ static struct platform_device mddi_hitachi_panel_device = {
 		.platform_data = &mddi_hitachi_panel_data,
 	}
 };
-#endif
 
 /* backlight device */
 static struct gpio_i2c_pin bl_i2c_pin[] = {
@@ -183,16 +156,7 @@ void __init thunderc_init_i2c_backlight(int bus_num)
 /* common functions */
 void __init lge_add_lcd_devices(void)
 {
-#if defined(CONFIG_FB_MSM_MDDI_NOVATEK_HITACHI_HVGA)
-  platform_device_register(&mddi_novatek_panel_device);	
-  platform_device_register(&mddi_hitachi_panel_device);	
-#else	
-#if defined(CONFIG_FB_MSM_MDDI_NOVATEK_HVGA)
-	platform_device_register(&mddi_novatek_panel_device);
-#else
 	platform_device_register(&mddi_hitachi_panel_device);
-#endif
-#endif /* CONFIG_FB_MSM_MDDI_NOVATEK_HITACHI_HVGA */
 
 	msm_fb_add_devices();
 

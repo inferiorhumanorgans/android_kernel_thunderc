@@ -56,15 +56,19 @@
 #include <dhd_dbg.h>
 
 
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-03-05, for gpio set in dhd_linux */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 #include <asm/gpio.h>
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-03-05, for gpio set in dhd_linux */
 
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-03-30, change ifname to wlan%d */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 #undef alloc_etherdev
 #define alloc_etherdev(sizeof_priv) \
 	alloc_netdev(sizeof_priv, "wlan%d", ether_setup)
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-03-30, change ifname to wlan%d */
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)) && defined(CONFIG_PM_SLEEP)
 #include <linux/suspend.h>
@@ -162,9 +166,11 @@ volatile bool          g_dhd_registration_status;
 /* load firmware and/or nvram values from the filesystem */
 module_param_string(firmware_path, firmware_path, MOD_PARAM_PATHLEN, 0);
 module_param_string(nvram_path, nvram_path, MOD_PARAM_PATHLEN, 0);
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-04-03, configs */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 module_param_string(config_path, config_path, MOD_PARAM_PATHLEN, 0);
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-04-03, configs */
 
 /* Error bits */
 module_param(dhd_msg_level, int, 0);
@@ -189,6 +195,16 @@ module_param(dhd_dpc_prio, int, 0);
 /* DPC thread priority, -1 to use tasklet */
 extern int dhd_dongle_memsize;
 module_param(dhd_dongle_memsize, int, 0);
+
+#ifdef CONFIG_MACH_MSM7X27_THUNDERC
+/* Control radio state */
+uint dhd_radio_up = 1;
+module_param(dhd_radio_up, int, 1);
+
+/* Network inteface name */
+char iface_name[IFNAMSIZ];
+module_param_string(iface_name, iface_name, IFNAMSIZ, 0);
+#endif	/* CONFIG_MACH_MSM7X27_THUNDERC */
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0))
 #define DAEMONIZE(a) daemonize(a); \
@@ -589,10 +605,15 @@ dhd_op_if(dhd_if_t *ifp)
 #ifdef SOFTAP
 				 /* semaphore that the soft AP CODE waits on */
 				extern struct semaphore  ap_eth_sema;
-
+#ifdef CONFIG_MACH_MSM7X27_THUNDERC
+                extern bool ap_priv_running;
+#endif	/* CONFIG_MACH_MSM7X27_THUNDERC */
 				/* save ptr to wl0.1 netdev for use in wl_iw.c  */
 				ap_net_dev = ifp->net;
 				 /* signal to the SOFTAP 'sleeper' thread, wl0.1 is ready */
+#ifdef CONFIG_MACH_MSM7X27_THUNDERC
+                if(ap_priv_running == TRUE)
+#endif	/* CONFIG_MACH_MSM7X27_THUNDERC */
 				up(&ap_eth_sema);
 #endif
 				DHD_TRACE(("\n ==== pid:%x, net_device for if:%s created ===\n\n",
@@ -1660,6 +1681,19 @@ dhd_attach(osl_t *osh, struct dhd_bus *bus, uint bus_hdrlen)
 	memcpy(netdev_priv(net), &dhd, sizeof(dhd));
 
 	dhd->pub.osh = osh;
+#ifdef CONFIG_MACH_MSM7X27_THUNDERC 
+    /* Set network interface name if it was provided as module parameter */
+    if (iface_name[0]) {
+        int len;
+        char ch;
+        strncpy(net->name, iface_name, IFNAMSIZ);
+        net->name[IFNAMSIZ - 1] = 0;
+        len = strlen(net->name);
+        ch = net->name[len - 1];
+        if ((ch > '9' || ch < '0') && (len < IFNAMSIZ - 2))
+            strcat(net->name, "%d");
+    }
+#endif	/* CONFIG_MACH_MSM7X27_THUNDERC */
 
 	if (dhd_add_if(dhd, 0, (void *)net, net->name, NULL, 0, 0) == DHD_BAD_IF)
 		goto fail;
@@ -1955,9 +1989,11 @@ dhd_net_attach(dhd_pub_t *dhdp, int ifidx)
 	printf("%s: Broadcom Dongle Host Driver mac=%.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n", net->name,
 		dhd->pub.mac.octet[0], dhd->pub.mac.octet[1], dhd->pub.mac.octet[2],
 		dhd->pub.mac.octet[3], dhd->pub.mac.octet[4], dhd->pub.mac.octet[5]);
+/* LGE_CHANGE_S, [jisung.yang@lge.com], 2010-06-04, <Prevent scan after turning on Wifi> */
 #if 0
 	wl_iw_iscan_set_scan_broadcast_prep(net, 1);
 #endif
+/* LGE_CHANGE_E, [jisung.yang@lge.com], 2010-06-04, <Prevent scan after turning on Wifi> */
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)) && 1
 	g_dhd_registration_status = TRUE;
@@ -2070,6 +2106,7 @@ dhd_module_cleanup(void)
 	DHD_TRACE(("%s: Enter\n", __FUNCTION__));
 
 	dhd_bus_unregister();
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-03-05, for gpio set in dhd_linux */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 #if defined(CONFIG_BCM4325_GPIO_WL_REGON)
 	/* Call customer gpio to turn off power with WL_REG_ON signal */
@@ -2080,6 +2117,7 @@ dhd_module_cleanup(void)
 	/* Call customer gpio to turn off power with WL_REG_ON signal */
 	dhd_customer_gpio_wlan_ctrl(WLAN_POWER_OFF);
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-03-05, for gpio set in dhd_linux */
 }
 static int __init
 dhd_module_init(void)
@@ -2102,10 +2140,12 @@ dhd_module_init(void)
 		return -EINVAL;
 	} while (0);
 
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-03-05, for gpio set in dhd_linux */
 #if !defined(CONFIG_LGE_BCM432X_PATCH)
 	/* Call customer gpio to turn on power with WL_REG_ON signal */
 	dhd_customer_gpio_wlan_ctrl(WLAN_POWER_ON);
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-03-05, for gpio set in dhd_linux */
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)) && 1
 	g_dhd_registration_status = FALSE;

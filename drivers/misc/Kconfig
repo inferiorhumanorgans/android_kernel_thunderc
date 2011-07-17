@@ -383,6 +383,14 @@ config PMIC8058_NFC
 	  Qualcomm PM8058 chip has a module to support NFC (Near Field
 	  Communication). This option enables the driver to support it.
 
+config LGE_AT_CMD_DEVICE
+	bool "Support LGE AT_CMD device"
+	default n
+	depends on LGE_SUPPORT_AT_CMD
+	depends on MACH_LGE
+	help
+	 Choose if use AT_CMD device used for sending uevent to user space
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"

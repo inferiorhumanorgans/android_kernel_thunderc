@@ -376,6 +376,14 @@ static int mmc_blk_issue_rq(struct mmc_queue *mq, struct request *req)
 		 * until later as we need to wait for the card to leave
 		 * programming mode even when things go wrong.
 		 */
+		// LGE_CHANGE [dojip.kim@lge.com] 2010-08-29,
+		// don't redo I/O when nomedium error
+
+#if defined(CONFIG_MACH_LGE)
+		if (brq.cmd.error == -ENOMEDIUM) {
+			goto cmd_err;
+		}
+#endif
 		if (brq.cmd.error || brq.data.error || brq.stop.error) {
 			if (brq.data.blocks > 1 && rq_data_dir(req) == READ) {
 				/* Redo read one sector at a time */
@@ -444,13 +452,6 @@ static int mmc_blk_issue_rq(struct mmc_queue *mq, struct request *req)
 #endif
 		}
 
-		// don't redo I/O when nomedium error
-#if defined(CONFIG_MACH_LGE)
-		if (brq.cmd.error == -ENOMEDIUM) {
-			goto cmd_err;
-		}
-#endif
-
 		if (brq.cmd.error || brq.stop.error || brq.data.error) {
 			if (rq_data_dir(req) == READ) {
 				/*
@@ -506,6 +507,7 @@ static int mmc_blk_issue_rq(struct mmc_queue *mq, struct request *req)
 
 	spin_lock_irq(&md->lock);
 	while (ret) {
+		// LGE_CHANGE [dojip.kim@lge.com] 2010-08-29,
 		// supressed the error message
 #if defined(CONFIG_MACH_LGE)
 		req->cmd_flags |= REQ_QUIET;

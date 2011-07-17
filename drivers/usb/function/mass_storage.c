@@ -2751,6 +2751,7 @@ static void fsg_bind(void *_ctxt)
 		if( nCount++ > 20)
 			break;
 	}
+	/*LGE_CHANGE_E[kyuhyung.lee@lge.com - #endif*/
 #endif
 
 	dev_attr_file.attr.mode = 0644;

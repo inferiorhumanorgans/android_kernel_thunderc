@@ -23,6 +23,7 @@
 #include <mach/camera.h>
 
 extern struct isx005_reg isx005_regs;
+extern int mclk_rate;
 
 enum isx005_width {
 	BYTE_LEN,
@@ -38,48 +39,49 @@ struct isx005_register_address_value_pair {
 struct isx005_reg {
 	const struct isx005_register_address_value_pair *init_reg_settings;
 	uint16_t init_reg_settings_size;
+#if !defined(CONFIG_MACH_MSM7X27_THUNDERG) && \
+	!defined(CONFIG_MACH_MSM7X27_THUNDERA)
+	const struct isx005_register_address_value_pair *init_reg32_settings;
+	uint16_t init_reg32_settings_size;
+#endif
 	const struct isx005_register_address_value_pair *tuning_reg_settings;
 	uint16_t tuning_reg_settings_size;
-	
+
 	const struct isx005_register_address_value_pair *prev_reg_settings;
 	uint16_t prev_reg_settings_size;
 	const struct isx005_register_address_value_pair *snap_reg_settings;
 	uint16_t snap_reg_settings_size;
-	
+
 	const struct isx005_register_address_value_pair *af_normal_reg_settings;
 	uint16_t af_normal_reg_settings_size;
-	const struct isx005_register_address_value_pair *af_auto_reg_settings;
-	uint16_t af_auto_reg_settings_size;
 	const struct isx005_register_address_value_pair *af_macro_reg_settings;
 	uint16_t af_macro_reg_settings_size;
 	const struct isx005_register_address_value_pair *af_manual_reg_settings;
 	uint16_t af_manual_reg_settings_size;
-	
+
 	const struct isx005_register_address_value_pair *af_start_reg_settings;
 	uint16_t af_start_reg_settings_size;
 
-	
-	const struct isx005_register_address_value_pair 
+	const struct isx005_register_address_value_pair
 		*scene_auto_reg_settings;
-	uint16_t scene_auto_reg_settings_size;	
-	const struct isx005_register_address_value_pair 
+	uint16_t scene_auto_reg_settings_size;
+	const struct isx005_register_address_value_pair
 		*scene_portrait_reg_settings;
 	uint16_t scene_portrait_reg_settings_size;
-	const struct isx005_register_address_value_pair 
+	const struct isx005_register_address_value_pair
 		*scene_landscape_reg_settings;
 	uint16_t scene_landscape_reg_settings_size;
-	const struct isx005_register_address_value_pair 
+	const struct isx005_register_address_value_pair
 		*scene_sports_reg_settings;
 	uint16_t scene_sports_reg_settings_size;
-	const struct isx005_register_address_value_pair 
+	const struct isx005_register_address_value_pair
 		*scene_sunset_reg_settings;
 	uint16_t scene_sunset_reg_settings_size;
-	const struct isx005_register_address_value_pair 
+	const struct isx005_register_address_value_pair
 		*scene_night_reg_settings;
 	uint16_t scene_night_reg_settings_size;
 };
 
-			
 /* this value is defined in Android native camera */
 enum isx005_focus_mode {
 	FOCUS_NORMAL,
@@ -133,6 +135,8 @@ enum {
 
 #if defined(CONFIG_MACH_MSM7X27_THUNDERG) || \
 	defined(CONFIG_MACH_MSM7X27_THUNDERC)
+/* LGE_CHANGE_S. Change code to apply new LUT for display quality.
+ * 2010-08-13. minjong.gong@lge.com */
 extern void mdp_load_thunder_lut(int lut_type);
 #endif
 

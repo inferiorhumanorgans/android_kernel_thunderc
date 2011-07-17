@@ -46,9 +46,11 @@
 #include <linux/uaccess.h>
 #include <linux/wakelock.h>
 
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-08-12, Add Header for LGE USB */
 #ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_GADGET
 #include "u_lgeusb.h"
 #endif
+/* LGE_CHANGE_E [hyunhui.park@lge.com] 2010-08-12 */
 
 static const char driver_name[] = "msm72k_udc";
 
@@ -69,8 +71,17 @@ static const char driver_name[] = "msm72k_udc";
 #define SETUP_BUF_SIZE      4096
 
 
+/* LGE_CHANGES_S [younsuk.song@lge.com] 2010-07-04, Add debugging macro sourced by hyunhui.park@lge.com */
 #ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_GADGET
 
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-04-08, Macro for debugging */
+/* Debug mask value
+ * usage : echo [mask_value] > /sys/module/msm72k_udc/parameters/debug_mask
+ * All 		: 127
+ * No msg 	: 0
+ * PM		: 4
+ * Init		: 8
+ */
 enum {
 	USB_DEBUG_NORMAL   = 1U << 0,  /* Normal debug */
 	USB_DEBUG_ISR_WQ   = 1U << 1,  /* Isr, wq 		*/
@@ -95,11 +106,14 @@ module_param_named(debug_mask, lge_usb_debug_mask, int,
 #else
 #define USB_TRACE(mask, fmt, args...) do {} while (0)
 #endif
+/* LGE_CHANGE_E [hyunhui.park@lge.com] 2010-04-08 */
+/* LGE_CHANGES_E [younsuk.song@lge.com] 2010-07-04 */
 
 #ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_GADGET
 
 #define LGE_FACTORY_CABLE 1
 #define LGE_FACTORY_USB_PID_STRING "0x6000"
+#define LGE_FACTORY_USB_PID 0x6000
 
 static int cable_type = -1;
 
@@ -170,8 +184,6 @@ struct msm_endpoint {
 static void usb_do_work(struct work_struct *w);
 static void usb_do_remote_wakeup(struct work_struct *w);
 
-extern int msm_chg_LG_cable_type(void);
-
 #define USB_STATE_IDLE    0
 #define USB_STATE_ONLINE  1
 #define USB_STATE_OFFLINE 2
@@ -229,6 +241,11 @@ struct usb_info {
 	unsigned chg_current;
 	struct delayed_work chg_det;
 	struct delayed_work chg_stop;
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-09-19, Detection of factory cable using wq */
+#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_FACTORY_CABLE_WQ
+	struct delayed_work cable_det;
+#endif
+/* LGE_CHANGE_E [hyunhui.park@lge.com] 2010-09-19 */
 
 	struct work_struct work;
 	unsigned phy_status;
@@ -337,15 +354,22 @@ static ssize_t print_switch_state_for_autorun(struct switch_dev *sdev, char *buf
 static inline enum chg_type usb_get_chg_type(struct usb_info *ui)
 {
 
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-08-12, Detect Cable Type */
+/* CDMA - LT Cable, GSM/WCDMA - PIF Cable
+ * Normal USB - it is 0.
+ */
 #ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_GADGET
-	/* If cable is factory cable, it's value is 1 */
 	cable_type = lge_detect_factory_cable();
 #endif
+/* LGE_CHANGE_E [hyunhui.park@lge.com] 2010-08-12 */	
 
+/* LGE_CHANGES_S [younsuk.song@lge.com] 2010-06-30, TA when LT cable */
 #ifdef CONFIG_USB_SUPPORT_LGE_FACTORY_USB
-	if (cable_type == LGE_FACTORY_CABLE)
+	if ((cable_type == LGE_FACTORY_CABLE_TYPE) ||
+			(cable_type == LGE_FACTORY_CABLE_130K_TYPE))
 		return USB_CHG_TYPE__WALLCHARGER;
 #endif
+/* LGE_CHANGES_E [younsuk.song@lge.com] 2010-06-30 */
 
 	if ((readl(USB_PORTSC) & PORTSC_LS) == PORTSC_LS)
 		return USB_CHG_TYPE__WALLCHARGER;
@@ -381,9 +405,11 @@ static int usb_get_max_power(struct usb_info *ui)
 	return bmaxpow;
 }
 
+/* LGE_CHANGE_S [younsuk.song@lge.com] 2010-09-03, Verizon Test: 5 second delayed charger type recognizion */	
 #ifdef CONFIG_USB_SUPPORT_LGE_GADGET_CDMA			
 static enum chg_type pre_chg_type = USB_CHG_TYPE__INVALID;
 #endif
+/* LGE_CHANGE_E [younsuk.song@lge.com] 2010-09-03 */				
 
 static void usb_chg_stop(struct work_struct *w)
 {
@@ -429,30 +455,27 @@ static void usb_chg_detect(struct work_struct *w)
 	spin_unlock_irqrestore(&ui->lock, flags);
 #endif
 
-
+/* LGE_CHANGE_S [younsuk.song@lge.com] 2010-09-03, Verizon Test: 5 second delayed charger type recognizion */				
 #ifdef CONFIG_USB_SUPPORT_LGE_GADGET_CDMA
-
-	if (pre_chg_type == temp)
-	{
+	if (pre_chg_type == temp) {
 		pr_debug("%s: skip re-usb_chg_detect pre: %d cur: %d\r\n", __func__, pre_chg_type, temp);
 		goto skip;
-	}
-	else
-	{
+	} else  {
 		pre_chg_type= temp;
 	}
-	
 #endif
+/* LGE_CHANGE_E  */				
 
-
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-07-15, Detect TA from ARM9 */
+/* As charger detection RPC is used, it must not be in spin lock area */
 #ifdef CONFIG_USB_SUPPORT_LGE_GADGET_GSM
-/* FIXME : Because of side effect about TA, we comment out for the meanwhile */
 	if (msm_hsusb_detect_chg_type() == USB_CHG_TYPE__WALLCHARGER) {
 		spin_lock_irqsave(&ui->lock, flags);
 		temp = ui->chg_type = USB_CHG_TYPE__WALLCHARGER;
 		spin_unlock_irqrestore(&ui->lock, flags);
 	}
 #endif
+/* LGE_CHANGE_E [hyunhui.park@lge.com] 2010-07-15 */
 
 	hsusb_chg_connected(temp);
 	atomic_set(&otg->chg_type, temp);
@@ -465,11 +488,14 @@ static void usb_chg_detect(struct work_struct *w)
 #endif
 		hsusb_chg_vbus_draw(maxpower);
 	
-
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-08-12, Factory Cable Sleep Skip */
+/* If cable is factory cable, we skips deep sleep to manufacturing */
 #ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_GADGET
-	if(cable_type == LGE_FACTORY_CABLE)
+	/* Normal cable is 0 */
+	if(cable_type)
 		goto skip;
 #endif
+/* LGE_CHANGE_E [hyunhui.park@lge.com] 2010-08-12 */	
 
 	/* USB driver prevents idle and suspend power collapse(pc)
 	 * while USB cable is connected. But when dedicated charger is
@@ -481,27 +507,41 @@ static void usb_chg_detect(struct work_struct *w)
 	if (temp == USB_CHG_TYPE__WALLCHARGER) {
 		/* Workaround: Reset PHY in SE1 state */
 		otg->reset(ui->xceiv);
-		/* select DEVICE mode */
-		writel(0x12, USB_USBMODE);
-		msleep(1);
+
+		if (!is_b_sess_vld() && is_usb_online(ui)) {
+			pr_info("%s: Missed BSV interrupt\n", __func__);
+			msm_hsusb_set_vbus_state(0);
+			return;
+		}
+
 		otg_set_suspend(ui->xceiv, 1);
+	}
+
+	/* check if the cable status is changed after set_suspend */
+	if (!is_b_sess_vld() && is_usb_online(ui)) {
+		otg_set_suspend(ui->xceiv, 0);
+		pr_info("%s: Missed BSV interrupt-2\n", __func__);
+		msm_hsusb_set_vbus_state(0);
+		return;
+	}
+
+	if (temp == USB_CHG_TYPE__WALLCHARGER) {
 		msm72k_pm_qos_update(0);
 		wake_unlock(&ui->wlock);
 	}
 
 #ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_GADGET
 
+/* LGE_CHANGE_S [younsuk.song@lge.com] 2010-09-03, Verizon Tst: 5 second delayed charger type recognizion */
 #ifdef CONFIG_USB_SUPPORT_LGE_GADGET_CDMA
-	
-	if (temp == USB_CHG_TYPE__SDP)
-	{
+	if (temp == USB_CHG_TYPE__SDP && is_b_sess_vld()) {
 		pr_info("%s: try to re-usb_chg_detect after 5 seconds \r\n", __func__);
 		schedule_delayed_work(&ui->chg_det, 5 * USB_CHG_DET_DELAY);
 	}
 #endif
+/* LGE_CHANGE_E [younsuk.song@lge.com] */
 
 skip :
-		
 	return;
 #endif
 
@@ -1249,8 +1289,11 @@ static irqreturn_t usb_interrupt(int irq, void *data)
 			ui->flags = USB_FLAG_CONFIGURED;
 			spin_unlock_irqrestore(&ui->lock, flags);
 
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-08-14, Add Defence Code */
+/* When USB debugging on/off, defence the kernel panic. */
 			if (ui->driver && ui->driver->resume && &ui->gadget)
 				ui->driver->resume(&ui->gadget);
+/* LGE_CHANGE_E [hyunhui.park@lge.com] 2010-08-14 */			
 			schedule_work(&ui->work);
 		} else
 			msm_hsusb_set_state(USB_STATE_DEFAULT);
@@ -1298,6 +1341,8 @@ static irqreturn_t usb_interrupt(int irq, void *data)
 		ui->flags = USB_FLAG_SUSPEND;
 		spin_unlock_irqrestore(&ui->lock, flags);
 
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-08-14, Add Defence Code */
+/* When USB debugging on/off, defence the kernel panic. */
 		if (ui->driver && ui->driver->suspend && &ui->gadget)
 			ui->driver->suspend(&ui->gadget);
 /* DKL TEMPORARY 2010-08-14 */		
@@ -1319,6 +1364,18 @@ static irqreturn_t usb_interrupt(int irq, void *data)
 	}
 	return IRQ_HANDLED;
 }
+
+
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-09-19, Detection of factory cable using wq */
+#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_FACTORY_CABLE_WQ
+static void usb_do_factory_cable_detect(struct work_struct *w)
+{
+	pr_info("%s: OK, we detect LG factory cable...... change pid\n", __func__);
+
+	android_switch_composition_ext(LGE_FACTORY_USB_PID);
+}
+#endif
+/* LGE_CHANGE_E [hyunhui.park@lge.com] 2010-09-19 */
 
 static void usb_prepare(struct usb_info *ui)
 {
@@ -1344,7 +1401,19 @@ static void usb_prepare(struct usb_info *ui)
 	INIT_DELAYED_WORK(&ui->chg_det, usb_chg_detect);
 	INIT_DELAYED_WORK(&ui->chg_stop, usb_chg_stop);
 	INIT_DELAYED_WORK(&ui->rw_work, usb_do_remote_wakeup);
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-09-19, Detection of factory cable using wq */
+#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_FACTORY_CABLE_WQ
+	INIT_DELAYED_WORK(&ui->cable_det, usb_do_factory_cable_detect);
+#endif
+/* LGE_CHANGE_E [hyunhui.park@lge.com] 2010-09-19 */
 }
+
+/* LGE_CHANGES_S [younsuk.song@lge.com] 2010-06-21, [VS660] Support Factory USB Cable sourced by VS760*/
+#ifdef CONFIG_USB_SUPPORT_LGE_FACTORY_USB
+// For factory mode switching
+extern int android_set_pid(const char *val, struct kernel_param *kp);
+#endif
+/* LGE_CHANGES_E [younsuk.song@lge.com] 2010-06-21 */
 
 static void usb_reset(struct usb_info *ui)
 {
@@ -1367,11 +1436,15 @@ static void usb_reset(struct usb_info *ui)
 
 	writel(ui->dma, USB_ENDPOINTLISTADDR);
 
+/* LGE_CHANGES_S [younsuk.song@lge.com] 2010-06-21, [VS660] Support Factory USB Cable sourced by VS760*/
 #ifdef CONFIG_USB_SUPPORT_LGE_FACTORY_USB
-
-
-	if( LG_FACTORY_CABLE_TYPE == msm_chg_LG_cable_type()) 
-	{
+	/* This case is only if LT cable is connected, NOT 130K cable */
+	if(lge_detect_factory_cable() == LGE_FACTORY_CABLE_TYPE) {
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-09-19, Detection of factory cable using wq */
+#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_FACTORY_CABLE_WQ
+		//Port force full speed connect, p917 SWI doc
+		writel(readl(USB_PORTSC) | (1<<24), USB_PORTSC);
+#else /* Below is LGE Original Approach */
 		unsigned tmp = 0; 
 
 		tmp = ulpi_read(ui, 0x04);
@@ -1381,11 +1454,12 @@ static void usb_reset(struct usb_info *ui)
 		writel(readl(USB_PORTSC) | (1<<24), USB_PORTSC);
 
 		// For factory mode switching
-		extern int android_set_pid(const char *val, struct kernel_param *kp); 
 		android_set_pid(LGE_FACTORY_USB_PID_STRING, NULL);
-	}
-	
 #endif
+/* LGE_CHANGE_E [hyunhui.park@lge.com] 2010-09-19 */
+	}
+#endif
+/* LGE_CHANGES_E [younsuk.song@lge.com] 2010-06-21 */
 
 	configure_endpoints(ui);
 
@@ -1405,11 +1479,13 @@ static void usb_reset(struct usb_info *ui)
 
 	atomic_set(&ui->running, 1);
 
+/* LGE_CHANGE_S [younsuk.song@lge.com] 2010-09-03, Verizon Test: 5 second delayed charger type recognizion */				
+
 #ifdef CONFIG_USB_SUPPORT_LGE_GADGET_CDMA
-
 	pre_chg_type = USB_CHG_TYPE__INVALID;
-
 #endif
+
+/* LGE_CHANGE_E [younsuk.song@lge.com] 2010-09-03 */				
 
 }
 
@@ -1480,22 +1556,52 @@ static void usb_do_work_check_vbus(struct usb_info *ui)
 	spin_unlock_irqrestore(&ui->lock, iflags);
 }
 
+/* LGE_CHANGE_S [jaeho.cho@lge.com] 2010-09-24, workaround to fix unexpected charging without ext_pwr */
+#ifdef CONFIG_USB_SUPPORT_LGE_GADGET_CDMA
+atomic_t stop_charging;
+#endif
+/* LGE_CHANGE_E [jaeho.cho@lge.com] 2010-09-24 */
+
 static void usb_do_work(struct work_struct *w)
 {
 	struct usb_info *ui = container_of(w, struct usb_info, work);
 	unsigned long iflags;
 	unsigned flags, _vbus;
 
+/* LGE_CHANGE_S [jaeho.cho@lge.com] 2010-09-24, workaround to fix unexpected charging without ext_pwr */
+#ifdef CONFIG_USB_SUPPORT_LGE_GADGET_CDMA
+    enum chg_type chg_type_v;
+#endif
+/* LGE_CHANGE_E [jaeho.cho@lge.com] 2010-09-24 */
+
 	for (;;) {
 		spin_lock_irqsave(&ui->lock, iflags);
 		flags = ui->flags;
 		ui->flags = 0;
-		_vbus = is_usb_online(ui);
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-10-21, Fix USB Noti issue by QCT */
+		_vbus = is_b_sess_vld();
+/* LGE_CHANGE_E [hyunhui.park@lge.com] 2010-10-21 */
+
+/* LGE_CHANGE_S [jaeho.cho@lge.com] 2010-09-24, workaround to fix unexpected charging without ext_pwr */
+#ifdef CONFIG_USB_SUPPORT_LGE_GADGET_CDMA
+        chg_type_v = ui->chg_type;
+#endif
+/* LGE_CHANGE_E [jaeho.cho@lge.com] 2010-09-24 */
+
 		spin_unlock_irqrestore(&ui->lock, iflags);
 
 		/* give up if we have nothing to do */
 		if (flags == 0)
 			break;
+
+/* LGE_CHANGE_S [jaeho.cho@lge.com] 2010-09-24, workaround to fix unexpected charging without ext_pwr */
+#ifdef CONFIG_USB_SUPPORT_LGE_GADGET_CDMA
+		if ((!_vbus && chg_type_v != USB_CHG_TYPE__INVALID) || (!_vbus && atomic_read(&stop_charging) == 0)) {
+			hsusb_chg_connected(
+				USB_CHG_TYPE__INVALID);
+		}
+#endif
+/* LGE_CHANGE_E [jaeho.cho@lge.com] 2010-09-24 */
 
 		switch (ui->state) {
 		case USB_STATE_IDLE:
@@ -1504,7 +1610,52 @@ static void usb_do_work(struct work_struct *w)
 				struct msm_otg *otg = to_msm_otg(ui->xceiv);
 
 				if (!_vbus) {
+					otg_set_suspend(ui->xceiv, 0);
+					dev_info(&ui->pdev->dev,
+						"msm72k_udc: IDLE->OFFLINE\n");
 					ui->state = USB_STATE_OFFLINE;
+
+					ui->chg_type = USB_CHG_TYPE__INVALID;
+					ui->chg_current = 0;
+					atomic_set(&ui->running, 0);
+					atomic_set(&ui->remote_wakeup, 0);
+					atomic_set(&ui->configured, 0);
+					msm72k_pullup_internal(&ui->gadget, 0);
+					hsusb_chg_connected(
+							USB_CHG_TYPE__INVALID);
+					switch_set_state(&ui->sdev, 0);
+#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
+					pr_info("%s: switch_set_state() FLAG_VBUS_OFFLINE\n", __func__);
+					switch_set_state(&ui->sdev_autorun, 0);
+#endif
+					if (ui->irq) {
+						free_irq(ui->irq, ui);
+						ui->irq = 0;
+					}
+
+					flush_all_endpoints(ui);
+
+					if (ui->driver) {
+						dev_dbg(&ui->pdev->dev,
+							"usb:notify offline\n");
+						ui->driver->disconnect(&ui->gadget);
+					}
+
+					/* power down phy, clock down usb */
+					otg->reset(ui->xceiv);
+					otg_set_suspend(ui->xceiv, 1);
+
+					if (is_b_sess_vld() && !is_usb_online(ui)) {
+						pr_info("%s: missing vbus "
+						"interrupt ui->state=IDLE\n",
+							__func__);
+						otg_set_suspend(ui->xceiv, 0);
+						msm_hsusb_set_vbus_state(1);
+						break;
+					}
+
+					msm72k_pm_qos_update(0);
+					wake_unlock(&ui->wlock);
 					break;
 				}
 
@@ -1556,6 +1707,11 @@ static void usb_do_work(struct work_struct *w)
 				spin_unlock_irqrestore(&ui->lock, iflags);
 				if (temp == USB_CHG_TYPE__WALLCHARGER)
 					msm72k_pm_qos_update(1);
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-09-19, Detection of factory cable using wq */
+#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_FACTORY_CABLE_WQ
+				cancel_delayed_work(&ui->cable_det);
+#endif
+/* LGE_CHANGE_E [hyunhui.park@lge.com] 2010-09-19 */
 
 				dev_info(&ui->pdev->dev,
 					"msm72k_udc: ONLINE -> OFFLINE\n");
@@ -1576,9 +1732,14 @@ static void usb_do_work(struct work_struct *w)
 				 * we must let modem know about charger
 				 * disconnection
 				 */
+/* LGE_CHANGE_S [jaeho.cho@lge.com] 2010-09-24, workaround to fix unexpected charging without ext_pwr */
+#ifdef CONFIG_USB_SUPPORT_LGE_GADGET_CDMA
+#else
 				if (temp != USB_CHG_TYPE__INVALID)
 					hsusb_chg_connected(
 						USB_CHG_TYPE__INVALID);
+#endif
+/* LGE_CHANGE_E [jaeho.cho@lge.com] 2010-09-24 */
 
 				if (ui->irq) {
 					free_irq(ui->irq, ui);
@@ -1600,6 +1761,7 @@ static void usb_do_work(struct work_struct *w)
 				switch_set_state(&ui->sdev_autorun, 0);
 #endif
 				/* power down phy, clock down usb */
+				pr_info("%s : msm72k_udc otg->reset() invoked --\n", __func__);
 				otg->reset(ui->xceiv);
 				otg_set_suspend(ui->xceiv, 1);
 
@@ -1673,6 +1835,16 @@ static void usb_do_work(struct work_struct *w)
 				msm72k_pm_qos_update(1);
 				otg_set_suspend(ui->xceiv, 0);
 				usb_reset(ui);
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-09-19, Detection of factory cable using wq */
+#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_FACTORY_CABLE_WQ
+				if(lge_detect_factory_cable()) {
+					ui->state = USB_STATE_IDLE;
+					schedule_delayed_work(&ui->cable_det, 0);
+					return;
+				}
+#endif
+/* LGE_CHANGE_E [hyunhui.park@lge.com] 2010-09-19 */
+
 				ui->state = USB_STATE_ONLINE;
 				usb_do_work_check_vbus(ui);
 				ret = request_irq(otg->irq, usb_interrupt,
@@ -1691,10 +1863,13 @@ static void usb_do_work(struct work_struct *w)
 				enable_irq_wake(otg->irq);
 				msm72k_pullup_internal(&ui->gadget, 1);
 
+/* LGE_CHANGE_S [younsuk.song@lge.com] 2010-09-03, Verizon Test: 5 second delayed charger type recognizion */				
+
 #ifdef CONFIG_USB_SUPPORT_LGE_GADGET_CDMA
 				cancel_delayed_work(&ui->chg_det);
 #endif
 
+/* LGE_CHANGE_E [younsuk.song@lge.com]  */
 
 				schedule_delayed_work(
 						&ui->chg_det,
@@ -2384,6 +2559,12 @@ static int msm72k_probe(struct platform_device *pdev)
 	ui->chg_type = USB_CHG_TYPE__INVALID;
 	hsusb_chg_init(1);
 
+/* LGE_CHANGE_S [jaeho.cho@lge.com] 2010-09-24, workaround to fix unexpected charging without ext_pwr */
+#ifdef CONFIG_USB_SUPPORT_LGE_GADGET_CDMA
+    atomic_set(&stop_charging, 1);
+#endif
+/* LGE_CHANGE_E [jaeho.cho@lge.com] 2010-09-24 */
+
 	ui->buf = dma_alloc_coherent(&pdev->dev, 4096, &ui->dma, GFP_KERNEL);
 	if (!ui->buf)
 		return usb_free(ui, -ENOMEM);
@@ -2554,19 +2735,19 @@ int usb_gadget_unregister_driver(struct usb_gadget_driver *driver)
 		return -EINVAL;
 
 	msm72k_pullup_internal(&dev->gadget, 0);
+/* LGE_CHANGE_S [younsuk.song@lge.com] 2010-08-24, QCT patch for USB kernel panic */
 	if (dev->irq) { 
 		printk("freeing IRQ\n"); 
 		free_irq(dev->irq, dev); 
 		dev->irq = 0; 
 	} 
-
+/* LGE_CHANGE_E [younsuk.song@lge.com] 2010-08-24 */
 	dev->state = USB_STATE_IDLE;
 	atomic_set(&dev->configured, 0);
 	switch_set_state(&dev->sdev, 0);
 
-	if (atomic_read(&dev->running))
-		msleep(300);
 
+	
 #ifdef CONFIG_USB_GADGET_LG_MTP_DRIVER
 	device_remove_file(&dev->gadget.dev, &dev_attr_mtp_usb_state);
 #endif

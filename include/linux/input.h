@@ -377,8 +377,6 @@ struct input_absinfo {
 
 #define KEY_WIMAX		246
 
-#define KEY_FOCUS		247
-
 /* Range 248 - 255 is reserved for special needs of AT keyboard driver */
 
 #define BTN_MISC		0x100

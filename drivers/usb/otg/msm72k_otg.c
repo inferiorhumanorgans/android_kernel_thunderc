@@ -172,55 +172,71 @@ static int msm_otg_set_clk(struct otg_transceiver *xceiv, int on)
 
 	return 0;
 }
+
 static void msm_otg_start_peripheral(struct otg_transceiver *xceiv, int on)
 {
-	struct msm_otg *dev = container_of(xceiv, struct msm_otg, otg);
+        struct msm_otg *dev = container_of(xceiv, struct msm_otg, otg);
 
-	if (!xceiv->gadget)
-		return;
+         if (!xceiv->gadget)
+                 return;
 
-	if (on) {
-		/* increment the clk reference count so that
-		 * it would be still on when disabled from
-		 * low power mode routine
-		 */
-		if (dev->pdata->pclk_required_during_lpm)
-			clk_enable(dev->hs_pclk);
+         if (on) {
+                 /* increment the clk reference count so that
+                  * it would be still on when disabled from
+                  * low power mode routine
+                  */
+                 if (dev->pdata->pclk_required_during_lpm)
+                         clk_enable(dev->hs_pclk);
 
-		usb_gadget_vbus_connect(xceiv->gadget);
-	} else {
-		atomic_set(&dev->chg_type, USB_CHG_TYPE__INVALID);
-		usb_gadget_vbus_disconnect(xceiv->gadget);
+                 usb_gadget_vbus_connect(xceiv->gadget);
+         } else {
+                 atomic_set(&dev->chg_type, USB_CHG_TYPE__INVALID);
+                 usb_gadget_vbus_disconnect(xceiv->gadget);
 
-		/* decrement the clk reference count so that
-		 * it would be off when disabled from
-		 * low power mode routine
-		 */
-		if (dev->pdata->pclk_required_during_lpm)
-			clk_disable(dev->hs_pclk);
-	}
-}
+          /* decrement the clk reference count so that
+                  * it would be off when disabled from
+                  * low power mode routine
+                  */
+                 if (dev->pdata->pclk_required_during_lpm)
+                         clk_disable(dev->hs_pclk);
+         }
+ }
 
 static void msm_otg_start_host(struct otg_transceiver *xceiv, int on)
+ {
+         struct msm_otg *dev = container_of(xceiv, struct msm_otg, otg);
+
+         if (!xceiv->host)
+                 return;
+
+         /* increment or decrement the clk reference count
+          * to avoid usb h/w lockup issues when low power
+          * mode is initiated and vbus is on.
+          */
+        if (dev->pdata->pclk_required_during_lpm) {
+                 if (on)
+                         clk_enable(dev->hs_pclk);
+                 else
+                         clk_disable(dev->hs_pclk);
+         }
+
+         if (dev->start_host)
+                 dev->start_host(xceiv->host, on);
+ }
+
+static int msm_otg_are_interrupts_pending(struct msm_otg *dev)
 {
-	struct msm_otg *dev = container_of(xceiv, struct msm_otg, otg);
+	unsigned otgsc = readl(USB_OTGSC);
 
-	if (!xceiv->host)
-		return;
-
-	/* increment or decrement the clk reference count
-	 * to avoid usb h/w lockup issues when low power
-	 * mode is initiated and vbus is on.
-	 */
-	if (dev->pdata->pclk_required_during_lpm) {
-		if (on)
-			clk_enable(dev->hs_pclk);
-		else
-			clk_disable(dev->hs_pclk);
+	/* check if there are any pending otg interrupts */
+	if (((otgsc & OTGSC_INTR_MASK) >> 8) & otgsc) {
+		pr_info("%s: Interrupts while suspending phy: "
+		"otgsc:%08x\n", __func__, otgsc);
+		return 1;
 	}
 
-	if (dev->start_host)
-		dev->start_host(xceiv->host, on);
+	return 0;
+
 }
 
 static int msm_otg_suspend(struct msm_otg *dev)
@@ -260,14 +276,23 @@ static int msm_otg_suspend(struct msm_otg *dev)
 	disable_phy_clk();
 	while (!is_phy_clk_disabled()) {
 		if (time_after(jiffies, timeout)) {
+			if (msm_otg_are_interrupts_pending(dev))
+				goto out;
+
 			pr_err("%s: Unable to suspend phy\n", __func__);
+			/* check if there any pending interrupts
+			 * before re-setting the h/w
+			 */
 			otg_reset(&dev->otg);
 			goto out;
 		}
 		msleep(1);
+		if (msm_otg_are_interrupts_pending(dev))
+			goto out;
 	}
 
 	writel(readl(USB_USBCMD) | ASYNC_INTR_CTRL | ULPI_STP_CTRL, USB_USBCMD);
+
 	if (dev->hs_pclk)
 		clk_disable(dev->hs_pclk);
 	if (dev->hs_cclk)

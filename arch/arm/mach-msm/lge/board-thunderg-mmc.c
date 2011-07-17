@@ -1,6 +1,6 @@
 /* arch/arm/mach-msm/lge/board-thunderg-mmc.c
  * Copyright (C) 2010 LGE Corporation.
- * Author: SungEun Kim 
+ * Author: SungEun Kim <cleaneye.kim@lge.com>
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -35,7 +35,7 @@ static void sdcc_gpio_init(void)
 	int rc = 0;
 	if (gpio_request(GPIO_SD_DETECT_N, "sdc1_status_pin_irq"))
 		pr_err("failed to request gpio sdc1_status_irq\n");
-	rc = gpio_tlmm_config(GPIO_CFG(GPIO_SD_DETECT_N, 0, GPIO_INPUT, GPIO_NO_PULL,
+	rc = gpio_tlmm_config(GPIO_CFG(GPIO_SD_DETECT_N, 0, GPIO_INPUT, GPIO_PULL_UP,
 									GPIO_2MA), GPIO_ENABLE);
 	if (rc)
 		printk(KERN_ERR "%s: Failed to configure GPIO %d\n",
@@ -253,6 +253,9 @@ static uint32_t msm_sdcc_setup_power(struct device *dv, unsigned int vdd)
 	}
 	set_bit(pdev->id, &vreg_sts);
 
+	/* if first called related to sdcc1, irq should be registered as wakeup source
+	 * cleaneye.kim@lge.com, 2010-02-19
+	 */
 #if 0
 	if (first_setup == 1) {
 		struct mmc_platform_data *pdata = pdev->dev.platform_data;
@@ -273,6 +276,7 @@ static unsigned int thunderg_sdcc_slot_status(struct device *dev)
 }
 #endif
 
+/* LGE_CHANGE_S [jisung.yang@lge.com] 2010-04-24, BCM4325 control gpio */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 static unsigned int bcm432x_sdcc_wlan_slot_status(struct device *dev)
 {
@@ -293,6 +297,7 @@ static struct mmc_platform_data bcm432x_sdcc_wlan_data = {
 	.nonremovable	= 1,
 };
 #endif  /* CONFIG_LGE_BCM432X_PATCH*/
+/* LGE_CHANGE_E [jisung.yang@lge.com] 2010-04-24, BCM4325 control gpio */
 
 static struct mmc_platform_data msm7x2x_sdcc_data = {
 #ifdef CONFIG_MMC_MSM_CARD_HW_DETECTION
@@ -330,6 +335,7 @@ static void __init msm7x2x_init_mmc(void)
 #endif	
 #ifdef CONFIG_MMC_MSM_SDC2_SUPPORT
 
+/* LGE_CHANGE_S [jisung.yang@lge.com] 2010-04-24, BCM4325 control */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 
 	/* GPIO config */
@@ -352,6 +358,7 @@ static void __init msm7x2x_init_mmc(void)
 #else /* qualcomm or google */
     msm_add_sdcc(2, &msm7x2x_sdcc_data);
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [jisung.yang@lge.com] 2010-04-24, BCM4325 control */
 
 #endif
 #ifdef CONFIG_MMC_MSM_SDC3_SUPPORT

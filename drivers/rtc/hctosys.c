@@ -22,11 +22,6 @@
  * the best guess is to add 0.5s.
  */
 
-#ifdef CONFIG_LGE_RTC_INTF_ALARM_SYNC
-extern int alarm_set_rtc(struct timespec new_time);
-extern bool alarm_need_to_set(void);
-#endif
-
 int rtc_hctosys(void)
 {
 	int err;
@@ -49,18 +44,14 @@ int rtc_hctosys(void)
 
 			rtc_tm_to_time(&tm, &tv.tv_sec);
 
-#ifdef CONFIG_LGE_RTC_INTF_ALARM_SYNC
-			if (alarm_need_to_set()) {
-				//printk("%s: called alarm_set_rtc(tv)\n", __func__);
-				alarm_set_rtc(tv);
-			} else {
-				//printk("%s: called do_settimeofday(&tv)\n", __func__);
-				do_settimeofday(&tv);
-			}
-#else
 			do_settimeofday(&tv);
-#endif
 
+			dev_info(rtc->dev.parent,
+				"setting system clock to "
+				"%d-%02d-%02d %02d:%02d:%02d UTC (%u)\n",
+				tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+				tm.tm_hour, tm.tm_min, tm.tm_sec,
+				(unsigned int) tv.tv_sec);
 		}
 		else
 			dev_err(rtc->dev.parent,

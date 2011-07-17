@@ -55,7 +55,7 @@ static int thunderc_bluetooth_toggle_radio(void *data, bool state)
 	int ret;
 	int (*power_control)(int enable);
 
-	power_control = ((struct bluetooth_platform_data *)data)->bluetooth_power;
+    power_control = ((struct bluetooth_platform_data *)data)->bluetooth_power;
 	ret = (*power_control)((state == RFKILL_USER_STATE_SOFT_BLOCKED) ? 1 : 0);
 	return ret;
 }
@@ -77,9 +77,9 @@ static int thunderc_bluetooth_power(int on)
 				return -EIO;
 			}
 		}
-		//Turn Bluetooth Power On if and only if not turned on by WLAN yet.
-		if (!gpio_get_value(CONFIG_BCM4325_GPIO_WL_REGON)) //#23
-			gpio_set_value(CONFIG_BCM4325_GPIO_WL_REGON, 1); //#23
+        //Turn Bluetooth Power On if and only if not turned on by WLAN yet.
+        if (!gpio_get_value(CONFIG_BCM4325_GPIO_WL_REGON)) //#23
+		    gpio_set_value(CONFIG_BCM4325_GPIO_WL_REGON, 1); //#23
 		mdelay(100);
 		gpio_set_value(BT_RESET_N, 0);
 		mdelay(100);
@@ -87,9 +87,9 @@ static int thunderc_bluetooth_power(int on)
 		mdelay(100);
 
 	} else {
-		//Turn Bluetooth Power Off if and only if not used by WLAN anymore.
-		if (!gpio_get_value(CONFIG_BCM4325_GPIO_WL_RESET)) //#93
-			gpio_set_value(CONFIG_BCM4325_GPIO_WL_REGON, 0); //#23
+        //Turn Bluetooth Power Off if and only if not used by WLAN anymore.
+        if (!gpio_get_value(CONFIG_BCM4325_GPIO_WL_RESET)) //#93
+         gpio_set_value(CONFIG_BCM4325_GPIO_WL_REGON, 0); //#23
 
 		gpio_set_value(BT_RESET_N, 0);
 		for (pin = 0; pin < ARRAY_SIZE(bt_config_power_off); pin++) {
@@ -120,43 +120,13 @@ static struct platform_device msm_bt_power_device = {
 
 static void __init bt_power_init(void)
 {
-	int pin, rc;
-	
-	/* Power On */
-	for (pin = 0; pin < ARRAY_SIZE(bt_config_power_on); pin++) {
-		rc = gpio_tlmm_config(bt_config_power_on[pin],
-				      GPIO_ENABLE);
-		if (rc) {
-			printk(KERN_ERR
-				"%s: gpio_tlmm_config(%#x)=%d\n",
-				__func__, bt_config_power_on[pin], rc);
-		}
-	}
-
-	gpio_direction_output(CONFIG_BCM4325_GPIO_WL_REGON, 1); //#23
-
-	mdelay(100);
-	gpio_set_value(BT_RESET_N, 0);
-	mdelay(100);
-	gpio_set_value(BT_RESET_N, 1);
-	mdelay(100);
-
-	/* 1 sec */
-	ssleep(1);
-
-	/* Power Off */
-	gpio_set_value(CONFIG_BCM4325_GPIO_WL_REGON, 0); //#23
-
-	gpio_set_value(BT_RESET_N, 0);
-	for (pin = 0; pin < ARRAY_SIZE(bt_config_power_off); pin++) {
-		rc = gpio_tlmm_config(bt_config_power_off[pin],
-				      GPIO_ENABLE);
-		if (rc) {
-			printk(KERN_ERR
-				"%s: gpio_tlmm_config(%#x)=%d\n",
-				__func__, bt_config_power_off[pin], rc);
-		}
-	}
+/* LGE_CHANGE_S, [kidong0420.kim@lge.com] , 2010-06-18, for current consumption*/
+  //MI thunderc_bluetooth_power(1);
+  gpio_set_value(23, 1);
+  ssleep(1); /* 1 sec */
+  //MI thunderc_bluetooth_power(0);
+  gpio_set_value(23, 0);
+/* LGE_CHANGE_E, [kidong0420.kim@lge.com] , 2010-06-18, for current consumption*/
 }
 #else
 #define bt_power_init(x) do {} while (0)

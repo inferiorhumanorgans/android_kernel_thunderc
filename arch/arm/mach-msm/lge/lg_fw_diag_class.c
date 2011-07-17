@@ -1,16 +1,8 @@
 /*
- * Copyright (c) 2010 LGE. All rights reserved.
+ *   LG_FW_AUDIO_TESTMODE
  *
- * This software is licensed under the terms of the GNU General Public
- * License version 2, as published by the Free Software Foundation, and
- * may be copied, distributed, and modified under those terms.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- */
+ *   kiwone creates this file for audio test mode, and the use of another function to send framework.
+*/
 
 #include <linux/module.h>
 #include <linux/types.h>
@@ -52,6 +44,13 @@ void update_diagcmd_state(struct diagcmd_dev *sdev, char *cmd, int state)
 	char *envp[3];
 	int env_offset = 0;
 	int length;
+
+	/* 
+	 * 2010-08-12, jinkyu.choi@lge.com, Do not check the state
+	 * Now, each command has own state number which is the sub command number of testmode tools.
+	 * The sub commands can be same though the major commands are different.
+	 * It is result in not sending the commnad to Android Diag application
+	 */
 
 	//if (sdev->state != state) {
 		sdev->state = state;
@@ -157,6 +156,6 @@ static void __exit lg_fw_diag_class_exit(void)
 module_init(lg_fw_diag_class_init);
 module_exit(lg_fw_diag_class_exit);
 
-MODULE_AUTHOR("kiwone.seo");
+MODULE_AUTHOR("kiwone.seo@lge.com");
 MODULE_DESCRIPTION("lg_fw_diag class driver");
 MODULE_LICENSE("GPL");

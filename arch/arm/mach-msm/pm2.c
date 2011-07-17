@@ -53,8 +53,7 @@
 #include "pm.h"
 #include "spm.h"
 
-#if defined(CONFIG_MACH_MSM7X27_THUNDERC)
-#endif
+
 /******************************************************************************
  * Debug Definitions
  *****************************************************************************/
@@ -1679,6 +1678,11 @@ static struct platform_suspend_ops msm_pm_ops = {
 static uint32_t restart_reason = 0x776655AA;
 
 #ifdef CONFIG_MACH_LGE
+/* LGE_CHANGE
+ * flush console before reboot
+ * from google's mahimahi kernel
+ * 2010-05-04, cleaneye.kim@lge.com
+ */
 
 static bool console_flushed;
 
@@ -1706,20 +1710,24 @@ void msm_pm_flush_console(void)
 }
 #endif
 
-#if defined(CONFIG_LGE_RAM_CONSOLE_CLEAN)
+// LGE_CHANGE [dojip.kim@lge.com] 2010-08-04, clean the ram console when normal shutdown
 extern void ram_console_clean_buffer(void);
-#endif
 
 static void msm_pm_power_off(void)
 {
-#if defined(CONFIG_LGE_RAM_CONSOLE_CLEAN)
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-04, clean the ram console when normal shutdown
 	ram_console_clean_buffer();
-#endif
+
 #ifdef CONFIG_MACH_LGE
+	/* To prevent Phone freezing during power off
+	 * blue.park@lge.com 2010-04-14 <To prevent Phone freezing during power off>
+	 */
 	smsm_change_state_nonotify(SMSM_APPS_STATE,
-				   0, SMSM_SYSTEM_POWER_DOWN);
+						  0, SMSM_SYSTEM_POWER_DOWN);
 #endif
+
 	msm_rpcrouter_close();
+	printk(KERN_INFO"%s: \n",__func__);
 	msm_proc_comm(PCOM_POWER_DOWN, 0, 0);
 	for (;;)
 		;
@@ -1728,6 +1736,11 @@ static void msm_pm_power_off(void)
 static void msm_pm_restart(char str, const char *cmd)
 {
 #ifdef CONFIG_MACH_LGE
+	/* LGE_CHANGE
+	 * flush console before reboot
+	 * from google's mahimahi kernel
+	 * 2010-05-04, cleaneye.kim@lge.com
+	 */
 	msm_pm_flush_console();
 #endif
 
@@ -1752,6 +1765,8 @@ static int msm_reboot_call
 		} else if (!strncmp(cmd, "oem-", 4)) {
 			unsigned code = simple_strtoul(cmd + 4, 0, 16) & 0xff;
 			restart_reason = 0x6f656d00 | code;
+		} else if (!strncmp(cmd, "", 1)) {
+			restart_reason = 0x776655AA;
 		} else {
 			restart_reason = 0x77665501;
 		}
@@ -1852,7 +1867,6 @@ static int __init msm_pm_init(void)
 		d_entry->data = NULL;
 	}
 #endif
-
 	return 0;
 }
 

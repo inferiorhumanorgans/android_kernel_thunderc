@@ -23,20 +23,32 @@
 #include <mach/board_lge.h>
 
 #include "board-thunderc.h"
-#include <mach/board_lge.h>
 
+extern int pclk_rate;
 int mclk_rate = 24000000;
-static int camera_power_status;
+
+DEFINE_MUTEX(camera_power_mutex);
+int camera_power_state;
+
+void camera_power_mutex_lock()
+{
+	mutex_lock(&camera_power_mutex);
+}
+
+void camera_power_mutex_unlock()
+{
+	mutex_unlock(&camera_power_mutex);
+}
 
 struct i2c_board_info i2c_devices[1] = {
-#if defined (CONFIG_ISX005)
+#if defined(CONFIG_ISX005)
 	{
 		I2C_BOARD_INFO("isx005", CAM_I2C_SLAVE_ADDR),
 	},
 #endif
 };
 
-#if defined (CONFIG_MSM_CAMERA)
+#if defined(CONFIG_MSM_CAMERA)
 static uint32_t camera_off_gpio_table[] = {
 	/* parallel CAMERA interfaces */
 	GPIO_CFG(4,  0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), /* DAT0 */
@@ -47,10 +59,11 @@ static uint32_t camera_off_gpio_table[] = {
 	GPIO_CFG(9,  0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), /* DAT5 */
 	GPIO_CFG(10, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), /* DAT6 */
 	GPIO_CFG(11, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), /* DAT7 */
-	GPIO_CFG(12, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_4MA), /* PCLK */
+	GPIO_CFG(12, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), /* PCLK */
 	GPIO_CFG(13, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), /* HSYNC_IN */
 	GPIO_CFG(14, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), /* VSYNC_IN */
-	GPIO_CFG(GPIO_CAM_MCLK, 0, GPIO_OUTPUT, GPIO_PULL_DOWN, GPIO_4MA), /* MCLK */
+	GPIO_CFG(GPIO_CAM_MCLK, 0, GPIO_OUTPUT, GPIO_NO_PULL,
+		GPIO_2MA), /* MCLK */
 };
 
 static uint32_t camera_on_gpio_table[] = {
@@ -66,7 +79,8 @@ static uint32_t camera_on_gpio_table[] = {
 	GPIO_CFG(12, 1, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_4MA), /* PCLK */
 	GPIO_CFG(13, 1, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), /* HSYNC_IN */
 	GPIO_CFG(14, 1, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), /* VSYNC_IN */
-	GPIO_CFG(GPIO_CAM_MCLK, 1, GPIO_OUTPUT, GPIO_PULL_DOWN, GPIO_4MA), /* MCLK */
+	GPIO_CFG(GPIO_CAM_MCLK, 1, GPIO_OUTPUT, GPIO_PULL_DOWN,
+		GPIO_4MA), /* MCLK */
 };
 
 static void config_gpio_table(uint32_t *table, int len)
@@ -94,13 +108,20 @@ void config_camera_off_gpios(void)
 		ARRAY_SIZE(camera_off_gpio_table));
 }
 
-int camera_power_on (void)
+int camera_power_on(void)
 {
 	int rc;
 	struct vreg *vreg_rftx;
 	struct device *dev = thunderc_backlight_dev();
-	
-	// RESET, PWDN to Low
+
+	camera_power_mutex_lock();
+
+	if (lcd_bl_power_state == BL_POWER_SUSPEND) {
+		thunderc_pwrsink_resume();
+		mdelay(50);
+	}
+
+	/* RESET, PWDN to Low */
 	gpio_set_value(GPIO_CAM_RESET, 0);
 	gpio_set_value(GPIO_CAM_PWDN, 0);
 
@@ -110,121 +131,133 @@ int camera_power_on (void)
 
 	rc = aat28xx_ldo_set_level(dev, LDO_CAM_DVDD_NO, 1200);
 	if (rc < 0) {
-		printk(KERN_ERR "%s: ldo %d set level error\n", __func__, LDO_CAM_DVDD_NO);
-		return rc;
+		printk(KERN_ERR "%s: ldo %d set level error\n", __func__,
+			LDO_CAM_DVDD_NO);
+		goto power_off_fail;
 	}
 	rc = aat28xx_ldo_enable(dev, LDO_CAM_DVDD_NO, 1);
 	if (rc < 0) {
-		printk(KERN_ERR "%s: ldo %d control error\n", __func__, LDO_CAM_DVDD_NO);
-		return rc;
+		printk(KERN_ERR "%s: ldo %d control error\n", __func__,
+			LDO_CAM_DVDD_NO);
+		goto power_off_fail;
 	}
 
 	rc = aat28xx_ldo_set_level(dev, LDO_CAM_IOVDD_NO, 2600);
 	if (rc < 0) {
-		printk(KERN_ERR "%s: ldo %d set level error\n", __func__, LDO_CAM_IOVDD_NO);
-		return rc;
+		printk(KERN_ERR "%s: ldo %d set level error\n", __func__,
+			LDO_CAM_IOVDD_NO);
+		goto power_off_fail;
 	}
 	rc = aat28xx_ldo_enable(dev, LDO_CAM_IOVDD_NO, 1);
 	if (rc < 0) {
-		printk(KERN_ERR "%s: ldo %d control error\n", __func__, LDO_CAM_IOVDD_NO);
-		return rc;
+		printk(KERN_ERR "%s: ldo %d control error\n", __func__,
+			LDO_CAM_IOVDD_NO);
+		goto power_off_fail;
 	}
-	if(lge_bd_rev >= 10){ /* >= Rev 1.2 */
-		rc = aat28xx_ldo_set_level(dev, LDO_CAM_AVDD_NO, 2900);
-	}
-	else{
-		rc = aat28xx_ldo_set_level(dev, LDO_CAM_AVDD_NO, 2700);
-	}
-	
+
+	rc = aat28xx_ldo_set_level(dev, LDO_CAM_AVDD_NO, 2700);
 	if (rc < 0) {
-		printk(KERN_ERR "%s: ldo %d set level error\n", __func__, LDO_CAM_AVDD_NO);
-		return rc;
+		printk(KERN_ERR "%s: ldo %d set level error\n", __func__,
+			LDO_CAM_AVDD_NO);
+		goto power_off_fail;
 	}
 	rc = aat28xx_ldo_enable(dev, LDO_CAM_AVDD_NO, 1);
 	if (rc < 0) {
-		printk(KERN_ERR "%s: ldo %d control error\n", __func__, LDO_CAM_AVDD_NO);
-		return rc;
+		printk(KERN_ERR "%s: ldo %d control error\n", __func__,
+			LDO_CAM_AVDD_NO);
+		goto power_off_fail;
 	}
-	
+
 	mdelay(5);
 	msm_camio_clk_rate_set(mclk_rate);
 	mdelay(5);
 	msm_camio_camif_pad_reg_reset();
 	mdelay(5);
 
-	// RESET, PWDN to HIGH
+	/* RESET, PWDN to HIGH */
 	gpio_set_value(GPIO_CAM_RESET, 1);
 
-	mdelay(5); 
-	/*Nstandby high*/
+	mdelay(5);
+	/* Nstandby high */
 	gpio_set_value(GPIO_CAM_PWDN, 1);
-	
-	mdelay(8);  // T2 
 
-	camera_power_status = CAMERA_POWER_ON;
+	mdelay(8);	/* T2 */
 
+	camera_power_state = CAM_POWER_ON;
+
+power_off_fail:
+	camera_power_mutex_unlock();
 	return rc;
 
 }
 
-int camera_power_off (void)
+int camera_power_off(void)
 {
 	int rc;
 	struct vreg *vreg_rftx;
 	struct device *dev = thunderc_backlight_dev();
 
-	/*Nstandby low*/
+	camera_power_mutex_lock();
+
+	if (lcd_bl_power_state == BL_POWER_SUSPEND) {
+		thunderc_pwrsink_resume();
+		mdelay(50);
+	}
+
+	/* Nstandby low */
 	gpio_set_value(GPIO_CAM_PWDN, 0);
 	mdelay(5);
 
-	/*reset low*/
+	/* reset low */
 	gpio_set_value(GPIO_CAM_RESET, 0);
-
-	rc = aat28xx_ldo_set_level(dev, LDO_CAM_AVDD_NO, 0);
-	if (rc < 0) {
-		printk(KERN_ERR "%s: ldo %d set level error\n", __func__, LDO_CAM_AVDD_NO);
-		return rc;
-	}
-	rc = aat28xx_ldo_enable(dev, LDO_CAM_AVDD_NO, 0);
-	if (rc < 0) {
-		printk(KERN_ERR "%s: ldo %d control error\n", __func__, LDO_CAM_AVDD_NO);
-		return rc;
-	}
-	
-	rc = aat28xx_ldo_set_level(dev, LDO_CAM_IOVDD_NO, 0);
-	if (rc < 0) {
-		printk(KERN_ERR "%s: ldo %d set level error\n", __func__, LDO_CAM_IOVDD_NO);
-		return rc;
-	}
-	rc = aat28xx_ldo_enable(dev, LDO_CAM_IOVDD_NO, 0);
-	if (rc < 0) {
-		printk(KERN_ERR "%s: ldo %d control error\n", __func__, LDO_CAM_IOVDD_NO);
-		return rc;
-	}
-
-	rc = aat28xx_ldo_set_level(dev, LDO_CAM_DVDD_NO, 0);
-	if (rc < 0) {
-		printk(KERN_ERR "%s: ldo %d set level error\n", __func__, LDO_CAM_DVDD_NO);
-		return rc;
-	}
-	rc = aat28xx_ldo_enable(dev, LDO_CAM_DVDD_NO, 0);
-	if (rc < 0) {
-		printk(KERN_ERR "%s: ldo %d control error\n", __func__, LDO_CAM_DVDD_NO);
-		return rc;
-	}
 
 	vreg_rftx = vreg_get(0, "rftx");
 	vreg_set_level(vreg_rftx, 0);
 	vreg_disable(vreg_rftx);
 
-	camera_power_status = CAMERA_POWER_OFF;
-	
-	return rc;
-}
+	rc = aat28xx_ldo_set_level(dev, LDO_CAM_AVDD_NO, 0);
+	if (rc < 0) {
+		printk(KERN_ERR "%s: ldo %d set level error\n", __func__,
+			LDO_CAM_AVDD_NO);
+		goto power_off_fail;
+	}
+	rc = aat28xx_ldo_enable(dev, LDO_CAM_AVDD_NO, 0);
+	if (rc < 0) {
+		printk(KERN_ERR "%s: ldo %d control error\n", __func__,
+			LDO_CAM_AVDD_NO);
+		goto power_off_fail;
+	}
 
-int camera_status(void)
-{
-	return camera_power_status;
+	rc = aat28xx_ldo_set_level(dev, LDO_CAM_IOVDD_NO, 0);
+	if (rc < 0) {
+		printk(KERN_ERR "%s: ldo %d set level error\n", __func__,
+			LDO_CAM_IOVDD_NO);
+		goto power_off_fail;
+	}
+	rc = aat28xx_ldo_enable(dev, LDO_CAM_IOVDD_NO, 0);
+	if (rc < 0) {
+		printk(KERN_ERR "%s: ldo %d control error\n", __func__,
+			LDO_CAM_IOVDD_NO);
+		goto power_off_fail;
+	}
+
+	rc = aat28xx_ldo_set_level(dev, LDO_CAM_DVDD_NO, 0);
+	if (rc < 0) {
+		printk(KERN_ERR "%s: ldo %d set level error\n", __func__,
+			LDO_CAM_DVDD_NO);
+		goto power_off_fail;
+	}
+	rc = aat28xx_ldo_enable(dev, LDO_CAM_DVDD_NO, 0);
+	if (rc < 0) {
+		printk(KERN_ERR "%s: ldo %d control error\n", __func__,
+			LDO_CAM_DVDD_NO);
+		goto power_off_fail;
+	}
+	camera_power_state = CAM_POWER_OFF;
+
+power_off_fail:
+	camera_power_mutex_unlock();
+	return rc;
 }
 
 static struct msm_camera_device_platform_data msm_camera_device_data = {
@@ -238,7 +271,7 @@ static struct msm_camera_device_platform_data msm_camera_device_data = {
 	.camera_power_off = camera_power_off,
 };
 
-#if defined (CONFIG_ISX005)
+#if defined(CONFIG_ISX005)
 static struct msm_camera_sensor_flash_data flash_none = {
 	.flash_type = MSM_CAMERA_FLASH_NONE,
 };
@@ -264,15 +297,21 @@ static struct platform_device msm_camera_sensor_isx005 = {
 #endif
 
 static struct platform_device *thunderc_camera_devices[] __initdata = {
-#if defined (CONFIG_ISX005)
+#if defined(CONFIG_ISX005)
 	&msm_camera_sensor_isx005,
 #endif
 };
 
 void __init lge_add_camera_devices(void)
 {
-	camera_power_status = CAMERA_POWER_ON;
-	config_camera_off_gpios();
+	if (lge_bd_rev >= LGE_REV_F)
+		pclk_rate = 32;
+	else
+		pclk_rate = 27;
 
-	platform_add_devices(thunderc_camera_devices, ARRAY_SIZE(thunderc_camera_devices));
+	camera_power_state = CAM_POWER_OFF;
+
+	config_camera_off_gpios();
+    platform_add_devices(thunderc_camera_devices,
+		ARRAY_SIZE(thunderc_camera_devices));
 }

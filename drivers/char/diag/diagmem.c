@@ -108,7 +108,7 @@ void diagmem_free(struct diagchar_dev *driver, void *buf, int pool_type)
 			atomic_add(-1, (atomic_t *)&driver->count_hdlc_pool);
 		} else
 			printk(KERN_ALERT "\n Attempt to free up DIAG driver "
-		"HDLC mempool which is already free %d ", driver->count_hdlc_pool);
+	"HDLC mempool which is already free %d ", driver->count_hdlc_pool);
 	} else if (pool_type == POOL_TYPE_USB_STRUCT) {
 		if (driver->diag_usb_struct_pool != NULL &&
 			 driver->count_usb_struct_pool > 0) {

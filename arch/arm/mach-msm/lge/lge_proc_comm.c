@@ -55,8 +55,26 @@ unsigned lge_get_lpm_info(void)
 }
 EXPORT_SYMBOL(lge_get_lpm_info);
 #endif
+/* LGE_CHANGE_S 2010-09-05, taehung.kim@lge.com
+ * support to read nv flag(manual mode on)
+ */
+unsigned lge_get_nv_manual_mode_state(void)
+{
+	int err;
+	unsigned manual_mode=-1;
+	unsigned cmd_manual_mode=2;
 
-#if defined(CONFIG_LGE_GET_POWER_ON_STATUS)
+	err = msm_proc_comm(PCOM_CUSTOMER_CMD2, &manual_mode, &cmd_manual_mode);
+	if (err < 0) {
+		pr_err("%s: msm_proc_comm(PCOM_CUSTOMER_CMD2) failed\n",
+		       __func__);
+		return err;
+	}
+
+	return manual_mode;
+}
+EXPORT_SYMBOL(lge_get_nv_manual_mode_state);
+
 /*
  * return value:
  *         PM_PWR_ON_EVENT_KEYPAD     0x1
@@ -83,20 +101,3 @@ unsigned lge_get_power_on_status(void)
 	return status;
 }
 EXPORT_SYMBOL(lge_get_power_on_status);
-#endif
-
-int lge_set_sleep_status(int status)
-{
-	int cmd_state = 1;
-	int err;
-
-	err = msm_proc_comm(PCOM_CUSTOMER_CMD2, &status, &cmd_state);
-	if (err < 0) {
-		pr_err("%s: msm_proc_comm(PCOM_CUSTOMER_CMD2) failed\n",
-		       __func__);
-		return err;
-	}
-
-	return status;
-}
-EXPORT_SYMBOL(lge_set_sleep_status);

@@ -114,11 +114,6 @@
 #define MSM_CAM_IOCTL_AF_CTRL_DONE \
 	_IOW(MSM_CAM_IOCTL_MAGIC, 26, struct msm_ctrl_cmt_t *)
 
-#if 1//def LG_CAMERA_HIDDEN_MENU
-#define MSM_CAM_IOCTL_SENSOR_ALWAYS_ON_TEST _IOW(MSM_CAM_IOCTL_MAGIC, 27, uint32_t *)
-#endif
-
-
 #define MSM_CAM_IOCTL_ERROR_CONFIG \
        _IOW(MSM_CAM_IOCTL_MAGIC, 32, uint32_t *)
 
@@ -404,6 +399,10 @@ struct msm_snapshot_pp_status {
 #define CFG_SEND_WB_INFO    28
 #define CFG_MAX 			29
 
+/* LGE_CHANGE_S [junyeong.han@lge.com] Add CFG values for auto focus */
+/* 2010-05-02: Add auto-focus values */
+/* 2010-05-05: Add setting iso values */
+/* 2010-05-14: Add setting scene values */
 #if defined (CONFIG_ISX005)
 #define CFG_START_AF_FOCUS	101
 #define CFG_CHECK_AF_DONE	102
@@ -414,6 +413,7 @@ struct msm_snapshot_pp_status {
 #define CFG_SET_ISO			201
 #define CFG_SET_SCENE		202
 #endif
+/* LGE_CHANGE_E [junyeong.han@lge.com] */
 
 #define MOVE_NEAR	0
 #define MOVE_FAR	1
@@ -436,6 +436,8 @@ struct msm_snapshot_pp_status {
 #define CAMERA_EFFECT_BLACKBOARD	7
 #define CAMERA_EFFECT_AQUA		8
 
+/* LGE_CHANGE_S [junyeong.han@lge.com] Add CAMERA_EFFECT values */
+/* 2010-05-13: Add CAMERA_EFFECT values */
 #if defined (CONFIG_ISX005)
 #define CAMERA_EFFECT_NEGATIVE_SEPIA	9
 #define CAMERA_EFFECT_BLUE				10
@@ -444,6 +446,7 @@ struct msm_snapshot_pp_status {
 #else	/* 5330 origin */
 #define CAMERA_EFFECT_MAX		9
 #endif
+/* LGE_CHANGE_E [junyeong.han@lge.com] */
 
 struct sensor_pict_fps {
 	uint16_t prevfps;

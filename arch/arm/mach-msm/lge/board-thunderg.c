@@ -19,7 +19,9 @@
 #include <linux/init.h>
 #include <linux/platform_device.h>
 #include <linux/power_supply.h>
+#ifdef CONFIG_USB_FUNCTION
 #include <linux/usb/mass_storage_function.h>
+#endif
 #include <linux/i2c.h>
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -85,75 +87,106 @@ struct msm_pm_platform_data msm7x27_pm_data[MSM_PM_SLEEP_MODE_NR] = {
 #endif
 
 /* board-specific usb data definitions */
-#ifdef CONFIG_USB_SUPPORT_LGDRIVER
-struct usb_mass_storage_platform_data usb_mass_storage_pdata = {
-	.nluns          = 0x01,
-	.buf_size       = 16384,
-	.vendor         = "GOOGLE",
-	.product        = "Mass storage",
-	.release        = 0xffff,
-};
-#endif
 
-#ifdef CONFIG_USB_SUPPORT_LGDRIVER
-static struct usb_function_map usb_functions_map[] = {
-	{"modem", 0},
-	{"diag", 1},
-	{"nmea", 2},
-	{"mass_storage", 3},
-	{"adb", 4},
-	{"ethernet", 5},
-};
-
+/* For supporting LG Android gadget framework, move android gadget platform
+ * datas to specific board file
+ * hyunhui.park@lge.com 2010-07-10
+ */
+#ifdef CONFIG_USB_ANDROID
 /* dynamic composition */
+/* This depends on each board. QCT original is at device_lge.c */
+/* function bit : (in include/linux/usb/android.h)
+   ADB				0x0001
+   MSC				0x0002
+   ACM_MODEM		0x0003
+   DIAG				0x0004
+   ACM_NMEA			0x0005
+   GENERIC_MODEM	0x0006
+   GENERIC_NMEA		0x0007
+   CDC_ECM			0x0008
+   RMNET			0x0009
+   RNDIS			0x000A
+   MTP				0x000B
+*/
 struct usb_composition usb_func_composition[] = {
 	{
-		.product_id 		  = 0x61B4,
-		.functions			  = 0x08 /* 001000 	UMS only*/
+		/* Mass Storage only mode : UMS
+		 * PID is dedicated for Thunder Global
+		 */
+		.product_id         = 0x61C5,
+		.functions	    	= 0x2,
+		.adb_product_id     = 0x61C5,
+		.adb_functions	    = 0x2,
 	},
 	{
-		.product_id 		  = 0x6000,
-		.functions			  = 0x03 /* 000011 	Diag, Modem*/
+		/* Full or Light mode : ADB, UMS, NMEA, DIAG, MODEM */
+		.product_id         = 0x618E,
+		.functions	    	= 0x2743,
+		.adb_product_id     = 0x618E,
+		.adb_functions	    = 0x12743,
 	},
 	{
-		.product_id 		  = 0x618E,
-		.functions			  = 0x1F /* 011111 	Modem,diag,NMEA,Mass,ADB*/
+		/* Factory mode for WCDMA or GSM : DIAG, MODEM */
+		/* We are in factory mode, ignore adb function */
+		.product_id         = 0x6000,
+		.functions	    	= 0x43,
+		.adb_product_id     = 0x6000,
+		.adb_functions	    = 0x43,
 	},
+#ifdef CONFIG_USB_ANDROID_CDC_ECM
 	{
-		.product_id 		  = 0x618F,
-		.functions			  = 0x0F /* 001111 	Modem,diag,NMEA,Mass*/
+		/* CDC ECM Driver for matching LG Android Net driver */
+		.product_id         = 0x61A2,
+		.functions          = 0x27384,
+		.adb_product_id     = 0x61A1,
+		.adb_functions      = 0x127384,
 	},
-};
+#endif	
+#ifdef CONFIG_USB_ANDROID_RNDIS
+	{
+		/* Microsoft's RNDIS driver */
+		.product_id         = 0xF00E,
+		.functions	    	= 0xA,
+		.adb_product_id     = 0xF00E,
+		.adb_functions	    = 0xA,
+	},
 #endif
+};
 
-#ifdef CONFIG_USB_SUPPORT_LGDRIVER
-struct msm_hsusb_platform_data msm_hsusb_pdata = {
+#define VENDOR_QCT	0x05C6
+#define VENDOR_LGE	0x1004
+
+struct android_usb_platform_data android_usb_pdata = {
+	.vendor_id	= VENDOR_LGE,
 	.version	= 0x0100,
-	.phy_info	= (USB_PHY_INTEGRATED | USB_PHY_MODEL_65NM),
-	.vendor_id          = 0x1004,
-	.product_name       = "LG Android USB Device",
-	.serial_number		= "LG_ANDROID_P500",	
-	.manufacturer_name	= "LG Electronics Inc.",
-	.compositions	= usb_func_composition,
+	.compositions   = usb_func_composition,
 	.num_compositions = ARRAY_SIZE(usb_func_composition),
-	.function_map   = usb_functions_map,
-	.num_functions	= ARRAY_SIZE(usb_functions_map),
-	.config_gpio    = NULL,
+	.product_name       = "LG Android USB Device",
+	.manufacturer_name	= "LG Electronics Inc.",
+	/* Default serial number(only for development) must
+	   be 20 characters at LG WCDMA class model(because of IMEI size).
+	   Currently we just have padding ;) */
+	.serial_number		= "LG_ANDROID_P500****",
+	.init_product_id	= 0x618E,
+	.nluns = 1,
 };
-#endif
 
-#if 0 /* should be modified, not using qwerty key */
-static int thunderg_reboot_key_detect(void)
-{
-	if (gpio_get_value(GPIO_PP2106_IRQ) == 0)
-		return REBOOT_KEY_PRESS;
-	else
-		return REBOOT_KEY_NOT_PRESS;
-}
-struct lge_panic_handler_platform_data panic_handler_data = {
-	.reboot_key_detect = thunderg_reboot_key_detect,
+struct usb_mass_storage_platform_data mass_storage_pdata = {
+	.nluns		= 1,
+	.vendor		= "GOOGLE",
+	.product	= "Mass Storage",
+	.release	= 0xFFFF,
 };
-#endif
+
+struct platform_device mass_storage_device = {
+	.name           = "usb_mass_storage",
+	.id             = -1,
+	.dev            = {
+		.platform_data          = &mass_storage_pdata,
+	},
+};
+
+#endif /* CONFIG_USB_ANDROID */
 
 static struct platform_device *devices[] __initdata = {
 	&msm_device_smd,
@@ -182,7 +215,25 @@ static struct msm_acpu_clock_platform_data msm7x2x_clock_data = {
 void msm_serial_debug_init(unsigned int base, int irq,
 			   struct device *clk_device, int signal_irq);
 
-unsigned pmem_fb_size = 0x96000;
+static void msm7x27_wlan_init(void)
+{
+	int rc = 0;
+	/* TBD: if (machine_is_msm7x27_ffa_with_wcn1312()) */
+	if (machine_is_msm7x27_ffa()) {
+		rc = mpp_config_digital_out(3, MPP_CFG(MPP_DLOGIC_LVL_MSMP,
+				MPP_DLOGIC_OUT_CTRL_LOW));
+		if (rc)
+			printk(KERN_ERR "%s: return val: %d \n",
+				__func__, rc);
+	}
+}
+
+/* decrease FB pmem size because thunderg uses hvga
+ * qualcomm's original value depends on wvga resolution
+ * 2010-04-18, cleaneye.kim@lge.com
+ */
+unsigned pmem_fb_size = 	0x96000;
+unsigned pmem_adsp_size =	0xAE4000; 
 
 static void __init msm7x2x_init(void)
 {
@@ -225,6 +276,7 @@ static void __init msm7x2x_init(void)
 	else
 		msm_pm_set_platform_data(msm7x25_pm_data,
 					ARRAY_SIZE(msm7x25_pm_data));
+	msm7x27_wlan_init();
 
 #ifdef CONFIG_ANDROID_RAM_CONSOLE
 	lge_add_ramconsole_devices();
@@ -237,6 +289,7 @@ static void __init msm7x2x_init(void)
 	lge_add_mmc_devices();
 	lge_add_input_devices();
 	lge_add_misc_devices();
+	lge_add_pm_devices();
 	
 	/* gpio i2c devices should be registered at latest point */
 	lge_add_gpio_i2c_devices();
