@@ -173,10 +173,12 @@ typedef enum{
 }test_mode_factory_reset_status_type;
 
 #endif
+//EDAM_KYC_2010.11.23 : Flight Kernel Model On add
 typedef enum
 {
   SLEEP_MODE_ON,
-  AIR_PLAIN_MODE_ON
+  AIR_PLAIN_MODE_ON,
+  FTM_BOOT_ON,
 }test_mode_sleep_mode_type;
 
 /* LGE_FACTORY_TEST_MODE for Photo Sensor(ALC) */
@@ -227,8 +229,9 @@ typedef enum
 typedef enum
 {
   DB_INTEGRITY_CHECK=0,
-  DB_CHECK_DUMP_TO_INTERNAL_MEMORY,
-  DB_CHECK_COPY_TO_SD_CARD
+  FPRI_CRC_CHECK, //for LW690
+  FILE_CRC_CHECK,
+  CODE_PARTITION_CRC_CHECK
 } test_mode_req_db_check;
 /* LGE_CHANGES_E, [jaffrhee@lge.com], 2010-08-03, <DB Integrity Check > */
 

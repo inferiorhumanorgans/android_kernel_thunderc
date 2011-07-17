@@ -1,4 +1,4 @@
-/* arch/arm/mach-msm/board-thunderc-input.c
+﻿/* arch/arm/mach-msm/board-thunderc-input.c
  * Copyright (C) 2009 LGE, Inc.
  *
  * This software is licensed under the terms of the GNU General Public

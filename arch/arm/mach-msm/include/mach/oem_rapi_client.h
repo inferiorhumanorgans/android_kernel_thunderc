@@ -70,6 +70,11 @@ enum {
 	/* LGE_CHANGES yongman.kwon@lge.com [MS690] for check prl version for wifi on/off */
 	//LG_FW_CHECK_PRL_VERSION
 	LG_FW_GET_PRL_VERSION = LG_FW_RAPI_START + 11,
+	
+	//EDAM_KYC_2010.11.23 : Flight Kernel Model On add [start]
+	LG_FW_SET_FTM_BOOT = LG_FW_RAPI_START + 12,
+	LG_FW_GET_FTM_BOOT = LG_FW_RAPI_START + 13,
+	//EDAM_KYC_2010.11.23 : Flight Kernel Model On add [end]
 
 #endif
 	OEM_RAPI_CLIENT_EVENT_MAX

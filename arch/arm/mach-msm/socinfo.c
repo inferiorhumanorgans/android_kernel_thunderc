@@ -363,6 +363,22 @@ static struct sysdev_attribute prl_ver_file[] = {
 	_SYSDEV_ATTR(prl_version, 0444, lg_show_prl_version, NULL),
 };
 
+//EDAM_KYC_2010.11.23 : Flight Kernel Model On add [start]
+extern void remote_get_ftm_boot(int *info);
+static ssize_t lg_show_ftm_boot(struct sys_device *dev,
+		struct sysdev_attribute *attr,
+		char *buf)
+{
+	int ftm;
+
+	remote_get_ftm_boot(&ftm);
+	return snprintf(buf, PAGE_SIZE, "%d\n", ftm);
+}
+static struct sysdev_attribute ftm_boot_file[] = {
+	_SYSDEV_ATTR(ftm_boot, 0444, lg_show_ftm_boot, NULL),
+};
+//EDAM_KYC_2010.11.23 : Flight Kernel Model On add [end]
+
 //20100929 yongman.kwon@lge.com [MS690] for check prl version for wifi on/off [START]
 
 
@@ -455,6 +471,11 @@ static void __init socinfo_init_sysdev(void)
 socinfo_create_files(&soc_sys_device, prl_ver_file,
 			ARRAY_SIZE(prl_ver_file));
 //20100929 yongman.kwon@lge.com [MS690] for check prl version for wifi on/off [END]
+
+//EDAM_KYC_2010.11.23 : Flight Kernel Model On add [start]
+	socinfo_create_files(&soc_sys_device, ftm_boot_file,
+				ARRAY_SIZE(ftm_boot_file));
+//EDAM_KYC_2010.11.23 : Flight Kernel Model On add [end]
 
 
 //20101130 yongman.kwon@lge.com [MS690] support HITACHI & SHARP [START]

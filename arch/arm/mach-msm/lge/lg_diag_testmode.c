@@ -24,6 +24,11 @@ extern int diag_event_log_end(void);
 extern void set_operation_mode(boolean isOnline);
 extern struct input_dev* get_ats_input_dev(void);
 extern int boot_info;
+
+//EDAM_KYC_2010.11.23 : Flight Kernel Model On add [start]
+extern void remote_set_ftm_boot(int info);
+//EDAM_KYC_2010.11.23 : Flight Kernel Model On add [end]
+
 /* ==========================================================================
 ===========================================================================*/
 
@@ -423,9 +428,16 @@ void* LGF_PowerSaveMode(test_mode_req_type* pReq, DIAG_TEST_MODE_F_rsp_type* pRs
 		case AIR_PLAIN_MODE_ON:
 			/*LGF_CHANGED yongman.kwon@lge.com [MS690] : add send key for Testmode*/
 			LGF_SendKey(KEY_POWER);			
+			remote_set_ftm_boot(0); // clear flag //EDAM_KYC_2010.11.23 : Flight Kernel Model On add
 			if_condition_is_on_air_plain_mode = 1;
 			set_operation_mode(FALSE);
 			break;
+			//EDAM_KYC_2010.11.23 : Flight Kernel Model On add [start]
+		case FTM_BOOT_ON: /* kernel mode */
+			//LGF_SendKey(KEY_POWER); //EDAM_KYC_2010.11.18 : blocked for Flight Kernel Model On add	
+			remote_set_ftm_boot(1); // set flag
+			break;
+			//EDAM_KYC_2010.11.23 : Flight Kernel Model On add [end]
 		default:
 			pRsp->ret_stat_code = TEST_NOT_SUPPORTED_S;
 	}
@@ -494,12 +506,22 @@ void* LGF_ExternalSocketMemory(	test_mode_req_type* pReq ,DIAG_TEST_MODE_F_rsp_t
         break;
 
 		case EXTERNAL_FLASH_MEMORY_SIZE:
+// jbbongs 2010.10.26 LW690 TestMode 8.3 [start]
+			
 		if (sys_statfs("/sdcard", (struct statfs *)&sf) != 0) {
 			printk(KERN_ERR
 			       "[Testmode]can not get sdcard infomation \n");
 			pRsp->ret_stat_code = TEST_FAIL_S;
 			break;
 		}
+		
+		if (external_memory_copy_test())
+		{
+			pRsp->ret_stat_code = TEST_FAIL_S;
+			break;
+		}
+// jbbongs 2010.10.26 LW690 TestMode 8.3 [end]
+		
 		printk(KERN_ERR "blocks %d  \n", sf.f_blocks);
 		printk(KERN_ERR "block size %d \n", sf.f_bsize);
 
@@ -530,12 +552,22 @@ void* LGF_ExternalSocketMemory(	test_mode_req_type* pReq ,DIAG_TEST_MODE_F_rsp_t
 			break;
 
 		case EXTERNAL_FLASH_MEMORY_USED_SIZE:
+// jbbongs 2010.10.26 LW690 TestMode 8.3 [start]
+			
 			if (sys_statfs("/sdcard", (struct statfs *)&sf) != 0)
 			{
 				printk(KERN_ERR "[Testmode]can not get sdcard information \n");
 				pRsp->ret_stat_code = TEST_FAIL_S;
 				break;
 			}
+		
+			if (external_memory_copy_test())
+			{
+				pRsp->ret_stat_code = TEST_FAIL_S;
+				break;
+			}
+// jbbongs 2010.10.26 LW690 TestMode 8.3 [end]
+
 		/* LGE_CHANGE [sm.shim@lge.com] 2010-08-31, 
 		 * SD card free size bug fix (Byte) 
 		 */
@@ -980,19 +1012,70 @@ void* LGF_TestScriptItemSet(	test_mode_req_type* pReq ,DIAG_TEST_MODE_F_rsp_type
 
 void* LGF_TestModeDBIntegrityCheck(    test_mode_req_type* pReq ,DIAG_TEST_MODE_F_rsp_type     *pRsp)
 {
+	int fd;
+	char *dest = (void *)0;
+   // char 	str[15];
 
-	printk(KERN_ERR "[_DBCHECK_] [%s:%d] DBCHECKSubCmd=<%d>\n", __func__, __LINE__, pReq->bt);
+  if(pReq->db_check == DB_INTEGRITY_CHECK)
+  {   
 
-	if (diagpdev != NULL){
-		update_diagcmd_state(diagpdev, "DBCHECK", pReq->db_check);
-		pRsp->ret_stat_code = TEST_OK_S;
+		printk(KERN_ERR "[_FPRICHECK_] [%s:%d] DBCHECKSubCmd=<%d>\n", __func__, __LINE__, pReq->bt);
+
+		if (diagpdev != NULL){
+			update_diagcmd_state(diagpdev, "DBCHECK", pReq->db_check);
+			pRsp->ret_stat_code = TEST_OK_S;
+		}
+		else
+		{
+			printk("\n[%s] error FPRICHECK_", __func__ );
+			pRsp->ret_stat_code = TEST_NOT_SUPPORTED_S;
+		}
+  }
+	else if(pReq->db_check == FPRI_CRC_CHECK)
+	{
+		printk(KERN_ERR "[_FPRICHECK_] [%s:%d] DBCHECKSubCmd=<%d>\n", __func__, __LINE__, pReq->bt);
+
+		if (diagpdev != NULL){
+			update_diagcmd_state(diagpdev, "DBCHECK", pReq->db_check);
+			ssleep(1);
+			if ( (fd = sys_open((const char __user *) "/data/fpri/FPRICRC.txt", O_RDONLY, 0) ) < 0 )
+			{
+				printk(KERN_ERR "[ATCMD_EMT] Can not read fpri crc file\n");
+				pRsp->ret_stat_code = TEST_FAIL_S;
+			}
+			else
+			{
+				if ( (dest = kmalloc(8, GFP_KERNEL)) )
+				{
+					if ((sys_read(fd, (char __user *) dest, 8)) < 0)
+					{
+						printk(KERN_ERR "[ATCMD_EMT]Can not read fpri crc file \n");
+						pRsp->ret_stat_code = TEST_FAIL_S;
+					}
+					pRsp->ret_stat_code = TEST_OK_S;
+					memset((void*)pRsp->test_mode_rsp.str_buf, 0x00, 15);
+					strncpy((char *)pRsp->test_mode_rsp.str_buf ,dest,8); 
+				}
+				
+				kfree(dest);
+				sys_unlink((const char __user *)"/data/fpri/FPRICRC.txt");
+				sys_unlink((const char __user *)"/data/fpri/FPRITest.txt");
+			}
+		}
+		else
+		{
+			printk("\n[%s] error FPRICHECK", __func__ );
+			pRsp->ret_stat_code = TEST_NOT_SUPPORTED_S;
+		}
+	}
+	else if(pReq->db_check == CODE_PARTITION_CRC_CHECK)
+	{
+		send_to_arm9((void*)(((byte*)pReq) -sizeof(diagpkt_header_type) - sizeof(word)) , pRsp);
 	}
 	else
 	{
-		printk("\n[%s] error DBCHECK", __func__ );
 		pRsp->ret_stat_code = TEST_NOT_SUPPORTED_S;
 	}
-
 	return pRsp;
 }
 

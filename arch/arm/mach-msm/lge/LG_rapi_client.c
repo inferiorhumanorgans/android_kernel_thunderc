@@ -473,3 +473,81 @@ EXPORT_SYMBOL(lg_get_prl_version);
 //20100929 yongman.kwon@lge.com [MS690] for check prl version for wifi on/off [END]
 
 
+//EDAM_KYC_2010.11.23 : Flight Kernel Model On add [start]
+void remote_set_ftm_boot(int info)
+{
+	struct oem_rapi_client_streaming_func_arg arg;
+	struct oem_rapi_client_streaming_func_ret ret;
+	int ret_val;
+
+	Open_check();
+
+	arg.event = LG_FW_SET_FTM_BOOT;
+	arg.cb_func = NULL;
+	arg.handle = (void *)0;
+	arg.in_len = sizeof(int);
+	arg.input = (char *)&info;
+	arg.out_len_valid = 0;
+	arg.output_valid = 0;
+	arg.output_size = 0;	//alloc memory for response
+
+	ret.output = NULL;
+	ret.out_len = NULL;
+
+	ret_val = oem_rapi_client_streaming_function(client, &arg, &ret);
+
+	if (ret.output)
+		kfree(ret.output);
+	if (ret.out_len)
+		kfree(ret.out_len);
+}
+EXPORT_SYMBOL(remote_set_ftm_boot);
+
+void remote_get_ftm_boot(int *info)
+{
+	struct oem_rapi_client_streaming_func_arg arg;
+	struct oem_rapi_client_streaming_func_ret ret;
+	int ret_val;
+	int resp_buf;
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-09-29, 
+	 * add error control code, try 2 times if error occurs
+	 */
+	int errCount = 0;
+
+	Open_check();
+
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-09-29, 
+	 * add error control code, try 2 times if error occurs
+	 */
+	do {
+		arg.event = LG_FW_GET_FTM_BOOT;
+		arg.cb_func = NULL;
+		arg.handle = (void *)0;
+		arg.in_len = 0;
+		arg.input = NULL;
+		arg.out_len_valid = 1;
+		arg.output_valid = 1;
+		arg.output_size = sizeof(int);
+
+		ret.output = NULL;
+		ret.out_len = NULL;
+
+		ret_val = oem_rapi_client_streaming_function(client, &arg, &ret);
+		if (ret_val == 0) {
+			memcpy(&resp_buf, ret.output, *ret.out_len);
+			*info = GET_INT32(&resp_buf);
+		} else {
+			*info = 0;	//default value
+		}
+
+		if (ret.output)
+			kfree(ret.output);
+		if (ret.out_len)
+			kfree(ret.out_len);
+
+	} while (ret_val < 0 && errCount++ < 3);
+
+}
+EXPORT_SYMBOL(remote_get_ftm_boot);
+//EDAM_KYC_2010.11.23 : Flight Kernel Model On add [end]
+

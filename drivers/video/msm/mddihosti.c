@@ -1943,10 +1943,10 @@ uint32 mddi_get_client_id(void)
 		else if((mddi_client_capability_pkt.Product_Code==0x00)&&(mddi_client_capability_pkt.Display_Window_Width==0x168))
 			mddi_client_id = 0;
 		else
-			mddi_client_id = 0xffffffff;
+			mddi_client_id = 0; //setting default 0 for hitachi lcd.
 
-		if (mddi_client_id == 0xffffffff)
-			mddi_disable(1);
+		//if (mddi_client_id == 0xffffffff)
+		//	mddi_disable(1);
 #endif		
 //20101124 yongman.kwon@lge.com [MS690] for supporting HITACHI & Sharp [END]		
 	}
