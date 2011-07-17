@@ -46,19 +46,11 @@ struct msm_ptbl_entry {
 	__u32 flags;
 };
 
-//20100728 myeonggyu.son@lge.com [MS690] fot FOTA STO partition [START]
 #if defined(CONFIG_MACH_MSM7X27_THUNDERG)
 #define MSM_MAX_PARTITIONS 11
 #else /* original */
-/* LGE_CHANGE [james.jang@lge.com] 2010-07-12, 
-     only LS670 for FOTA 8 -> 9 */
-//#define MSM_MAX_PARTITIONS 8
 #define MSM_MAX_PARTITIONS 9
-// LGE_CHANGE_S [hoseok.kim@lge.com] 2010.09.20 // LG_FW_USERDATA_BACKUP, ask hoseok.kim@lge.com to apply to other model .
-//#define MSM_MAX_PARTITIONS 10
-// LGE_CHANGE_E [hoseok.kim@lge.com] 2010.09.20 // LG_FW_USERDATA_BACKUP, ask hoseok.kim@lge.com to apply to other model .
 #endif
-//20100728 myeonggyu.son@lge.com [MS690] fot FOTA STO partition[END]
 
 static struct mtd_partition msm_nand_partitions[MSM_MAX_PARTITIONS];
 static char msm_nand_names[MSM_MAX_PARTITIONS * 16];

@@ -185,9 +185,6 @@ void smd_diag(void)
 		SMD_INFO("smem: DIAG '%s'\n", x);
 	}
 
-	/* AMSS's error handler has some delay */
-	mdelay(2000);
-
 	x = smem_get_entry(SMEM_ERR_CRASH_LOG, &size);
 	if (x != 0) {
 		x[size - 1] = 0;
@@ -213,6 +210,7 @@ void smd_diag(void)
 			message += LGE_ERROR_MAX_COLUMN;
 		}
 	}
+	msm_pm_flush_console();
 #endif
 }
 
@@ -227,22 +225,10 @@ static void handle_modem_crash(void)
 	pr_err("ARM9 has CRASHED\n");
 	smd_diag();
 #ifdef CONFIG_LGE_HANDLE_MODEM_CRASH
-	/* flush console before reboot
-	 * from google's mahimahi kernel
-	 * 2010-05-04, cleaneye.kim@lge.com
-	 */
 	msm_pm_flush_console();
-
-#if 0
-	atomic_notifier_call_chain(&panic_notifier_list, 0, 0x87654321);
-#endif
-#if 1
+	
 	smsm_reset_modem(SMSM_SYSTEM_REBOOT);
-#else
-	smsm_reset_modem(SMSM_SYSTEM_DOWNLOAD);
 #endif
-#endif
-
 	/* hard reboot if possible FIXME
 	if (msm_reset_hook)
 		msm_reset_hook();
@@ -1333,20 +1319,9 @@ static irqreturn_t smsm_irq_handler(int irq, void *data)
 			printk(KERN_INFO"<<<<<\n");
 
 			smd_diag();
-			
-			/* flush console before reboot
-			 * from google's mahimahi kernel
-			 * 2010-05-04, cleaneye.kim@lge.com
-			 */
-			msm_pm_flush_console();
-			
-			atomic_notifier_call_chain(&panic_notifier_list, 0, 0x87654321);
-#if 1
+			atomic_notifier_call_chain(&panic_notifier_list, 0, "arm9 has crashed...\n");
 			smsm_reset_modem(SMSM_SYSTEM_REBOOT);
-#else
-			smsm_reset_modem(SMSM_SYSTEM_DOWNLOAD);
-#endif	
-
+			
 			while (1);
 #endif
 		} else {
@@ -1468,9 +1443,6 @@ uint32_t smsm_get_state(uint32_t smsm_entry)
 
 
 #ifdef CONFIG_MACH_LGE
-/* Make a api to not report a changed SMSM state to other processor
- * blue.park@lge.com 2010-04-14
- */
 int smsm_change_state_nonotify(uint32_t smsm_entry,
 		      uint32_t clear_mask, uint32_t set_mask)
 {

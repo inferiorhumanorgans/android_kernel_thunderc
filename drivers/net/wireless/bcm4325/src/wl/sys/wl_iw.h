@@ -109,13 +109,11 @@ struct wl_ctrl {
 	struct completion sysioc_exited;
 };
 
-/* LGE_CHANGE_S, [jisung.yang@lge.com], 2010-06-28, < MAC write > */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 #define WLC_IW_SS_CACHE_MAXLEN              1024
 #else
 #define WLC_IW_SS_CACHE_MAXLEN              512
 #endif  /* defined(CONFIG_LGE_BCM432X_PATCH) */
-/* LGE_CHANGE_E, [jisung.yang@lge.com], 2010-06-28, < MAC write > */
 
 #define WLC_IW_SS_CACHE_CTRL_FIELD_MAXLEN	32
 #define WLC_IW_BSS_INFO_MAXLEN 				\

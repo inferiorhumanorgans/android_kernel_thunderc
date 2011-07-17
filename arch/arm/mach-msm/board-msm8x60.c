@@ -362,6 +362,7 @@ static struct android_usb_platform_data android_usb_pdata = {
 	.num_compositions = ARRAY_SIZE(usb_func_composition),
 	.product_name	= "Qualcomm HSUSB Device",
 	.manufacturer_name = "Qualcomm Incorporated",
+	.nluns = 1,
 };
 static struct platform_device android_usb_device = {
 	.name	= "android_usb",

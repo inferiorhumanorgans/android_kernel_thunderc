@@ -23,6 +23,7 @@
 #include <linux/spinlock.h>
 #include <linux/sysdev.h>
 #include <linux/wakelock.h>
+#include <linux/sched.h>
 
 #define ANDROID_ALARM_PRINT_ERROR (1U << 0)
 #define ANDROID_ALARM_PRINT_INIT_STATUS (1U << 1)
@@ -31,8 +32,10 @@
 #define ANDROID_ALARM_PRINT_SUSPEND (1U << 4)
 #define ANDROID_ALARM_PRINT_INT (1U << 5)
 #define ANDROID_ALARM_PRINT_FLOW (1U << 6)
+#define ANDROID_ALARM_PRINT_ADD (1U << 7)
 
 static int debug_mask = ANDROID_ALARM_PRINT_ERROR | \
+			ANDROID_ALARM_PRINT_ADD | \
 			ANDROID_ALARM_PRINT_INIT_STATUS;
 module_param_named(debug_mask, debug_mask, int, S_IRUGO | S_IWUSR | S_IWGRP);
 
@@ -67,6 +70,27 @@ static struct wake_lock alarm_rtc_wake_lock;
 static struct platform_device *alarm_platform_dev;
 struct alarm_queue alarms[ANDROID_ALARM_TYPE_COUNT];
 static bool suspended;
+
+#ifdef CONFIG_LGE_RTC_INTF_ALARM_SYNC
+static bool alarm_need_to_update = true; /* need to update alarm before first sleep */
+static bool force_to_update = true;
+
+bool alarm_need_to_set(void)
+{
+	if (force_to_update) {
+		return true;
+	}
+
+	if (!alarm_need_to_update) {
+		alarm_need_to_update = true;
+		return false;
+	}
+
+	return true;
+}
+
+EXPORT_SYMBOL(alarm_need_to_set);
+#endif
 
 static void update_timer_locked(struct alarm_queue *base, bool head_removed)
 {
@@ -109,9 +133,24 @@ static void alarm_enqueue_locked(struct alarm *alarm)
 	struct rb_node *parent = NULL;
 	struct alarm *entry;
 	int leftmost = 1;
+	s64 stime;
+	ktime_t now;
 
 	pr_alarm(FLOW, "added alarm, type %d, func %pF at %lld\n",
 		alarm->type, alarm->function, ktime_to_ns(alarm->expires));
+
+	now = alarm_get_elapsed_realtime();
+	stime = ktime_to_ns(alarm->expires) - ktime_to_ns(now);
+	do_div(stime, NSEC_PER_SEC);
+	pr_alarm(ADD, "added alarm, wakeup at %lld (after %lld sec): (now %lld)\n",
+		ktime_to_ns(alarm->expires), stime, ktime_to_ns(now));
+
+	{
+		char comm[sizeof(current->comm)];
+		pr_alarm(FLOW, "called alarm by pid %d (%s)\n",
+				task_pid_nr(current),
+				get_task_comm(comm, current));
+	}
 
 	if (base->first == &alarm->node)
 		base->first = rb_next(&alarm->node);
@@ -330,6 +369,9 @@ static enum hrtimer_restart alarm_timer_triggered(struct hrtimer *timer)
 	pr_alarm(INT, "alarm_timer_triggered type %d at %lld\n",
 		base - alarms, ktime_to_ns(now));
 
+	pr_alarm(ADD, "triggerd alarm, wakeup at %lld\n",
+		ktime_to_ns(now));
+
 	while (base->first) {
 		alarm = container_of(base->first, struct alarm, node);
 		if (alarm->softexpires.tv64 > now.tv64) {
@@ -433,6 +475,14 @@ static int alarm_suspend(struct platform_device *pdev, pm_message_t state)
 			spin_unlock_irqrestore(&alarm_slock, flags);
 		}
 	}
+#ifdef CONFIG_LGE_RTC_INTF_ALARM_SYNC
+	if (suspended) {
+		if (force_to_update)
+			force_to_update = false;
+
+		alarm_need_to_update = false;
+	}
+#endif
 	return err;
 }
 

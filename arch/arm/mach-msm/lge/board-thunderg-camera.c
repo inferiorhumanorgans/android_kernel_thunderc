@@ -26,19 +26,6 @@
 
 int mclk_rate = 24000000;
 
-DEFINE_MUTEX(camera_power_mutex);
-int camera_power_state;
-
-void camera_power_mutex_lock()
-{
-	mutex_lock(&camera_power_mutex);
-}
-
-void camera_power_mutex_unlock()
-{
-	mutex_unlock(&camera_power_mutex);
-}
-
 struct i2c_board_info i2c_devices[1] = {
 #if defined (CONFIG_ISX005)
 	{
@@ -109,14 +96,6 @@ int camera_power_on (void)
 {
 	int rc;
 	struct device *dev = thunderg_backlight_dev();
-
-	camera_power_mutex_lock();
-	if(lcd_bl_power_state == BL_POWER_SUSPEND)
-	{
-		thunderg_pwrsink_resume();
-		mdelay(50);
-	}
-
 	
 	/* clear RESET, PWDN to Low*/
 	gpio_set_value(GPIO_CAM_RESET, 0);
@@ -127,12 +106,12 @@ int camera_power_on (void)
 		rc = aat28xx_ldo_set_level(dev, LDO_CAM_AF_NO, 2800);
 		if (rc < 0) {
 			printk(KERN_ERR "%s: ldo %d set level error\n", __func__, LDO_CAM_AF_NO);
-			goto power_on_fail;
+			return rc;
 		}
 		rc = aat28xx_ldo_enable(dev, LDO_CAM_AF_NO, 1);
 		if (rc < 0) {
 			printk(KERN_ERR "%s: ldo %d control error\n", __func__, LDO_CAM_AF_NO);
-			goto power_on_fail;
+			return rc;
 		}
 	} else {	/* it is for rev.c and default */
 		struct vreg *vreg_mmc = vreg_get(0, "mmc");
@@ -144,40 +123,36 @@ int camera_power_on (void)
 	rc = aat28xx_ldo_set_level(dev, LDO_CAM_DVDD_NO, 1200);
 	if (rc < 0) {
 		printk(KERN_ERR "%s: ldo %d set level error\n", __func__, LDO_CAM_DVDD_NO);
-		goto power_on_fail;
+		return rc;
 	}
 	rc = aat28xx_ldo_enable(dev, LDO_CAM_DVDD_NO, 1);
 	if (rc < 0) {
 		printk(KERN_ERR "%s: ldo %d control error\n", __func__, LDO_CAM_DVDD_NO);
-		goto power_on_fail;
+		return rc;
 	}
 
   /*IOVDD power 2.6V*/
 	rc = aat28xx_ldo_set_level(dev, LDO_CAM_IOVDD_NO, 2600);
 	if (rc < 0) {
 		printk(KERN_ERR "%s: ldo %d set level error\n", __func__, LDO_CAM_IOVDD_NO);
-		goto power_on_fail;
+		return rc;
 	}
 	rc = aat28xx_ldo_enable(dev, LDO_CAM_IOVDD_NO, 1);
 	if (rc < 0) {
 		printk(KERN_ERR "%s: ldo %d control error\n", __func__, LDO_CAM_IOVDD_NO);
-		goto power_on_fail;
+		return rc;
 	}
 
 	/*AVDD power  2.7V*/
-	/* LGE_CHANGE 
-	  * Change AVDD level from 2.7V to 2.8V in order to reduce camera noise in dard environment.
-	  * 2010-08-03. minjong.gong@lge.com
-	  */
-	rc = aat28xx_ldo_set_level(dev, LDO_CAM_AVDD_NO, 2800);
+	rc = aat28xx_ldo_set_level(dev, LDO_CAM_AVDD_NO, 2700);
 	if (rc < 0) {
 		printk(KERN_ERR "%s: ldo %d set level error\n", __func__, LDO_CAM_AVDD_NO);
-		goto power_on_fail;
+		return rc;
 	}
 	rc = aat28xx_ldo_enable(dev, LDO_CAM_AVDD_NO, 1);
 	if (rc < 0) {
 		printk(KERN_ERR "%s: ldo %d control error\n", __func__, LDO_CAM_AVDD_NO);
-		goto power_on_fail;
+		return rc;
 	}	
 
 	mdelay(5);
@@ -196,10 +171,7 @@ int camera_power_on (void)
 	
 	mdelay(8);  // T2 
 
-	camera_power_state = CAM_POWER_ON;
 
-power_on_fail:
-	camera_power_mutex_unlock();
 	return rc;
 
 }
@@ -209,12 +181,6 @@ int camera_power_off (void)
 	int rc;
 	struct device *dev = thunderg_backlight_dev();
 
-	camera_power_mutex_lock();
-
-	if (lcd_bl_power_state == BL_POWER_SUSPEND) {
-		thunderg_pwrsink_resume();
-		mdelay(50);
-	}
 	/*Nstandby low*/
 	gpio_set_value(GPIO_CAM_PWDN, 0);
 	mdelay(5);
@@ -227,12 +193,12 @@ int camera_power_off (void)
 		rc = aat28xx_ldo_set_level(dev, LDO_CAM_AF_NO, 0);
 		if (rc < 0) {
 			printk(KERN_ERR "%s: ldo %d set level error\n", __func__, LDO_CAM_AF_NO);
-			goto power_off_fail;
+			return rc;
 		}
 		rc = aat28xx_ldo_enable(dev, LDO_CAM_AF_NO, 0);
 		if (rc < 0) {
 			printk(KERN_ERR "%s: ldo %d control error\n", __func__, LDO_CAM_AF_NO);
-			goto power_off_fail;
+			return rc;
 		}
 	} else {	/* it is for rev.c and default */
 		struct vreg *vreg_mmc = vreg_get(0, "mmc");
@@ -245,42 +211,39 @@ int camera_power_off (void)
 	rc = aat28xx_ldo_set_level(dev, LDO_CAM_AVDD_NO, 0);
 	if (rc < 0) {
 		printk(KERN_ERR "%s: ldo %d set level error\n", __func__, LDO_CAM_AVDD_NO);
-		goto power_off_fail;
+		return rc;
 	}
 	rc = aat28xx_ldo_enable(dev, LDO_CAM_AVDD_NO, 0);
 	if (rc < 0) {
 		printk(KERN_ERR "%s: ldo %d control error\n", __func__, LDO_CAM_AVDD_NO);
-		goto power_off_fail;
+		return rc;
 	}
 
 	/*IOVDD power 2.6V*/
 	rc = aat28xx_ldo_set_level(dev, LDO_CAM_IOVDD_NO, 0);
 	if (rc < 0) {
 		printk(KERN_ERR "%s: ldo %d set level error\n", __func__, LDO_CAM_IOVDD_NO);
-		goto power_off_fail;
+		return rc;
 	}
 	rc = aat28xx_ldo_enable(dev, LDO_CAM_IOVDD_NO, 0);
 	if (rc < 0) {
 		printk(KERN_ERR "%s: ldo %d control error\n", __func__, LDO_CAM_IOVDD_NO);
-		goto power_off_fail;
+		return rc;
 	}
 
   /* DVDD power 1.2V*/
 	rc = aat28xx_ldo_set_level(dev, LDO_CAM_DVDD_NO, 0);
 	if (rc < 0) {
 		printk(KERN_ERR "%s: ldo %d set level error\n", __func__, LDO_CAM_DVDD_NO);
-		goto power_off_fail;
+		return rc;
 	}
 	rc = aat28xx_ldo_enable(dev, LDO_CAM_DVDD_NO, 0);
 	if (rc < 0) {
 		printk(KERN_ERR "%s: ldo %d control error\n", __func__, LDO_CAM_DVDD_NO);
-		goto power_off_fail;
+		return rc;
 	}
-	camera_power_state = CAM_POWER_OFF;
 
 
-power_off_fail:
-	camera_power_mutex_unlock();
 	return rc;
 
 }

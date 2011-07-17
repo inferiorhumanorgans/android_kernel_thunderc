@@ -47,11 +47,7 @@
 /* #define VERBOSE_DEBUG */
 /* #define DUMP_MSGS */
 
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07, Confirm test result */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-/* #define AD_DBG */
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
+
 #include <linux/blkdev.h>
 #include <linux/completion.h>
 #include <linux/dcache.h>
@@ -71,48 +67,25 @@
 #include <linux/freezer.h>
 #include <linux/utsname.h>
 #include <linux/wakelock.h>
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-#include <asm/unaligned.h>
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
+
 #include <linux/usb.h>
 #include <linux/usb_usual.h>
 #include <linux/usb/ch9.h>
 #include <linux/usb/composite.h>
-
 #include <linux/usb/gadget.h>
 
 #include "f_mass_storage.h"
 #include "gadget_chips.h"
 
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-#define BULK_BUFFER_SIZE           4096
-#else
+
 #define BULK_BUFFER_SIZE           16384
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
+
 /*-------------------------------------------------------------------------*/
 
 #define DRIVER_NAME		"usb_mass_storage"
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-#define DRIVER_NAME_AUTORUN	"usb_autorun"
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 #define MAX_LUNS		8
 
 static const char shortname[] = DRIVER_NAME;
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-#ifdef AD_DBG
-#define ad_info(fmt,args...)	pr_info("AD: " fmt, ## args)
-#else
-#define ad_info(fmt,args...)	do { } while (0) 
-#endif
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 
 #ifdef DEBUG
 #define LDBG(lun, fmt, args...) \
@@ -163,12 +136,7 @@ static const char shortname[] = DRIVER_NAME;
 
 
 /*-------------------------------------------------------------------------*/
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-#define TYPE_UMS	0x00
-#define TYPE_CDROM	0x05
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
+
 /* Bulk-only data structures */
 
 /* Command Block Wrapper */
@@ -220,12 +188,6 @@ struct bulk_cs_wrap {
 #define SC_READ_12			0xa8
 #define SC_READ_CAPACITY		0x25
 #define SC_READ_FORMAT_CAPACITIES	0x23
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-#define SC_READ_HEADER			0x44
-#define SC_READ_TOC			0x43
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 #define SC_RELEASE			0x17
 #define SC_REQUEST_SENSE		0x03
 #define SC_RESERVE			0x16
@@ -237,32 +199,6 @@ struct bulk_cs_wrap {
 #define SC_WRITE_6			0x0a
 #define SC_WRITE_10			0x2a
 #define SC_WRITE_12			0xaa
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-#define SC_LGE_SPE      		0xF1
-#define SUB_CODE_MODE_CHANGE		0x01
-#define SUB_CODE_GET_VALUE		0x02
-#define SUB_CODE_PROBE_DEV		0xff
-#define TYPE_MOD_CHG_TO_ACM		0x01
-#define TYPE_MOD_CHG_TO_UMS		0x02
-#define TYPE_MOD_CHG_TO_MTP		0x03
-#define TYPE_MOD_CHG_TO_ASK		0x05
-#define TYPE_MOD_CHG2_TO_ACM		0x81
-#define TYPE_MOD_CHG2_TO_UMS		0x82
-#define TYPE_MOD_CHG2_TO_MTP		0x83
-#define TYPE_MOD_CHG2_TO_ASK		0x85
-/*ACK TO SEND HOST PC */
-#define ACK_STATUS_TO_HOST		0x10
-#define ACK_SW_REV_TO_HOST		0x12
-#define ACK_MEID_TO_HOST		0x13
-#define ACK_MODEL_TO_HOST		0x14
-#define ACK_SUB_VER_TO_HOST		0x15
-#define SUB_ACK_STATUS_ACM		0x00
-#define SUB_ACK_STATUS_MTP		0x01
-#define SUB_ACK_STATUS_UMS		0x02
-#define SUB_ACK_STATUS_ASK		0x03
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 
 /* SCSI Sense Key/Additional Sense Code/ASC Qualifier values */
 #define SS_NO_SENSE				0
@@ -284,45 +220,6 @@ struct bulk_cs_wrap {
 #define ASC(x)		((u8) ((x) >> 8))
 #define ASCQ(x)		((u8) (x))
 
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-static const char *chg_mode[] = {	
-	"change_unknown",
-	"change_acm",
-	"change_mtp",
-	"change_ums", 
-	"change_ask", 
-	"query_value",
-	"device_info",
-};
-
-enum chg_mode_state{
-	MODE_STATE_UNKNOWN = 0,
-	MODE_STATE_ACM,
-	MODE_STATE_MTP,
-	MODE_STATE_UMS,
-	MODE_STATE_ASK,
-	MODE_STATE_GET_VALUE,
-	MODE_STATE_PROBE_DEV,
-};
-
-static const char *check_str[] = {
-	"ACK_STATUS_ACM",
-	"ACK_STATUS_MTP",
-	"ACK_STATUS_UMS",
-	"ACK_STATUS_ASK",
-};
-
-enum check_mode_state {
-	ACK_STATUS_ACM = SUB_ACK_STATUS_ACM,
-	ACK_STATUS_MTP = SUB_ACK_STATUS_MTP,
-	ACK_STATUS_UMS = SUB_ACK_STATUS_UMS,
-	ACK_STATUS_ASK = SUB_ACK_STATUS_ASK,
-	ACK_STATUS_ERR,
-};
-
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 
 /*-------------------------------------------------------------------------*/
 
@@ -330,6 +227,7 @@ struct lun {
 	struct file	*filp;
 	loff_t		file_length;
 	loff_t		num_sectors;
+
 	unsigned int	ro : 1;
 	unsigned int	prevent_medium_removal : 1;
 	unsigned int	registered : 1;
@@ -421,11 +319,7 @@ struct fsg_dev {
 
 	unsigned int		bulk_out_maxpacket;
 	enum fsg_state		state;		/* For exception handling */
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	enum chg_mode_state	mode_state;
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */	
+
 	u8			config, new_config;
 
 	unsigned int		running : 1;
@@ -471,19 +365,9 @@ struct fsg_dev {
 	int				release;
 
 	struct switch_dev sdev;
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	int autorun_enable;
-	struct switch_dev autorun_sdev;
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
+
 	struct wake_lock wake_lock;
 };
-
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-unsigned int user_mode = 0;
-#endif
-
 static int send_status(struct fsg_dev *fsg);
 
 static inline struct fsg_dev *func_to_dev(struct usb_function *f)
@@ -506,13 +390,7 @@ static void set_bulk_out_req_length(struct fsg_dev *fsg,
 	rem = length % fsg->bulk_out_maxpacket;
 	if (rem > 0)
 		length += fsg->bulk_out_maxpacket - rem;
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	if (bh->outreq) { bh->outreq->length = length; }
-#else
 	bh->outreq->length = length;
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 }
 
 static struct fsg_dev			*the_fsg;
@@ -595,6 +473,7 @@ static void put_be16(u8 *buf, u16 val)
 	buf[0] = val >> 8;
 	buf[1] = val;
 }
+
 static void put_be32(u8 *buf, u32 val)
 {
 	buf[0] = val >> 24;
@@ -603,15 +482,6 @@ static void put_be32(u8 *buf, u32 val)
 	buf[3] = val & 0xff;
 }
 
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-/* Routines for unaligned data access */
-static u32 get_unaligned_be24(u8 *buf)
-{
-		return 0xffffff & (u32) get_unaligned_be32(buf - 1);
-}
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 /*-------------------------------------------------------------------------*/
 
 /*
@@ -794,19 +664,8 @@ static int fsg_function_setup(struct usb_function *f,
 	u16			w_length = le16_to_cpu(ctrl->wLength);
 
 	DBG(fsg, "fsg_function_setup\n");
-
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	if (!fsg->autorun_enable) {
-		if (w_index != intf_desc.bInterfaceNumber)
-			return value;
-	}
-#else
 	if (w_index != intf_desc.bInterfaceNumber)
 		return value;
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
-
 	/* Handle Bulk-only class-specific requests */
 	if ((ctrl->bRequestType & USB_TYPE_MASK) == USB_TYPE_CLASS) {
 	DBG(fsg, "USB_TYPE_CLASS\n");
@@ -823,14 +682,6 @@ static int fsg_function_setup(struct usb_function *f,
 			/* Raise an exception to stop the current operation
 			 * and reinitialize our state. */
 			DBG(fsg, "bulk reset request\n");
-
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-//			if (fsg->autorun_enable)
-				raise_exception(fsg, FSG_STATE_RESET);
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
-
 			value = 0;
 			break;
 
@@ -845,7 +696,6 @@ static int fsg_function_setup(struct usb_function *f,
 			VDBG(fsg, "get max LUN\n");
 			*(u8 *)cdev->req->buf = fsg->nluns - 1;
 			value = 1;
-
 			break;
 		}
 	}
@@ -856,34 +706,12 @@ static int fsg_function_setup(struct usb_function *f,
 			"%02x.%02x v%04x i%04x l%u\n",
 			ctrl->bRequestType, ctrl->bRequest,
 			le16_to_cpu(ctrl->wValue), w_index, w_length);
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	if (fsg->autorun_enable) {
-		if (value >= 0) {
-			int rc;
-			cdev->req->zero = value < w_length;
-			cdev->req->length = value;
-			rc = usb_ep_queue(cdev->gadget->ep0, cdev->req, GFP_ATOMIC);
-			if (rc < 0)
-				printk("%s setup response queue error\n", __func__);
-		}
-	} else {
-		if (value >= 0) {
-			req->length = value;
-			value = usb_ep_queue(cdev->gadget->ep0, req, GFP_ATOMIC);
-			if (value < 0)
-				req->status = 0;
-		}
-	}
-#else
 	if (value >= 0) {
 		req->length = value;
 		value = usb_ep_queue(cdev->gadget->ep0, req, GFP_ATOMIC);
 		if (value < 0)
 			req->status = 0;
 	}
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */	
 	return value;
 }
 
@@ -964,28 +792,6 @@ static int do_read(struct fsg_dev *fsg)
 
 	/* Get the starting Logical Block Address and check that it's
 	 * not too big */
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	if (fsg->cmnd[0] == SC_READ_6) {
-		if (fsg->autorun_enable)
-			lba = get_unaligned_be24(&fsg->cmnd[1]);
-		else
-			lba = (fsg->cmnd[1] << 16) | get_be16(&fsg->cmnd[2]);
-	} else {
-		if (fsg->autorun_enable)
-			lba = get_unaligned_be32(&fsg->cmnd[2]);
-		else
-			lba = get_be32(&fsg->cmnd[2]);
-
-		/* We allow DPO (Disable Page Out = don't save data in the
-		 * cache) and FUA (Force Unit Access = don't read from the
-		 * cache), but we don't implement them. */
-		if ((fsg->cmnd[1] & ~0x18) != 0) {
-			curlun->sense_data = SS_INVALID_FIELD_IN_CDB;
-			return -EINVAL;
-		}
-	}
-#else
 	if (fsg->cmnd[0] == SC_READ_6)
 		lba = (fsg->cmnd[1] << 16) | get_be16(&fsg->cmnd[2]);
 	else {
@@ -999,9 +805,6 @@ static int do_read(struct fsg_dev *fsg)
 			return -EINVAL;
 		}
 	}
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
-
 	if (lba >= curlun->num_sectors) {
 		curlun->sense_data = SS_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE;
 		return -EINVAL;
@@ -1126,31 +929,6 @@ static int do_write(struct fsg_dev *fsg)
 
 	/* Get the starting Logical Block Address and check that it's
 	 * not too big */
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	if (fsg->cmnd[0] == SC_WRITE_6) {
-		if (fsg->autorun_enable)
-			lba = get_unaligned_be24(&fsg->cmnd[1]);
-		else
-			lba = (fsg->cmnd[1] << 16) | get_be16(&fsg->cmnd[2]);
-	} else {
-		if (fsg->autorun_enable)
-			lba = get_unaligned_be32(&fsg->cmnd[2]);
-		else
-			lba = get_be32(&fsg->cmnd[2]);
-
-		/* We allow DPO (Disable Page Out = don't save data in the
-		 * cache) and FUA (Force Unit Access = write directly to the
-		 * medium).  We don't implement DPO; we implement FUA by
-		 * performing synchronous output. */
-		if ((fsg->cmnd[1] & ~0x18) != 0) {
-			curlun->sense_data = SS_INVALID_FIELD_IN_CDB;
-			return -EINVAL;
-		}
-		if (fsg->cmnd[1] & 0x08)	/* FUA */
-			curlun->filp->f_flags |= O_SYNC;
-	}
-#else
 	if (fsg->cmnd[0] == SC_WRITE_6)
 		lba = (fsg->cmnd[1] << 16) | get_be16(&fsg->cmnd[2]);
 	else {
@@ -1167,9 +945,6 @@ static int do_write(struct fsg_dev *fsg)
 		if (fsg->cmnd[1] & 0x08)	/* FUA */
 			curlun->filp->f_flags |= O_SYNC;
 	}
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
-
 	if (lba >= curlun->num_sectors) {
 		curlun->sense_data = SS_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE;
 		return -EINVAL;
@@ -1201,7 +976,7 @@ static int do_write(struct fsg_dev *fsg)
 			partial_page = usb_offset & (PAGE_CACHE_SIZE - 1);
 			if (partial_page > 0)
 				amount = min(amount,
-						(unsigned int) PAGE_CACHE_SIZE - partial_page);
+	(unsigned int) PAGE_CACHE_SIZE - partial_page);
 
 			if (amount == 0) {
 				get_some_more = 0;
@@ -1267,9 +1042,9 @@ static int do_write(struct fsg_dev *fsg)
 			amount = bh->outreq->actual;
 			if (curlun->file_length - file_offset < amount) {
 				LERROR(curlun,
-						"write %u @ %llu beyond end %llu\n",
-						amount, (unsigned long long) file_offset,
-						(unsigned long long) curlun->file_length);
+	"write %u @ %llu beyond end %llu\n",
+	amount, (unsigned long long) file_offset,
+	(unsigned long long) curlun->file_length);
 				amount = curlun->file_length - file_offset;
 			}
 
@@ -1342,7 +1117,6 @@ static int do_write(struct fsg_dev *fsg)
 				}
 			}
 #endif
-
 			/* Did the host decide to stop early? */
 			if (bh->outreq->actual != bh->outreq->length) {
 				fsg->short_packet_received = 1;
@@ -1524,68 +1298,17 @@ static int do_verify(struct fsg_dev *fsg)
 
 /*-------------------------------------------------------------------------*/
 
-/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-07-10, Setting of UMS */
-/* If board is not GED, mass storage's vendor/product name is 
- * "LGE Android Platform USB Device"
- * FIXME : This info must be in platform data of mass storage
- */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_GADGET
-#define LGE_UMS_VENDOR    "LGE"
-#define LGE_UMS_PRODUCT   "Android Platform"
-#define LGE_CDROM_PRODUCT "Android CDROM"
-#endif
-/* LGE_CHANGE_E [hyunhui.park@lge.com] 2010-07-10 */
-
 static int do_inquiry(struct fsg_dev *fsg, struct fsg_buffhd *bh)
 {
 	u8	*buf = (u8 *) bh->buf;
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	static char product_disk_id[] = LGE_UMS_PRODUCT;
-	static char product_cdrom_id[] = LGE_CDROM_PRODUCT;
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 
 	if (!fsg->curlun) {		/* Unsupported LUNs are okay */
 		fsg->bad_lun_okay = 1;
 		memset(buf, 0, 36);
 		buf[0] = 0x7f;		/* Unsupported, no device-type */
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-		if (fsg->autorun_enable)
-			buf[4] = 35; // Additional length
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 		return 36;
 	}
 
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN	
-	if(fsg->autorun_enable) {
-		/* CD-Rom For Autorun */
-		memset(buf, 0, 8);	/* Non-removable, direct-access device */
-		buf[0] = TYPE_CDROM;
-		buf[1] = 0x80;	/* set removable bit */
-		buf[2] = 2;		/* ANSI SCSI level 2 */
-		buf[3] = 2;		/* SCSI-2 INQUIRY data format */
-		buf[4] = 31;	/* Additional length */
-
-		sprintf(buf + 8, "%-8s%-16s%04x", fsg->vendor,
-				product_cdrom_id,fsg->release);
-	} else {
-		/* Mass storage */
-		memset(buf, 0, 8);	/* Non-removable, direct-access device */
-		buf[0] = TYPE_UMS;
-		buf[1] = 0x80;	/* set removable bit */
-		buf[2] = 2;		/* ANSI SCSI level 2 */
-		buf[3] = 2;		/* SCSI-2 INQUIRY data format */
-		buf[4] = 31;	/* Additional length */
-
-		sprintf(buf + 8, "%-8s%-16s%04x", fsg->vendor,
-				product_disk_id,fsg->release);
-	}
-
-#else
 	memset(buf, 0, 8);	/* Non-removable, direct-access device */
 
 	buf[1] = 0x80;	/* set removable bit */
@@ -1595,86 +1318,9 @@ static int do_inquiry(struct fsg_dev *fsg, struct fsg_buffhd *bh)
 				/* No special options */
 	sprintf(buf + 8, "%-8s%-16s%04x", fsg->vendor,
 			fsg->product, fsg->release);
-	
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */              
 	return 36;
 }
 
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN	
-static int do_ack_status(struct fsg_dev *fsg, struct fsg_buffhd *bh, u8 ack)
-{
-	u8	*buf = (u8 *) bh->buf;
-	
-	if (!fsg->curlun) {		/* Unsupported LUNs are okay */
-		fsg->bad_lun_okay = 1;
-		memset(buf, 0, 1);
-		buf[0] = 0xf;		
-		return 1;
-	}
-	
-	if(ack == SUB_ACK_STATUS_ACM)
-		buf[0] = SUB_ACK_STATUS_ACM;
-	else if(ack == SUB_ACK_STATUS_MTP)
-		buf[0] = SUB_ACK_STATUS_MTP;
-	else if(ack == SUB_ACK_STATUS_UMS)
-		buf[0] = SUB_ACK_STATUS_UMS;
-	else if(ack == SUB_ACK_STATUS_ASK)
-		buf[0] = SUB_ACK_STATUS_ASK;
-
-	return 1;
-}
-static int do_get_sw_rev(struct fsg_dev *fsg, struct fsg_buffhd *bh)
-{
-	u8	*buf = (u8 *) bh->buf;	
-	
-	memset(buf, 0, 7);	
-
-	buf[0] = 2;	
-	buf[1] = 1;	
-	buf[5] = 1;	
-	buf[6] = 2;	
-	return 7;
-}
-static int do_get_meid(struct fsg_dev *fsg, struct fsg_buffhd *bh)
-{
-	u8	*buf = (u8 *) bh->buf;	
-	
-	memset(buf, 0, 7);	
-
-	buf[0] = 3;	
-	buf[1] = 1;	
-	buf[5] = 1;	
-	buf[6] = 3;	
-	return 7;
-}
-static int do_get_model(struct fsg_dev *fsg, struct fsg_buffhd *bh)
-{
-	u8	*buf = (u8 *) bh->buf;	
-	
-	memset(buf, 0, 7);	
-
-	buf[0] = 4;	
-	buf[1] = 1;	
-	buf[5] = 1;	
-	buf[6] = 4;	
-	return 7;
-}
-static int do_get_sub_ver(struct fsg_dev *fsg, struct fsg_buffhd *bh)
-{
-	u8	*buf = (u8 *) bh->buf;	
-	
-	memset(buf, 0, 7);	
-
-	buf[0] = 5;	
-	buf[1] = 1;	
-	buf[5] = 1;	
-	buf[6] = 5;	
-	return 7;
-}
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */   
 
 static int do_request_sense(struct fsg_dev *fsg, struct fsg_buffhd *bh)
 {
@@ -1698,7 +1344,7 @@ static int do_request_sense(struct fsg_dev *fsg, struct fsg_buffhd *bh)
 	 *
 	 * FSG normally uses option a); enable this code to use option b).
 	 */
-#if 1
+#if 0
 	if (curlun && curlun->unit_attention_data != SS_NO_SENSE) {
 		curlun->sense_data = curlun->unit_attention_data;
 		curlun->unit_attention_data = SS_NO_SENSE;
@@ -1722,16 +1368,7 @@ static int do_request_sense(struct fsg_dev *fsg, struct fsg_buffhd *bh)
 	memset(buf, 0, 18);
 	buf[0] = valid | 0x70;			/* Valid, current error */
 	buf[2] = SK(sd);
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	if (fsg->autorun_enable)
-		put_unaligned_be32(sdinfo, &buf[3]); /* Sense information */
-	else
-		put_be32(&buf[3], sdinfo); /* Sense information */
-#else
-	put_be32(&buf[3], sdinfo); /* Sense information */
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */	
+	put_be32(&buf[3], sdinfo);		/* Sense information */
 	buf[7] = 18 - 8;			/* Additional sense length */
 	buf[12] = ASC(sd);
 	buf[13] = ASCQ(sd);
@@ -1742,118 +1379,21 @@ static int do_request_sense(struct fsg_dev *fsg, struct fsg_buffhd *bh)
 static int do_read_capacity(struct fsg_dev *fsg, struct fsg_buffhd *bh)
 {
 	struct lun	*curlun = fsg->curlun;
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	u32		lba;
-#else
 	u32		lba = get_be32(&fsg->cmnd[2]);
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 	int		pmi = fsg->cmnd[8];
 	u8		*buf = (u8 *) bh->buf;
-
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	if (fsg->autorun_enable)
-		lba = get_unaligned_be32(&fsg->cmnd[2]);
-	else
-		lba = get_be32(&fsg->cmnd[2]);
-#endif
 
 	/* Check the PMI and LBA fields */
 	if (pmi > 1 || (pmi == 0 && lba != 0)) {
 		curlun->sense_data = SS_INVALID_FIELD_IN_CDB;
 		return -EINVAL;
 	}
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	if (fsg->autorun_enable) {
-		/* Max logical block */
-		put_unaligned_be32(curlun->num_sectors - 1, &buf[0]);
-		put_unaligned_be32(512, &buf[4]); /* Block length */
-	} else {
-		put_be32(&buf[0], curlun->num_sectors - 1);	/* Max logical block */
-		put_be32(&buf[4], 512);	/* Block length */
-	}
-#else
+
 	put_be32(&buf[0], curlun->num_sectors - 1);	/* Max logical block */
 	put_be32(&buf[4], 512);				/* Block length */
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
-	return 8;
-}
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-static void store_cdrom_address(u8 *dest, int msf, u32 addr)
-{
-	if (msf) {
-		/* Convert to Minutes-Seconds-Frames */
-		addr >>= 2;		/* Convert to 2048-byte frames */
-		addr += 2*75;		/* Lead-in occupies 2 seconds */
-		dest[3] = addr % 75;	/* Frames */
-		addr /= 75;
-		dest[2] = addr % 60;	/* Seconds */
-		addr /= 60;
-		dest[1] = addr;		/* Minutes */
-		dest[0] = 0;		/* Reserved */
-	} else {
-		/* Absolute sector */
-		put_unaligned_be32(addr, dest);
-	}
-}
-
-static int do_read_header(struct fsg_dev *fsg, struct fsg_buffhd *bh)
-{
-	struct lun	*curlun = fsg->curlun;
-	int		msf = fsg->cmnd[1] & 0x02;
-	u32		lba = get_unaligned_be32(&fsg->cmnd[2]);
-	u8		*buf = (u8 *) bh->buf;
-
-	if ((fsg->cmnd[1] & ~0x02) != 0) {		/* Mask away MSF */
-		DBG(fsg, "fail 'do_read_header' invalid field in cdb\n");
-		curlun->sense_data = SS_INVALID_FIELD_IN_CDB;
-		return -EINVAL;
-	}
-	if (lba >= curlun->num_sectors) {
-		DBG(fsg, "fail 'do_read_header' address out of range\n");
-		curlun->sense_data = SS_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE;
-		return -EINVAL;
-	}
-
-	memset(buf, 0, 8);
-	buf[0] = 0x01;		/* 2048 bytes of user data, rest is EC */
-	store_cdrom_address(&buf[4], msf, lba);
 	return 8;
 }
 
-static int do_read_toc(struct fsg_dev *fsg, struct fsg_buffhd *bh)
-{
-	struct lun	*curlun = fsg->curlun;
-	int		msf = fsg->cmnd[1] & 0x02;
-	int		start_track = fsg->cmnd[6];
-	u8		*buf = (u8 *) bh->buf;
-
-	if ((fsg->cmnd[1] & ~0x02) != 0 ||		/* Mask away MSF */
-			start_track > 1) {
-		curlun->sense_data = SS_INVALID_FIELD_IN_CDB;
-		DBG(fsg, "fail do_read_toc start track\n");
-		return -EINVAL;
-	}
-
-	memset(buf, 0, 20);
-	buf[1] = (20-2);		/* TOC data length */
-	buf[2] = 1;			/* First track number */
-	buf[3] = 1;			/* Last track number */
-	buf[5] = 0x16;			/* Data track, copying allowed */
-	buf[6] = 0x01;			/* Only track is number 1 */
-	store_cdrom_address(&buf[8], msf, 0);
-
-	buf[13] = 0x16;			/* Lead-out track is data */
-	buf[14] = 0xAA;			/* Lead-out track number */
-	store_cdrom_address(&buf[16], msf, curlun->num_sectors);
-	return 20;
-}
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 
 static int do_mode_sense(struct fsg_dev *fsg, struct fsg_buffhd *bh)
 {
@@ -1911,23 +1451,11 @@ static int do_mode_sense(struct fsg_dev *fsg, struct fsg_buffhd *bh)
 			buf[2] = 0x04;	/* Write cache enable, */
 					/* Read cache not disabled */
 					/* No cache retention priorities */
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-			put_unaligned_be16(0xffff, &buf[4]);
-					 /* Don't disable prefetch */
-					/* Minimum prefetch = 0 */
-			put_unaligned_be16(0xffff, &buf[8]);
-					/* Maximum prefetch */
-			put_unaligned_be16(0xffff, &buf[10]);
-					/* Maximum prefetch ceiling */
-#else			
 			put_be16(&buf[4], 0xffff);  /* Don't disable prefetch */
 					/* Minimum prefetch = 0 */
 			put_be16(&buf[8], 0xffff);  /* Maximum prefetch */
 			/* Maximum prefetch ceiling */
 			put_be16(&buf[10], 0xffff);
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 		}
 		buf += 12;
 	}
@@ -1943,26 +1471,11 @@ static int do_mode_sense(struct fsg_dev *fsg, struct fsg_buffhd *bh)
 		return -EINVAL;
 	}
 
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	/*  Store the mode data length */
-	if (mscmnd == SC_MODE_SENSE_6)
-		buf0[0] = len - 1;
-	else {
-		if (fsg->autorun_enable)
-			put_unaligned_be16(len - 2, buf0);
-		else
-			put_be16(buf0, len - 2);
-	}
-#else
 	/*  Store the mode data length */
 	if (mscmnd == SC_MODE_SENSE_6)
 		buf0[0] = len - 1;
 	else
 		put_be16(buf0, len - 2);
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
-
 	return len;
 }
 
@@ -1978,20 +1491,8 @@ static int do_start_stop(struct fsg_dev *fsg)
 	if (loej) {
 		/* eject request from the host */
 		if (backing_file_is_open(curlun)) {
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-			/* If eject command is received to Autorun CD,
-			 * we reject the eject request.
-			 */
-			if (!fsg->autorun_enable) {
-				close_backing_file(fsg, curlun);
-				curlun->unit_attention_data = SS_MEDIUM_NOT_PRESENT;
-			}
-#else
 			close_backing_file(fsg, curlun);
 			curlun->unit_attention_data = SS_MEDIUM_NOT_PRESENT;
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 		}
 	}
 
@@ -2025,20 +1526,9 @@ static int do_read_format_capacities(struct fsg_dev *fsg,
 	buf[0] = buf[1] = buf[2] = 0;
 	buf[3] = 8;	/* Only the Current/Maximum Capacity Descriptor */
 	buf += 4;
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	if (fsg->autorun_enable) {
-		put_unaligned_be32(curlun->num_sectors, &buf[0]); /* Num of blocks */
-		put_unaligned_be32(512, &buf[4]);		/* Block length */
-	} else {
-		put_be32(&buf[0], curlun->num_sectors);	/* Number of blocks */
-		put_be32(&buf[4], 512);				/* Block length */
-	}
-#else
+
 	put_be32(&buf[0], curlun->num_sectors);	/* Number of blocks */
 	put_be32(&buf[4], 512);				/* Block length */
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 	buf[4] = 0x02;					/* Current capacity */
 	return 12;
 }
@@ -2052,6 +1542,7 @@ static int do_mode_select(struct fsg_dev *fsg, struct fsg_buffhd *bh)
 	curlun->sense_data = SS_INVALID_COMMAND;
 	return -EINVAL;
 }
+
 
 static int halt_bulk_in_endpoint(struct fsg_dev *fsg)
 {
@@ -2073,7 +1564,6 @@ static int halt_bulk_in_endpoint(struct fsg_dev *fsg)
 	}
 	return rc;
 }
-
 /*-------------------------------------------------------------------------*/
 #if 0
 static int write_zero(struct fsg_dev *fsg)
@@ -2133,11 +1623,6 @@ static int throw_away_data(struct fsg_dev *fsg)
 			 * the bulk-out maxpacket size */
 			bh->outreq->length = bh->bulk_out_intended_length =
 					amount;
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN			
-			ad_info("In throw_away_data() - ");
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 			start_transfer(fsg, fsg->bulk_out, bh->outreq,
 					&bh->outreq_busy, &bh->state);
 			fsg->next_buffhd_to_fill = bh->next;
@@ -2162,70 +1647,19 @@ static int finish_reply(struct fsg_dev *fsg)
 
 	switch (fsg->data_dir) {
 	case DATA_DIR_NONE:
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-		ad_info("In finish_reply() - DATA_DIR_NONE");
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 		break;			/* Nothing to send */
 
 	case DATA_DIR_UNKNOWN:
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-		ad_info("In finish_reply() - DATA_DIR_UNKNOWN");
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 		rc = -EINVAL;
 		break;
 
 	/* All but the last buffer of data must have already been sent */
 	case DATA_DIR_TO_HOST:
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-		ad_info("finish_reply()- DIR_TO_HOST");
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */		
 		if (fsg->data_size == 0)
-#ifdef CONFIG_LGE_USB_SUPPORT_ANDROID_AUTORUN
-
-			DBG(fsg, "finish_reply(1)");		/* Nothing to send */
-#else
 			;		/* Nothing to send */
-#endif
+
 		/* If there's no residue, simply send the last buffer */
 		else if (fsg->residue == 0) {
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-			DBG(fsg, "finish_reply(1-1)");
-			start_transfer(fsg, fsg->bulk_in, bh->inreq,
-					&bh->inreq_busy, &bh->state);
-			fsg->next_buffhd_to_fill = bh->next;
-		} else {
-			DBG(fsg, "finish_reply(1-2)");
-			if (fsg->autorun_enable) {
-				start_transfer(fsg, fsg->bulk_in, bh->inreq,
-						&bh->inreq_busy, &bh->state);
-				fsg->next_buffhd_to_fill = bh->next;
-			} else {
-				if (can_stall) {
-					bh->state = BUF_STATE_EMPTY;
-					for (i = 0; i < NUM_BUFFERS; ++i) {
-						struct fsg_buffhd
-							*bh = &fsg->buffhds[i];
-						while (bh->state != BUF_STATE_EMPTY) {
-							rc = sleep_thread(fsg);
-							if (rc)
-								return rc;
-						}
-					}
-					rc = halt_bulk_in_endpoint(fsg);
-				} else {
-					start_transfer(fsg, fsg->bulk_in, bh->inreq,
-							&bh->inreq_busy, &bh->state);
-					fsg->next_buffhd_to_fill = bh->next;
-				}
-			}
-#else
 			start_transfer(fsg, fsg->bulk_in, bh->inreq,
 					&bh->inreq_busy, &bh->state);
 			fsg->next_buffhd_to_fill = bh->next;
@@ -2247,8 +1681,6 @@ static int finish_reply(struct fsg_dev *fsg)
 					&bh->inreq_busy, &bh->state);
 			fsg->next_buffhd_to_fill = bh->next;
 			}
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */			
 #if 0
 			/* this is unnecessary, and was causing problems with MacOS */
 			if (bh->inreq->length > 0)
@@ -2260,11 +1692,6 @@ static int finish_reply(struct fsg_dev *fsg)
 	/* We have processed all we want from the data the host has sent.
 	 * There may still be outstanding bulk-out requests. */
 	case DATA_DIR_FROM_HOST:
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-		ad_info("In finish_reply() - DATA_DIR_FROM_HOST");
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 		if (fsg->residue == 0)
 			;		/* Nothing to receive */
 
@@ -2351,11 +1778,6 @@ static int send_status(struct fsg_dev *fsg)
 	csw->Status = status;
 
 	bh->inreq->length = USB_BULK_CS_WRAP_LEN;
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	ad_info("In send_status() - ");
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */	
 	start_transfer(fsg, fsg->bulk_in, bh->inreq,
 			&bh->inreq_busy, &bh->state);
 
@@ -2388,50 +1810,22 @@ static int check_command(struct fsg_dev *fsg, int cmnd_size,
 
 	/* We can't reply at all until we know the correct data direction
 	 * and size. */
-	if (fsg->data_size_from_cmnd == 0){		//DATA_DIR_NONE		
+	if (fsg->data_size_from_cmnd == 0)
 		data_dir = DATA_DIR_NONE;
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN	
-		ad_info("(check_cmd(1))\n");
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
-
-	}
-	if (fsg->data_dir == DATA_DIR_UNKNOWN) {	/* CB or CBI */ //DATA_DIR_UNKNOWN
+	if (fsg->data_dir == DATA_DIR_UNKNOWN) {	/* CB or CBI */
 		fsg->data_dir = data_dir;
 		fsg->data_size = fsg->data_size_from_cmnd;
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-		ad_info("(check_cmd(2))\n");
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
-	} 
-	else {					/* Bulk-only */ //DATA_DIR_
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-		ad_info("(check_cmdd(3))");
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
+
+	} else {					/* Bulk-only */
 		if (fsg->data_size < fsg->data_size_from_cmnd) {
 
 			/* Host data size < Device data size is a phase error.
 			 * Carry out the command, but only transfer as much
 			 * as we are allowed. */
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-			ad_info("phase error1");
-#else		
 			DBG(fsg, "phase error 1\n");
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */	
 			fsg->data_size_from_cmnd = fsg->data_size;
 			fsg->phase_error = 1;
 		}
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-		ad_info("OK \n");
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */	
 	}
 	fsg->residue = fsg->usb_amount_left = fsg->data_size;
 
@@ -2448,21 +1842,10 @@ static int check_command(struct fsg_dev *fsg, int cmnd_size,
 		/* Special case workaround: MS-Windows issues REQUEST_SENSE
 		 * and INQUIRY commands with cbw->Length == 12 (it should be 6). */
 		if ((fsg->cmnd[0] == SC_REQUEST_SENSE && fsg->cmnd_size == 12)
-		 || (fsg->cmnd[0] == SC_INQUIRY && fsg->cmnd_size == 12)){
+		 || (fsg->cmnd[0] == SC_INQUIRY && fsg->cmnd_size == 12))
 			cmnd_size = fsg->cmnd_size;
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-			ad_info("(check_cmd(5))\n");	// success Verify the length of the CMD
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
-		}
 		else {
 			fsg->phase_error = 1;
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-			ad_info("(check_cmd(6)) \n");  //fail Verify the length of the CMD
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 			return -EINVAL;
 		}
 	}
@@ -2476,32 +1859,12 @@ static int check_command(struct fsg_dev *fsg, int cmnd_size,
 	/* Check the LUN */
 	if (fsg->lun >= 0 && fsg->lun < fsg->nluns) {
 		fsg->curlun = curlun = &fsg->luns[fsg->lun];
-		/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-		ad_info("(check_cmd(7)) ");	// check the run OK
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 		if (fsg->cmnd[0] != SC_REQUEST_SENSE) {
 			curlun->sense_data = SS_NO_SENSE;
 			curlun->sense_data_info = 0;
 			curlun->info_valid = 0;
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-			ad_info("(check_cmd(8)) \n");   //- but not same SC_REQUSET_SENSE
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 		}
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-		ad_info("(check_cmd(9))\n");   // - same SC_REQUSET_SENSE	
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 	} else {
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-		ad_info("(check_cmd(10)) ");  //check the run NOT OK
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */		
 		fsg->curlun = curlun = NULL;
 		fsg->bad_lun_okay = 0;
 
@@ -2512,11 +1875,6 @@ static int check_command(struct fsg_dev *fsg, int cmnd_size,
 			DBG(fsg, "unsupported LUN %d\n", fsg->lun);
 			return -EINVAL;
 		}
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-		ad_info("(check_cmd(12))  \n");//supported LUN
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 	}
 
 	/* If a unit attention condition exists, only INQUIRY and
@@ -2526,11 +1884,6 @@ static int check_command(struct fsg_dev *fsg, int cmnd_size,
 			fsg->cmnd[0] != SC_REQUEST_SENSE) {
 		curlun->sense_data = curlun->unit_attention_data;
 		curlun->unit_attention_data = SS_NO_SENSE;
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-		ad_info("(check_cmd(13)) \n");	//ERROR unit attention condition
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */		
 		return -EINVAL;
 	}
 
@@ -2556,9 +1909,7 @@ static int check_command(struct fsg_dev *fsg, int cmnd_size,
 	return 0;
 }
 
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-extern int get_autorun_user_mode(void);
-#endif
+
 static int do_scsi_command(struct fsg_dev *fsg)
 {
 	struct fsg_buffhd	*bh;
@@ -2589,111 +1940,7 @@ static int do_scsi_command(struct fsg_dev *fsg)
 				"INQUIRY")) == 0)
 			reply = do_inquiry(fsg, bh);
 		break;
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	case SC_LGE_SPE:
-		pr_info("%s : SC_LGE_SPE - %x %x %x\n", __func__,
-			  fsg->cmnd[0], fsg->cmnd[1], fsg->cmnd[2]);
 
-		fsg->mode_state = MODE_STATE_UNKNOWN;
-		switch(fsg->cmnd[1])
-		{
-			case SUB_CODE_MODE_CHANGE:
-				switch(fsg->cmnd[2])
-				{
-					case TYPE_MOD_CHG_TO_ACM :
-					case TYPE_MOD_CHG2_TO_ACM :
-						fsg->mode_state = MODE_STATE_ACM;
-						break;
-					case TYPE_MOD_CHG_TO_UMS :
-					case TYPE_MOD_CHG2_TO_UMS :
-						fsg->mode_state = MODE_STATE_UMS;
-						break;
-					case TYPE_MOD_CHG_TO_MTP :
-					case TYPE_MOD_CHG2_TO_MTP :
-						fsg->mode_state = MODE_STATE_MTP;
-						break;
-					case TYPE_MOD_CHG_TO_ASK :
-					case TYPE_MOD_CHG2_TO_ASK :
-						fsg->mode_state = MODE_STATE_ASK;
-						break;
-					default:
-						fsg->mode_state = MODE_STATE_UNKNOWN;
-				}
-				pr_info("%s : SC_LGE_MODE - %d\n", __func__, fsg->mode_state);
-				if (fsg->autorun_enable && &fsg->autorun_sdev) {
-					switch_set_state(&fsg->autorun_sdev, fsg->mode_state);
-					/* For Refreshing Uevent, This Uevent will be ignore by 
-					   AutoRun APK */
-					switch_set_state(&fsg->autorun_sdev, MODE_STATE_UNKNOWN);
-				}
-				reply = 0;	
-				break;
-			case SUB_CODE_GET_VALUE:	
-				switch(fsg->cmnd[2])
-				{
-					case ACK_STATUS_TO_HOST :	// 0xf1 0x02 0x10
-						/* If some error exists, we set default mode
-						   to ACM mode */
-						user_mode = get_autorun_user_mode();
-						fsg->mode_state = MODE_STATE_GET_VALUE;
-						if (user_mode >= ACK_STATUS_ERR) {
-							pr_err("%s [AUTORUN] : Error on user mode setting, set default mode (ACM)\n", __func__);
-							user_mode = ACK_STATUS_ACM;
-						} else 
-							pr_info("%s [AUTORUN] : send user mode to PC %s\n", __func__, check_str[user_mode]);
-
-						fsg->data_size_from_cmnd = 1;
-						if ((reply = check_command(fsg, 6, DATA_DIR_TO_HOST,
-										(7<<1), 1, check_str[user_mode])) == 0)
-							reply=do_ack_status(fsg, bh, user_mode);
-
-						/* For reseting Autorun App watchdog timer */
-						if (fsg->autorun_enable && &fsg->autorun_sdev)
-							switch_set_state(&fsg->autorun_sdev, fsg->mode_state);
-						break;
-					case ACK_SW_REV_TO_HOST :	// 0xf1 0x02 0x12
-						fsg->data_size_from_cmnd = 7;
-						if ((reply = check_command(fsg, 6, DATA_DIR_TO_HOST,
-										(7<<1), 1, "ACK_SW_REV")) == 0)
-							reply=do_get_sw_rev(fsg, bh);
-						break;
-					case ACK_MEID_TO_HOST :		// 0xf1 0x02 0x13
-						fsg->data_size_from_cmnd = 7;
-						if ((reply = check_command(fsg, 6, DATA_DIR_TO_HOST,
-										(7<<1), 1, "ACK_MEID")) == 0)
-							reply=do_get_meid(fsg, bh);
-						break;
-					case ACK_MODEL_TO_HOST :	// 0xf1 0x02 0x14 
-						fsg->data_size_from_cmnd = 7;
-						if ((reply = check_command(fsg, 6, DATA_DIR_TO_HOST,
-										(7<<1), 1, "ACK_MODEL_NAME")) == 0)
-							reply=do_get_model(fsg, bh);
-						break;
-					case ACK_SUB_VER_TO_HOST:	// 0xf1 0x02 0x15  
-						fsg->data_size_from_cmnd = 7;
-						if ((reply = check_command(fsg, 6, DATA_DIR_TO_HOST,
-										(7<<1), 1, "ACK_SUB_VERSION")) == 0)
-							reply=do_get_sub_ver(fsg, bh);
-						break;
-					default:
-						break;	
-				}
-				
-				break;
-			case SUB_CODE_PROBE_DEV:
-				fsg->mode_state = MODE_STATE_PROBE_DEV;
-				reply=0;
-				break;
-			default:
-				fsg->mode_state = MODE_STATE_UNKNOWN;
-				reply=0;
-				break;
-		}
-		
-		break;
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 	case SC_MODE_SELECT_6:
 		fsg->data_size_from_cmnd = fsg->cmnd[4];
 		if ((reply = check_command(fsg, 6, DATA_DIR_FROM_HOST,
@@ -2766,29 +2013,7 @@ static int do_scsi_command(struct fsg_dev *fsg)
 				"READ CAPACITY")) == 0)
 			reply = do_read_capacity(fsg, bh);
 		break;
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN	
-	case SC_READ_HEADER:
-		if (!fsg->curlun->ro)	
-			goto unknown_cmnd;
-		fsg->data_size_from_cmnd = get_unaligned_be16(&fsg->cmnd[7]);
-		if ((reply = check_command(fsg, 10, DATA_DIR_TO_HOST,
-				(3<<7) | (0x1f<<1), 1,
-				"READ HEADER")) == 0)
-			reply = do_read_header(fsg, bh);
-		break;
 
-	case SC_READ_TOC:
-		if (!fsg->curlun->ro)	
-			goto unknown_cmnd;
-		fsg->data_size_from_cmnd = get_unaligned_be16(&fsg->cmnd[7]);
-		if ((reply = check_command(fsg, 10, DATA_DIR_TO_HOST,
-				(7<<6) | (1<<1), 1,
-				"READ TOC")) == 0)
-			reply = do_read_toc(fsg, bh);
-		break;
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 	case SC_READ_FORMAT_CAPACITIES:
 		fsg->data_size_from_cmnd = get_be16(&fsg->cmnd[7]);
 		if ((reply = check_command(fsg, 10, DATA_DIR_TO_HOST,
@@ -2874,18 +2099,8 @@ static int do_scsi_command(struct fsg_dev *fsg)
 		/* Fall through */
 
 	default:
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN	
-unknown_cmnd:
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */        
 		fsg->data_size_from_cmnd = 0;
 		sprintf(unknown, "Unknown x%02x", fsg->cmnd[0]);
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN		
-		ad_info("unknown_cmnd x%02x", fsg->cmnd[0]);
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */		
 		if ((reply = check_command(fsg, fsg->cmnd_size,
 				DATA_DIR_UNKNOWN, 0xff, 0, unknown)) == 0) {
 			fsg->curlun->sense_data = SS_INVALID_COMMAND;
@@ -2898,14 +2113,7 @@ unknown_cmnd:
 	VDBG(fsg, "reply: %d, fsg->data_size_from_cmnd: %d\n",
 			reply, fsg->data_size_from_cmnd);
 	if (reply == -EINTR || signal_pending(current))
-	{
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN		
-		ad_info("go error = return -EINTR\n");
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */		
-			return -EINTR;
-	}
+		return -EINTR;
 
 	/* Set up the single reply buffer for finish_reply() */
 	if (reply == -EINVAL)
@@ -2976,22 +2184,8 @@ static int get_next_command(struct fsg_dev *fsg)
 	bh = fsg->next_buffhd_to_fill;
 	while (bh->state != BUF_STATE_EMPTY) {
 		rc = sleep_thread(fsg);
-		if (rc) {
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN			
-			if(fsg->autorun_enable) {
-				usb_ep_dequeue(fsg->bulk_out, bh->outreq);
-				bh->outreq_busy = 0;
-				bh->state = BUF_STATE_EMPTY;
-				return rc;
-			} else
-				return rc;
-#else
+		if (rc)
 			return rc;
-
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
-		}
 	}
 
 	/* Queue a request to read a Bulk-only CBW */
@@ -3173,12 +2367,7 @@ static int do_set_config(struct fsg_dev *fsg, u8 new_config)
 	if (new_config != 0)
 		fsg->config = new_config;
 
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	if (!fsg->autorun_enable)
-		switch_set_state(&fsg->sdev, new_config);
-#else	
 	switch_set_state(&fsg->sdev, new_config);
-#endif	
 	adjust_wake_lock(fsg);
 	return rc;
 }
@@ -3382,11 +2571,7 @@ static int open_backing_file(struct fsg_dev *fsg, struct lun *curlun,
 	struct inode			*inode = NULL;
 	loff_t				size;
 	loff_t				num_sectors;
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	loff_t				min_sectors;
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
+
 	/* R/W if we can, R/O if we must */
 	ro = curlun->ro;
 	if (!ro) {
@@ -3430,41 +2615,11 @@ static int open_backing_file(struct fsg_dev *fsg, struct lun *curlun,
 		goto out;
 	}
 	num_sectors = size >> 9;	/* File size in 512-byte sectors */
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	if(fsg->autorun_enable) {
-		min_sectors = 1;
-
-		num_sectors &= ~3;	// Reduce to a multiple of 2048
-		//min_sectors = 300*4;	// Smallest track is 300 frames
-		min_sectors = 300*2;
-		if (num_sectors >= 256*60*75*4) {
-			num_sectors = (256*60*75 - 1) * 4;
-			LINFO(curlun, "file too big: %s\n", filename);
-			ad_info("file too big: %s\n", filename);
-			LINFO(curlun, "using only first %d blocks\n",
-					(int) num_sectors);
-		}
-
-		if (num_sectors < min_sectors) {
-			LINFO(curlun, "file too small: %s\n", filename);
-			ad_info("file too small: %s\n", filename);
-		}
-	} else {
-		if (num_sectors == 0) {
-			LINFO(curlun, "file too small: %s\n", filename);
-			rc = -ETOOSMALL;
-			goto out;
-		}
-	}
-#else
 	if (num_sectors == 0) {
 		LINFO(curlun, "file too small: %s\n", filename);
 		rc = -ETOOSMALL;
 		goto out;
 	}
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */		
 
 	get_file(filp);
 	curlun->ro = ro;
@@ -3474,13 +2629,6 @@ static int open_backing_file(struct fsg_dev *fsg, struct lun *curlun,
 	LDBG(curlun, "open backing file: %s size: %lld num_sectors: %lld\n",
 			filename, size, num_sectors);
 	rc = 0;
-
-/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-09-11, For sync sdcard's contents */
-	pr_info("%s: UMS active.. fsync and invalidate..\n", __func__);
-	fsync_sub(curlun);
-	invalidate_sub(curlun);
-/* LGE_CHANGE_E [hyunhui.park@lge.com] 2010-09-11 */
-
 	adjust_wake_lock(fsg);
 
 out:
@@ -3555,12 +2703,7 @@ static ssize_t store_file(struct device *dev, struct device_attribute *attr,
 	struct fsg_dev	*fsg = dev_get_drvdata(dev);
 	int		rc = 0;
 
-#ifdef DEBUG	
 	DBG(fsg, "store_file: \"%s\"\n", buf);
-#else
-	pr_info("%s: store_file: \"%s\"\n", __func__, buf);
-#endif
-
 #if 0
 	/* disabled because we need to allow closing the backing file if the media was removed */
 	if (curlun->prevent_medium_removal && backing_file_is_open(curlun)) {
@@ -3591,47 +2734,8 @@ static ssize_t store_file(struct device *dev, struct device_attribute *attr,
 	return (rc < 0 ? rc : count);
 }
 
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
 
-static DEVICE_ATTR(file, 0666, show_file, store_file);
-#else
 static DEVICE_ATTR(file, 0444, show_file, store_file);
-#endif
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-#if 0
-static ssize_t store_community(struct device *dev, 
-			struct device_attribute *attr, const char *buf, size_t count)
-{
-	struct fsg_dev	*fsg = dev_get_drvdata(dev);
-	unsigned long tmp;
-	int ret = 0;
-
-	down_write(&fsg->filesem);
-	
-	if (count > 0 && buf[0]) {
-		/* NOTE : base of converting from string to long is 16(hex) */
-		ret = strict_strtoul(buf, 16, &tmp);
-		if (ret) {
-			up_write(&fsg->filesem);
-			return ret;
-		}
-	
-			
-		autorun_user_mode = (unsigned int)tmp;
-		pr_info("%s: set user_mode is %d\n",__func__ ,autorun_user_mode);
-	}
-	up_write(&fsg->filesem);
-
-	return count;
-}
-
-//static DEVICE_ATTR(community, 0666, show_community, store_community);
-static DEVICE_ATTR(community, 0666, NULL, store_community);
-#endif
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 
 /*-------------------------------------------------------------------------*/
 
@@ -3649,6 +2753,7 @@ static void lun_release(struct device *dev)
 
 	kref_put(&fsg->ref, fsg_release);
 }
+
 
 /*-------------------------------------------------------------------------*/
 
@@ -3678,23 +2783,6 @@ static ssize_t print_switch_state(struct switch_dev *sdev, char *buf)
 	struct fsg_dev	*fsg = container_of(sdev, struct fsg_dev, sdev);
 	return sprintf(buf, "%s\n", (fsg->config ? "online" : "offline"));
 }
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-
-static ssize_t print_switch_name_autorun(struct switch_dev *sdev, char *buf)
-{
-	return sprintf(buf, "%s\n", DRIVER_NAME_AUTORUN);
-}
-
-static ssize_t print_switch_state_autorun(struct switch_dev *sdev, char *buf)
-{
-	pr_info("%s : send Uevent - %s\n", __func__,  chg_mode[sdev->state]);
-
-	return sprintf(buf, "%s\n", chg_mode[sdev->state]);
-	
-}
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 
 static void
 fsg_function_unbind(struct usb_configuration *c, struct usb_function *f)
@@ -3711,11 +2799,6 @@ fsg_function_unbind(struct usb_configuration *c, struct usb_function *f)
 		curlun = &fsg->luns[i];
 		if (curlun->registered) {
 			device_remove_file(&curlun->dev, &dev_attr_file);
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	/*		device_remove_file(&curlun->dev, &dev_attr_community); */
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 			device_unregister(&curlun->dev);
 			curlun->registered = 0;
 		}
@@ -3735,17 +2818,7 @@ fsg_function_unbind(struct usb_configuration *c, struct usb_function *f)
 		kfree(fsg->buffhds[i].buf);
 		fsg->buffhds[i].buf = NULL;
 	}
-
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	if (fsg->autorun_enable)
-		switch_dev_unregister(&the_fsg->autorun_sdev);
-	else
-		switch_dev_unregister(&the_fsg->sdev);
-#else
 	switch_dev_unregister(&the_fsg->sdev);
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 }
 
 static int
@@ -3760,35 +2833,10 @@ fsg_function_bind(struct usb_configuration *c, struct usb_function *f)
 	struct usb_ep		*ep;
 	char			*pathbuf, *p;
 
-#if defined(CONFIG_LGE_UMS_WORKAROUND_PATCH)
-	int cnt = 0;
-#endif
-
 	fsg->cdev = cdev;
 	DBG(fsg, "fsg_function_bind\n");
 
-#if defined(CONFIG_LGE_UMS_WORKAROUND_PATCH)
-
-	/* LG_FW khlee 2010.01.20 :
-	 * After composite switching, Mass driver is not working.
-	 * to prevent the binding until mass thread is killed.  */
-	while(fsg->thread_task != NULL)
-	{
-		msleep(10);
-		pr_err("%s :remain kernel thread in fsg binding: %d\n",
-				__func__, (int)fsg->thread_task);
-
-		if( cnt++ > 20)
-			break;
-	}
-	/*LGE_CHANGE_E[kyuhyung.lee@lge.com - #endif*/
-#endif
-
-#ifdef CONFIG_SUPPORT_LGE_ANDROID_AUTORUN
-	dev_attr_file.attr.mode = 0666;
-#else
 	dev_attr_file.attr.mode = 0644;
-#endif
 
 	/* Find out how many LUNs there should be */
 	i = fsg->nluns;
@@ -3811,17 +2859,7 @@ fsg_function_bind(struct usb_configuration *c, struct usb_function *f)
 
 	for (i = 0; i < fsg->nluns; ++i) {
 		curlun = &fsg->luns[i];
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-		if (fsg->autorun_enable)
-			curlun->ro = 1; /* cdrom : read only */
-		else
-			curlun->ro = 0; /* mass storage : read/write */
-#else
 		curlun->ro = 0;
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
-
 		curlun->dev.release = lun_release;
 		curlun->dev.parent = &cdev->gadget->dev;
 		dev_set_drvdata(&curlun->dev, fsg);
@@ -3838,20 +2876,6 @@ fsg_function_bind(struct usb_configuration *c, struct usb_function *f)
 			device_unregister(&curlun->dev);
 			goto out;
 		}
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-#if 0		
-		rc = device_create_file(&curlun->dev, &dev_attr_community);
-		if (rc != 0) {
-			ERROR(fsg, "device_create_community failed: %d\n", rc);
-			device_remove_file(&curlun->dev, &dev_attr_file);
-			device_unregister(&curlun->dev);
-			goto out;
-		}
-#endif		
-#endif
-/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
-
 		curlun->registered = 1;
 		kref_get(&fsg->ref);
 	}
@@ -3966,25 +2990,13 @@ static void fsg_function_disable(struct usb_function *f)
 	raise_exception(fsg, FSG_STATE_CONFIG_CHANGE);
 }
 
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-int mass_storage_function_add(struct usb_composite_dev *cdev,
-	struct usb_configuration *c, int nluns, int autorun_enable)
-#else
 int mass_storage_function_add(struct usb_composite_dev *cdev,
 	struct usb_configuration *c, int nluns)
-#endif
 {
 	int		rc;
 	struct fsg_dev	*fsg;
-	
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN	
-	if (autorun_enable)
-		printk(KERN_INFO "mass_storage_function_add : AUTORUN\n");
-	else
-		printk(KERN_INFO "mass_storage_function_add\n");
-#else
+
 	printk(KERN_INFO "mass_storage_function_add\n");
-#endif	
 	rc = fsg_alloc();
 	if (rc)
 		return rc;
@@ -3997,42 +3009,12 @@ int mass_storage_function_add(struct usb_composite_dev *cdev,
 	init_completion(&fsg->thread_notifier);
 
 	the_fsg->buf_size = BULK_BUFFER_SIZE;
-/* LGE_CHANGES_S [younsuk.song@lge.com] 2010-06-16, Add Vendor/Product name */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_GADGET
-	the_fsg->vendor= LGE_UMS_VENDOR;
-	the_fsg->product= LGE_UMS_PRODUCT;
-#endif
-/* LGE_CHANGES_E [younsuk.song@lge.com] 2010-06-16 */
-
-/* LGE_CHANGE_S [adwardk.kim@lge.com] 2010-08-07 */
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN	
-	the_fsg->autorun_enable = autorun_enable;
-
-	if (the_fsg->autorun_enable) {
-		the_fsg->autorun_sdev.name = DRIVER_NAME_AUTORUN;
-		the_fsg->autorun_sdev.print_name = print_switch_name_autorun;
-		the_fsg->autorun_sdev.print_state = print_switch_state_autorun;
-
-		rc = switch_dev_register(&the_fsg->autorun_sdev);
-		if (rc < 0)
-			goto err_switch_dev_register;
-	} else {
-		the_fsg->sdev.name = DRIVER_NAME;
-		the_fsg->sdev.print_name = print_switch_name;
-		the_fsg->sdev.print_state = print_switch_state;
-		rc = switch_dev_register(&the_fsg->sdev);
-		if (rc < 0)
-			goto err_switch_dev_register;
-	}
-#else
 	the_fsg->sdev.name = DRIVER_NAME;
 	the_fsg->sdev.print_name = print_switch_name;
 	the_fsg->sdev.print_state = print_switch_state;
 	rc = switch_dev_register(&the_fsg->sdev);
 	if (rc < 0)
 		goto err_switch_dev_register;
-#endif
-	/* LGE_CHANGE_E [adwardk.kim@lge.com] 2010-08-07 */
 
 	wake_lock_init(&the_fsg->wake_lock, WAKE_LOCK_SUSPEND,
 		       "usb_mass_storage");

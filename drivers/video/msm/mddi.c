@@ -33,7 +33,6 @@
 #include <linux/uaccess.h>
 #include <linux/clk.h>
 #include <linux/platform_device.h>
-#include <linux/pm_qos_params.h>
 
 #include "msm_fb.h"
 #include "mddihosti.h"
@@ -89,9 +88,6 @@ static int mddi_off(struct platform_device *pdev)
 	if (mddi_pdata && mddi_pdata->mddi_power_save)
 		mddi_pdata->mddi_power_save(0);
 
-	pm_qos_update_requirement(PM_QOS_SYSTEM_BUS_FREQ , "mddi",
-				  PM_QOS_DEFAULT_VALUE);
-
 	return ret;
 }
 
@@ -119,9 +115,6 @@ static int mddi_on(struct platform_device *pdev)
 	if (clk_set_min_rate(mddi_clk, clk_rate) < 0)
 		printk(KERN_ERR "%s: clk_set_min_rate failed\n",
 			__func__);
-
-	pm_qos_update_requirement(PM_QOS_SYSTEM_BUS_FREQ , "mddi",
-				  65000);
 
 	ret = panel_next_on(pdev);
 
@@ -249,9 +242,6 @@ static int mddi_probe(struct platform_device *pdev)
 	mfd->mddi_early_suspend.resume = mddi_early_resume;
 	register_early_suspend(&mfd->mddi_early_suspend);
 #endif
-
-	pm_qos_add_requirement(PM_QOS_SYSTEM_BUS_FREQ , "mddi",
-			       PM_QOS_DEFAULT_VALUE);
 
 	return 0;
 

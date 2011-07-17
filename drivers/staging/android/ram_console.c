@@ -26,15 +26,6 @@
 #include <linux/rslib.h>
 #endif
 
-// kiwone.seo@lge.com :20101010. add silent reset(include arm9)
-// LGE_CHANGE_S : woonghee.park@lge.com : 2010.03.30
-// LG_FW_RESET_INFO_IN_SDRAM
-#include "../../../arch/arm/mach-msm/smd_private.h"
-uint32_t  *smem_sreset_hwreset =  NULL;
-// LGE_CHANGE_E
-
-uint32_t  *smem_webdl_completed =  NULL;
-
 struct ram_console_buffer {
 	uint32_t    sig;
 	uint32_t    start;
@@ -55,7 +46,6 @@ static struct ram_console_buffer *ram_console_buffer;
 static size_t ram_console_buffer_size;
 
 #if defined(CONFIG_LGE_SUPPORT_ERS) || defined(CONFIG_LGE_HANDLE_PANIC)
-/* LGE_CHANGES_S [j.y.han@lge.com] 20090904, helper function */
 inline struct ram_console_buffer *get_ram_console_buffer(void)
 {
 	return ram_console_buffer;
@@ -161,7 +151,6 @@ static struct console ram_console = {
 	.name	= "ram",
 	.write	= ram_console_write,
 #if defined (CONFIG_MACH_LGE)	
-	/* LGE_CHANGES_S [lsy@lge.com] 2009-10-29, Do not reprint buffer */
 	.flags	= CON_ENABLED,
 #else	/* origin */
 	.flags	= CON_PRINTBUFFER | CON_ENABLED,
@@ -380,7 +369,6 @@ static int __init ram_console_module_init(void)
 }
 #endif
 
-// LGE_CHANGE_S [dojip.kim@lge.com] 2010-08-04, clean the ram console when normal shutdown
 #if defined(CONFIG_LGE_RAM_CONSOLE_CLEAN)
 void ram_console_clean_buffer(void)
 {
@@ -390,7 +378,7 @@ void ram_console_clean_buffer(void)
 }
 EXPORT_SYMBOL(ram_console_clean_buffer);
 #endif
-// LGE_CHANGE_E [dojip.kim@lge.com] 2010-08-04
+
 static ssize_t ram_console_read_old(struct file *file, char __user *buf,
 				    size_t len, loff_t *offset)
 {
@@ -416,46 +404,19 @@ static const struct file_operations ram_console_file_ops = {
 static int __init ram_console_late_init(void)
 {
 	struct proc_dir_entry *entry;
-	int webdl_completed = 0;
 
-// kiwone.seo@lge.com :20101010. add silent reset(include arm9)
-// LGE_CHANGE_S : woonghee.park@lge.com : 2010.03.30
-// LG_FW_RESET_INFO_IN_SDRAM
-	smem_sreset_hwreset = smem_alloc(SMEM_ID_VENDOR2, sizeof(uint32_t));
-	if(smem_sreset_hwreset != NULL)
-	{
-		if(*smem_sreset_hwreset == 0xDDDEADDD)
-		{
-			entry = create_proc_entry("last_kmsg_arm9", S_IFREG | S_IRUGO, NULL);
-			if (!entry) {
-				printk(KERN_ERR "ram_console: failed to create proc entry\n");
-			}
-		}
-	}
-// LGE_CHANGE_E
-
-// LGE_CHANGE_S : hoseok.kim@lge.com : 2010.10.17 After completing webdownload, Do not entering charging mode.
-	smem_webdl_completed = smem_alloc(SMEM_ID_WEBDL_COMPLETED, sizeof(uint32_t));
-	if(smem_webdl_completed != NULL)
-	{
-		if(*smem_webdl_completed == 0x57454244) {
-			webdl_completed = 1;
-		}
-	}
-// LGE_CHANGE_E : hoseok.kim@lge.com : 2010.10.17
-
-	if ((ram_console_old_log == NULL) && (webdl_completed != 1))
+	if (ram_console_old_log == NULL)
 		return 0;
-
 #ifdef CONFIG_ANDROID_RAM_CONSOLE_EARLY_INIT
 	ram_console_old_log = kmalloc(ram_console_old_log_size, GFP_KERNEL);
 	if (ram_console_old_log == NULL) {
-		printk(KERN_ERR "ram_console: failed to allocate buffer for old log\n");
+		printk(KERN_ERR
+		       "ram_console: failed to allocate buffer for old log\n");
 		ram_console_old_log_size = 0;
 		return 0;
 	}
 	memcpy(ram_console_old_log,
-				ram_console_old_log_init_buffer, ram_console_old_log_size);
+	       ram_console_old_log_init_buffer, ram_console_old_log_size);
 #endif
 	entry = create_proc_entry("last_kmsg", S_IFREG | S_IRUGO, NULL);
 	if (!entry) {

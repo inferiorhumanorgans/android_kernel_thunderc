@@ -52,16 +52,6 @@ ifeq ($(CONFIG_USB_ANDROID_RNDIS),y)
 F_RNDIS = rndis.o f_rndis.o
 endif
 
-# LGE_CHANGE_S [hyunhui.park@lge.com] 2010-07-11, Add common LGE usb features
-ifeq ($(CONFIG_USB_SUPPORT_LGE_ANDROID_GADGET), y)
-U_LGEUSB = u_lgeusb.o
-endif
-# LGE_CHANGE_E [hyunhui.park@lge.com] 2010-07-11 
-
-ifeq ($(CONFIG_USB_GADGET_LG_MTP_DRIVER),y)
-F_MTP = f_mtp.o
-endif
-
 g_zero-objs			:= zero.o
 g_audio-objs			:= audio.o
 g_ether-objs			:= ether.o
@@ -74,7 +64,7 @@ g_cdc-objs			:= cdc2.o
 g_android-objs			:= android.o f_adb.o f_mass_storage.o \
 					u_serial.o f_acm.o u_ether.o \
 					$(F_ECM) $(F_SERIAL) $(F_DIAG) \
-					$(F_RMNET) $(F_RNDIS) $(U_LGEUSB) $(F_MTP)
+					$(F_RMNET) $(F_RNDIS)
 
 obj-$(CONFIG_USB_ZERO)		+= g_zero.o
 obj-$(CONFIG_USB_AUDIO)		+= g_audio.o

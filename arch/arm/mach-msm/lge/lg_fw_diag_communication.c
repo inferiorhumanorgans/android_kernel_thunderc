@@ -1,8 +1,17 @@
 /*
- *   LG_FW_AUDIO_TESTMODE
+ * Copyright (c) 2010 LGE. All rights reserved.
  *
- *   kiwone creates this file for audio test mode, and the use of another function to send framework.
-*/
+ * This software is licensed under the terms of the GNU General Public
+ * License version 2, as published by the Free Software Foundation, and
+ * may be copied, distributed, and modified under those terms.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ */
+
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
@@ -35,7 +44,7 @@ static int diagcmd_probe(struct platform_device *pdev)
 	int ret = 0;
 
 	if (!pdata){
-		D("diagcmd_probe pdata err:%s\n", pdata->name);
+		D("diagcmd_probe pdata is NULL\n");
 		return -EBUSY;
 	}
 
@@ -92,7 +101,7 @@ static void __exit diagcmd_exit(void)
 module_init(diagcmd_init);
 module_exit(diagcmd_exit);
 
-MODULE_AUTHOR("kiwone.seo@lge.com");
+MODULE_AUTHOR("kiwone.seo");
 MODULE_DESCRIPTION("lg_fw_diagcmd driver");
 MODULE_LICENSE("GPL");
 

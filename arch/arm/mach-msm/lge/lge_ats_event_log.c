@@ -32,20 +32,10 @@ static struct input_dev *ats_input_dev;
 static struct input_handler input_handler;
 static struct work_struct event_log_work;
 struct ats_mtc_key_log_type ats_mtc_key_log1;
+static int ats_log_status = 0;
 
-static int is_log_request_started=0;	//20100901 myeonggyu.son@lge.com [MS690] checking status of the mtc key&touch log requeset mask
-
-extern int ats_mtc_log_mask;
-extern void ats_mtc_send_key_log_to_eta(struct ats_mtc_key_log_type *);
-
-/* LGE_CHANGE
- * support MTC using diag port
- * 2010-07-11 taehung.kim@lge.com
- */
-#if defined (CONFIG_MACH_MSM7X27_THUNDERC) || defined(LG_FW_MTC)
-extern unsigned char g_diag_mtc_check;
-extern void mtc_send_key_log_data(struct ats_mtc_key_log_type* p_ats_mtc_key_log);
-#endif
+extern unsigned int ats_mtc_log_mask;
+extern void ats_mtc_send_key_log_to_eta() ;
 
 /* TODO :  need to modify key map for each model */
 #define ETA_KEY_MAX     8
@@ -91,15 +81,12 @@ static char eta_prev_action = ETA_TOUCH_DEFAULT;
 int touch_status = 0 ;
 
 
-static int ats_event_log_connect(struct input_handler *handler,struct input_dev *dev,const struct input_device_id *id)
+static int ats_event_log_connect(struct input_handler *handler,
+		struct input_dev *dev, const struct input_device_id *id)
 {
 	int i;
 	int ret;
 	struct input_handle *handle;
-
-	if(strcmp(dev->name, "ats_input") == 0)
-		return 0;
-
 	printk(" connect () %s \n\n",dev->name);
 
 	for (i = 0 ; i < ETA_KEY_MAX - 1 ; i++){
@@ -128,6 +115,7 @@ static int ats_event_log_connect(struct input_handler *handler,struct input_dev 
 		goto err_input_open_device;
 
 	return 0;
+
 err_input_open_device:
 	input_unregister_handle(handle);
 err_input_register_handle:
@@ -154,19 +142,11 @@ static const struct input_device_id ats_event_log_ids[] = {
 
 static void event_log_work_func(struct work_struct *work)
 {
-/* LGE_CHANGE
- * support MTC using diag port
- * 2010-07-11 taehung.kim@lge.com
- */
-#if defined (CONFIG_MACH_MSM7X27_THUNDERC) || defined(LG_FW_MTC)
-	if(g_diag_mtc_check==1)
-		mtc_send_key_log_data(&ats_mtc_key_log1);
-	else
-#endif
-		ats_mtc_send_key_log_to_eta(&ats_mtc_key_log1);
+	ats_mtc_send_key_log_to_eta(&ats_mtc_key_log1);
 }
 
-static void ats_event_log_event(struct input_handle *handle, unsigned int type,unsigned int code, int value)
+static void ats_event_log_event(struct input_handle *handle, 
+		unsigned int type, unsigned int code, int value)
 {
 	if ( (type == EV_KEY) && (0x00000001 & ats_mtc_log_mask) ){
 		ats_mtc_key_log1.log_id = 1; /* LOG_ID, 1 key, 2 touch */
@@ -177,37 +157,34 @@ static void ats_event_log_event(struct input_handle *handle, unsigned int type,u
 	}
 	else if ( (type == EV_ABS || type == EV_SYN) && (0x00000002 & ats_mtc_log_mask) ){
 		switch(code){
-			case ABS_MT_TOUCH_MAJOR:
-				{
-					touch_status++;
-					if(value == 1){ /* value = 1 is touch pressed case */
-						if (eta_prev_action == ETA_TOUCH_DOWN)
-							ats_mtc_key_log1.action = (unsigned char)ETA_TOUCH_MOVETO;
-						else
-							ats_mtc_key_log1.action = (unsigned char)ETA_TOUCH_DOWN;
+			case ABS_MT_TOUCH_MAJOR: {
+				touch_status++;
+				if(value == 1){ /* value = 1 is touch pressed case */
+					if (eta_prev_action == ETA_TOUCH_DOWN)
+						ats_mtc_key_log1.action = (unsigned char)ETA_TOUCH_MOVETO;
+					else
+						ats_mtc_key_log1.action = (unsigned char)ETA_TOUCH_DOWN;
 
-						eta_prev_action = ETA_TOUCH_DOWN;
-					}
-					else {
-						ats_mtc_key_log1.action = (unsigned char)ETA_TOUCH_UP;
-						eta_prev_action = ETA_TOUCH_UP;
-					}
-					break;
+					eta_prev_action = ETA_TOUCH_DOWN;
 				}
-			case ABS_MT_POSITION_X :
-				{
-					ats_mtc_key_log1.x_hold = value;
-					touch_status++;
-					break;
+				else {
+					ats_mtc_key_log1.action = (unsigned char)ETA_TOUCH_UP;
+					eta_prev_action = ETA_TOUCH_UP;
 				}
-			case ABS_MT_POSITION_Y:
-				{
-					ats_mtc_key_log1.y_code = value;
-					touch_status++;
-					break;
-				}
+				break;
+			}
+			case ABS_MT_POSITION_X: {
+				ats_mtc_key_log1.x_hold = value;
+				touch_status++;
+				break;
+			}
+			case ABS_MT_POSITION_Y: {
+				ats_mtc_key_log1.y_code = value;
+				touch_status++;
+				break;
+			}
 		}
-		if(touch_status == 3){
+		if (touch_status == 3) {
 			ats_mtc_key_log1.log_id = 2; /* LOG_ID, 1 key, 2 touch */
 			ats_mtc_key_log1.log_len = 22; /*LOG_LEN */
 			touch_status = 0;
@@ -218,22 +195,17 @@ static void ats_event_log_event(struct input_handle *handle, unsigned int type,u
 
 int event_log_start(void)
 {
-	int ret = 0;
-
-	input_handler.name = "key_log";
-	input_handler.connect = ats_event_log_connect;
-	input_handler.disconnect = ats_event_log_disconnect;
-	input_handler.event = ats_event_log_event;
-	input_handler.id_table = ats_event_log_ids;
-	ret = input_register_handler(&input_handler);
-	if (ret != 0)
-		printk("%s:fail to registers input handler\n", __func__);
-//20100901 myeonggyu.son@lge.com [MS690] checking status of the mtc key&touch log requeset mask [START]
-	else
-		is_log_request_started = 1;
-//20100901 myeonggyu.son@lge.com [MS690] checking status of the mtc key&touch log requeset mask [END]
-		
-	INIT_WORK(&event_log_work,event_log_work_func);
+	printk("[ETA] call %s() ats_log_status = %d\n", __func__, ats_log_status);
+	if(ats_log_status == 0) {
+	 	input_handler.name = "key_log";
+	 	input_handler.connect = ats_event_log_connect;
+	 	input_handler.disconnect = ats_event_log_disconnect;
+	 	input_handler.event = ats_event_log_event;
+	 	input_handler.id_table = ats_event_log_ids;
+	 	input_register_handler(&input_handler);
+	 	INIT_WORK(&event_log_work, event_log_work_func);
+		ats_log_status = 1;
+	}
 
 	return 0;
 }
@@ -241,14 +213,11 @@ EXPORT_SYMBOL(event_log_start);
 
 int event_log_end(void)
 {
-//20100901 myeonggyu.son@lge.com [MS690] checking status of the mtc key&touch log requeset mask[START]
-	if(is_log_request_started == 1)
-	{
+	printk("[ETA] call %s() ats_log_status = %d\n", __func__, ats_log_status);
+	if(ats_log_status == 1) {
 		input_unregister_handler(&input_handler);
-		is_log_request_started = 0;
+		ats_log_status = 0;
 	}
-//20100901 myeonggyu.son@lge.com [MS690] checking status of the mtc key&touch log requeset mask [END]
-	
 	return 0 ;
 }
 EXPORT_SYMBOL(event_log_end);

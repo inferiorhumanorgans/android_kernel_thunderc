@@ -377,7 +377,6 @@ struct input_absinfo {
 
 #define KEY_WIMAX		246
 
-//20100705 myeonggyu.son@lge.com [MS690] add KEY_FOCUS
 #define KEY_FOCUS		247
 
 /* Range 248 - 255 is reserved for special needs of AT keyboard driver */

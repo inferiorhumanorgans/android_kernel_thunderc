@@ -997,12 +997,7 @@ static long kgsl_ioctl_sharedmem_from_vmalloc(struct kgsl_file_private *private,
 
 	list_for_each_entry_safe(entry, entry_tmp,
 				&private->preserve_entry_list, list) {
-		/* make sure that read only pages aren't accidently
-		 * used when read-write pages are requested
-		 */
-		if (entry->memdesc.size == len &&
-		    ((entry->memdesc.priv & KGSL_MEMFLAGS_GPUREADONLY) ==
-		    (param.flags & KGSL_MEMFLAGS_GPUREADONLY))) {
+		if (entry->memdesc.size == len) {
 			list_del(&entry->list);
 			found = 1;
 			break;
@@ -1040,8 +1035,7 @@ static long kgsl_ioctl_sharedmem_from_vmalloc(struct kgsl_file_private *private,
 		entry->memdesc.pagetable = private->pagetable;
 		entry->memdesc.size = len;
 		entry->memdesc.priv = KGSL_MEMFLAGS_VMALLOC_MEM |
-			    KGSL_MEMFLAGS_CACHE_CLEAN |
-			    (param.flags & KGSL_MEMFLAGS_GPUREADONLY);
+			    KGSL_MEMFLAGS_CACHE_CLEAN;
 		entry->memdesc.physaddr = (unsigned long)vmalloc_area;
 		entry->priv = private;
 		private->vmalloc_size += len;
@@ -1353,6 +1347,7 @@ static long kgsl_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 	return result;
 }
 
+#if 0
 static int kgsl_mmap(struct file *file, struct vm_area_struct *vma)
 {
 	int result = 0;
@@ -1398,12 +1393,12 @@ done:
 	mutex_unlock(&kgsl_driver.mutex);
 	return result;
 }
+#endif
 
 static const struct file_operations kgsl_fops = {
 	.owner = THIS_MODULE,
 	.release = kgsl_release,
 	.open = kgsl_open,
-	.mmap = kgsl_mmap,
 	.unlocked_ioctl = kgsl_ioctl,
 };
 

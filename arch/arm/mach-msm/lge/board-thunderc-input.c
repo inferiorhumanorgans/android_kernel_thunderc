@@ -23,14 +23,9 @@
 #include <mach/board.h>
 #include <mach/board_lge.h>
 #include <mach/rpc_server_handset.h>
-
-#include <linux/synaptics_i2c_rmi.h>	//20100705 myeonggyu.son@lge.com [MS690] synaptcis touch series
+#include <mach/board_lge.h>
 
 #include "board-thunderc.h"
-
-//20100727 myeonggyu.son@lge.com [MS690] pcd revision [START]
-#include <mach/lg_pcb_version.h>
-//20100727 myeonggyu.son@lge.com [MS690] pcd revision [END]
 
 static int prox_power_set(unsigned char onoff);
 
@@ -48,23 +43,33 @@ static struct platform_device hs_device = {
 	},
 };
 
-/* None qwerty keypad device
- * For Thunder CDMA Keypad  [ youngchul.park@lge.com ]
- * gpio key pad device - from keypad-surf-ffa */
+#if defined(CONFIG_MACH_MSM7X27_THUNDERC_SPRINT)
 static unsigned int keypad_row_gpios[] = {
-//20100705 myeonggyu.son@lge.com [MS690] keypad layout [START]
-#if 1
-	33, 34, 35
-#else
-	32, 33
-#endif
-//20100705 myeonggyu.son@lge.com  [MS690] keypad layout [END]
+	32, 33, 34
 };
+#else
+static unsigned int keypad_row_gpios[] = {
+	32, 33
+};
+#endif
 
 static unsigned int keypad_col_gpios[] = {38, 37,36};
 
 #define KEYMAP_INDEX(row, col) ((row)*ARRAY_SIZE(keypad_col_gpios) + (col))
 
+#if defined(CONFIG_MACH_MSM7X27_THUNDERC_SPRINT)
+static const unsigned short keypad_keymap_thunder[9] = {
+    [KEYMAP_INDEX(0, 0)] = KEY_MENU,
+    [KEYMAP_INDEX(0, 1)] = KEY_HOME,
+	[KEYMAP_INDEX(0, 2)] = KEY_VOLUMEUP,
+	[KEYMAP_INDEX(1, 0)] = KEY_SEARCH,
+	[KEYMAP_INDEX(1, 1)] = KEY_BACK,
+	[KEYMAP_INDEX(1, 2)] = KEY_VOLUMEDOWN,
+	[KEYMAP_INDEX(2, 0)] = KEY_CAMERA,
+	[KEYMAP_INDEX(2, 1)] = KEY_FOCUS,
+	[KEYMAP_INDEX(2, 2)] = KEY_CHAT,
+};
+#else
 /* change key map for H/W Rev.B -> Rev.C  2010-06-13 younchan,kim
 	[Rev.B key map]
 static const unsigned short keypad_keymap_thunder[6] = {
@@ -77,21 +82,6 @@ static const unsigned short keypad_keymap_thunder[6] = {
 };
 */
 /* add Rev.C key map 2010-05-13 younchan.kim */
-
-//20100429 yongman.kwon@lge.com [MS690] for keymap [START]
-#if 1
-static const unsigned short keypad_keymap_thunder[9] = {
-	[KEYMAP_INDEX(0, 0)] = KEY_MENU,
-	[KEYMAP_INDEX(0, 1)] = KEY_HOME,
-	[KEYMAP_INDEX(0, 2)] = KEY_VOLUMEUP,
-	[KEYMAP_INDEX(1, 0)] = KEY_SEARCH,
-	[KEYMAP_INDEX(1, 1)] = KEY_BACK,
-	[KEYMAP_INDEX(1, 2)] = KEY_VOLUMEDOWN,
-	[KEYMAP_INDEX(2, 0)] = KEY_FOCUS,
-	[KEYMAP_INDEX(2, 1)] = 0, /* for mDTV Key */
-	[KEYMAP_INDEX(2, 2)] = KEY_CAMERA,	
-};
-#else
 static const unsigned short keypad_keymap_thunder[6] = {
 	[KEYMAP_INDEX(0, 0)] = KEY_MENU,
 	[KEYMAP_INDEX(0, 1)] = KEY_HOME,
@@ -101,8 +91,6 @@ static const unsigned short keypad_keymap_thunder[6] = {
 	[KEYMAP_INDEX(1, 2)] = KEY_VOLUMEDOWN,
 };
 #endif
-//20100429 yongman.kwon@lge.com [MS690] for keymap [END]
-
 static struct gpio_event_matrix_info thunder_keypad_matrix_info = {
 	.info.func	= gpio_event_matrix_func,
 	.keymap		= keypad_keymap_thunder,
@@ -180,76 +168,48 @@ static struct platform_device ts_i2c_device = {
 	.name	= "i2c-gpio",
 	.dev.platform_data = &ts_i2c_pdata,
 };
-//20100705 myeonggyu.son@lge.com [MS690] synatics touch series [START]
 
-static int ts_config_gpio(int config)
-{
-	if (config)
-	{		/* for wake state */
-		gpio_tlmm_config(GPIO_CFG(TS_GPIO_IRQ, 0, GPIO_INPUT, GPIO_PULL_UP, GPIO_2MA), GPIO_ENABLE);
-	}
-	else
-	{		/* for sleep state */
-		gpio_tlmm_config(GPIO_CFG(TS_GPIO_IRQ, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), GPIO_ENABLE);
-
-		gpio_tlmm_config(GPIO_CFG(TS_GPIO_I2C_SDA, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), GPIO_ENABLE);
-		gpio_tlmm_config(GPIO_CFG(TS_GPIO_I2C_SCL, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), GPIO_ENABLE);
-	}
-
-	return 0;
-}
-
+#ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
+int ts_set_vreg(unsigned char onoff)
+#else
 static int ts_set_vreg(unsigned char onoff)
+#endif
 {
 	struct vreg *vreg_touch;
-	struct vreg *vreg_pullup;
 	int rc;
+	static int old_onoff = 0;
 
 	printk("[Touch] %s() onoff:%d\n",__FUNCTION__, onoff);
 
-	vreg_touch = vreg_get(0, "synt");
-	vreg_pullup = vreg_get(0, "gp1");
+	if (old_onoff == onoff)
+		return 0;
 
-	if((IS_ERR(vreg_touch)) || (IS_ERR(vreg_pullup))) {
+	vreg_touch = vreg_get(0, "synt");
+
+	if(IS_ERR(vreg_touch)) {
 		printk("[Touch] vreg_get fail : touch\n");
 		return -1;
 	}
 
 	if (onoff) {
-		ts_config_gpio(1);
-
-		vreg_set_level(vreg_touch, 3050);
+		rc = vreg_set_level(vreg_touch, 3050);
+		if (rc != 0) {
+			printk("[Touch] vreg_set_level failed\n");
+			return -1;
+		}
 		vreg_enable(vreg_touch);
-
-		msleep(15);	// wait 15ms
-		
-		vreg_set_level(vreg_pullup, 2600);
-		vreg_enable(vreg_pullup);
-
-		//ts_config_gpio(1);
+		old_onoff = onoff;
 	} else {
-		ts_config_gpio(0);
-
-		vreg_set_level(vreg_pullup, 0);
-
-		vreg_disable(vreg_pullup);
 		vreg_disable(vreg_touch);
-		
-		//ts_config_gpio(0);
+		old_onoff = onoff;
 	}
+
 	return 0;
 }
-//20100705 myeonggyu.son@lge.com [MS690] synatics touch series [END]
+#ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
+EXPORT_SYMBOL(ts_set_vreg);
+#endif
 
-//20100705 myeonggyu.son@lge.com [MS690] synatics touch series [START]
-#if 1
-static struct synaptics_i2c_rmi_platform_data ts_pdata = {
-	.version = 0x0,
-	.irqflags = IRQF_TRIGGER_FALLING,
-	.use_irq = true,
-	.power = ts_set_vreg,
-};
-#else
 static struct touch_platform_data ts_pdata = {
 	.ts_x_min = TS_X_MIN,
 	.ts_x_max = TS_X_MAX,
@@ -260,19 +220,7 @@ static struct touch_platform_data ts_pdata = {
 	.scl      = TS_GPIO_I2C_SCL,
 	.sda      = TS_GPIO_I2C_SDA,
 };
-#endif
-//20100705 myeonggyu.son@lge.com [MS690] synatics touch series [END]
 
-//20100705 myeonggyu.son@lge.com [MS690] synatics touch series [START]
-#if 1
-static struct i2c_board_info ts_i2c_bdinfo[] = {
-	[0] = {
-		I2C_BOARD_INFO("synaptics-rmi-ts", TS_I2C_SLAVE_ADDR),
-		.type = "synaptics-rmi-ts",
-		.platform_data = &ts_pdata,
-	},
-};
-#else
 static struct i2c_board_info ts_i2c_bdinfo[] = {
 	[0] = {
 		I2C_BOARD_INFO("touch_mcs6000", TS_I2C_SLAVE_ADDR),
@@ -280,8 +228,6 @@ static struct i2c_board_info ts_i2c_bdinfo[] = {
 		.platform_data = &ts_pdata,
 	},
 };
-#endif
-//20100705 myeonggyu.son@lge.com [MS690] synatics touch series [END]
 
 static void __init thunderc_init_i2c_touch(int bus_num)
 {
@@ -295,13 +241,9 @@ static void __init thunderc_init_i2c_touch(int bus_num)
 /* accelerometer */
 static int kr3dh_config_gpio(int config)
 {
-	if (config)
-	{		/* for wake state */
-		//20100811 myeonggyu.son@lge.com [MS690] motion sensor gpio control
-		gpio_tlmm_config(GPIO_CFG(ACCEL_GPIO_INT, 0, GPIO_INPUT, GPIO_PULL_UP, GPIO_2MA), GPIO_ENABLE);
+	if (config) { /* for wake state */
 	}
-	else
-	{		/* for sleep state */
+	else { /* for sleep state */
 		gpio_tlmm_config(GPIO_CFG(ACCEL_GPIO_INT, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), GPIO_ENABLE);
 	}
 
@@ -317,54 +259,15 @@ static void kr_exit(void)
 {
 }
 
-//20100810 myeonggyu.son@lge.com [MS690] 3V MOTION PMIC Power control [START]
-enum {
-	MOTION_POWER_OFF=0,
-	MOTION_POWER_ON
-};
-enum {
-	PROXI_POWER_OFF=0,
-	PROXI_POWER_ON
-};
-
-static int motion_power_status = MOTION_POWER_OFF;
-static int proxi_power_status = PROXI_POWER_OFF;
-//20100810 myeonggyu.son@lge.com [MS690] 3V MOTION PMIC Power control [END]
-
-//20100810 myeonggyu.son@lge.com [MS690] 3V MOTION PMIC Power control [START]
-static int accel_power_on(void)
+static int power_on(void)
 {
-	int ret = 0;
-	struct vreg *gp3_vreg = vreg_get(0, "gp3");
-
-	printk("[Accelerometer] %s() : Power On\n",__FUNCTION__);
-
-	if(motion_power_status == MOTION_POWER_OFF)
-	{		
-		vreg_set_level(gp3_vreg, 3000);
-		vreg_enable(gp3_vreg);
-		motion_power_status = MOTION_POWER_ON;
-	}
-
-	return ret;
+	return 0;
 }
 
-static int accel_power_off(void)
+static int power_off(void)
 {
-	int ret = 0;
-	struct vreg *gp3_vreg = vreg_get(0, "gp3");
-
-	printk("[Accelerometer] %s() : Power Off\n",__FUNCTION__);
-
-	if(motion_power_status == MOTION_POWER_ON)
-	{
-		vreg_disable(gp3_vreg);
-		motion_power_status = MOTION_POWER_OFF;
-	}
-	
-	return ret;
+	return 0;
 }
-//20100810 myeonggyu.son@lge.com [MS690] 3V MOTION PMIC Power control [END]
 
 struct kr3dh_platform_data kr3dh_data = {
 	.poll_interval = 100,
@@ -378,8 +281,8 @@ struct kr3dh_platform_data kr3dh_data = {
 	.negate_y = 0,
 	.negate_z = 0,
 
-	.power_on = accel_power_on,
-	.power_off = accel_power_off,
+	.power_on = power_on,
+	.power_off = power_off,
 	.kr_init = kr_init,
 	.kr_exit = kr_exit,
 	.gpio_config = kr3dh_config_gpio,
@@ -424,53 +327,55 @@ static void __init thunderc_init_i2c_acceleration(int bus_num)
 
 	init_gpio_i2c_pin(&accel_i2c_pdata, accel_i2c_pin[0], &accel_i2c_bdinfo[0]);
 
-	//20100727 myeonggyu.son@lge.com [MS690] accelerator device init -KR3DM & KR3DH [START]
-	if(lge_bd_rev >= HW_PCB_REV_10)
+	if (lge_bd_rev >= 9) /* KR_3DH >= Rev. 1.1 */
 		i2c_register_board_info(bus_num, &accel_i2c_bdinfo[0], 1);
 	else
 		i2c_register_board_info(bus_num, &accel_i2c_bdinfo[1], 1);
-	//20100727 myeonggyu.son@lge.com [MS690] accelerator device init - KR3DM & KR3DH [END]
-	
 	platform_device_register(&accel_i2c_device);
 }
 
-//20100810 myeonggyu.son@lge.com [MS690] 3V MOTION PMIC Power control [START]
 /* proximity & ecompass */
+
+#define ECOM_POWER_OFF		0
+#define ECOM_POWER_ON		1
+
+static int ecom_is_power_on = ECOM_POWER_OFF;
+
 static int ecom_power_set(unsigned char onoff)
 {
 	int ret = 0;
 	struct vreg *gp3_vreg = vreg_get(0, "gp3");
-	struct vreg *gp6_vreg = vreg_get(0, "gp6");
+	struct vreg *gp6_vreg = vreg_get(0, "gp6"); /* prox */
 
-	printk("[Ecompass] %s() : Power %s\n",__FUNCTION__, onoff ? "On" : "Off");
+	printk("[Ecompass] %s() onoff %d, prev_status %d\n",__FUNCTION__, 
+			onoff, ecom_is_power_on);
 
 	if (onoff) {
-		if(motion_power_status== MOTION_POWER_OFF)
-		{
+		if (ecom_is_power_on == ECOM_POWER_OFF) {
 			vreg_set_level(gp3_vreg, 3000);
 			vreg_enable(gp3_vreg);
-			motion_power_status = MOTION_POWER_ON;
+			/* proximity power on , 
+			 * when we turn off I2C line be set to low caues sensor H/W characteristic 
+			 */
+#ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
+			vreg_set_level(gp6_vreg, 2900);
+#else
+			vreg_set_level(gp6_vreg, 2800);
+#endif
+			vreg_enable(gp6_vreg);
 
-			/* proximity power on , when we turn off I2C line be set to low caues sensor H/W characteristic */
-			if(proxi_power_status == PROXI_POWER_OFF)
-			{
-				vreg_set_level(gp6_vreg, 2800);
-				vreg_enable(gp6_vreg);
-				proxi_power_status = PROXI_POWER_ON;
-			}
+			ecom_is_power_on = ECOM_POWER_ON;
 		}
 	} else {
-		if(motion_power_status== MOTION_POWER_ON)
-		{
+		if (ecom_is_power_on == ECOM_POWER_ON) {
 			vreg_disable(gp3_vreg);
-			motion_power_status = MOTION_POWER_OFF;
 
-			/* proximity power off */
-			if(proxi_power_status == PROXI_POWER_ON)
-			{
-				vreg_disable(gp6_vreg);
-				proxi_power_status = PROXI_POWER_OFF;
-			}
+			/* proximity power on , 
+			 * when we turn off I2C line be set to low caues sensor H/W characteristic 
+			 */
+			vreg_disable(gp6_vreg);
+
+			ecom_is_power_on = ECOM_POWER_OFF;
 		}
 	}
 
@@ -483,37 +388,47 @@ static struct ecom_platform_data ecom_pdata = {
 	.power          	= ecom_power_set,
 };
 
+#define PROX_POWER_OFF		0
+#define PROX_POWER_ON		1
+
+static int prox_is_power_on = PROX_POWER_OFF;
+
 static int prox_power_set(unsigned char onoff)
 {
 	int ret = 0;
 	struct vreg *gp6_vreg = vreg_get(0, "gp6");
 
-	printk("[Proximity] %s() : Power %s\n",__FUNCTION__, onoff ? "On" : "Off");
+	printk("[Proxi] %s() onoff %d, prev_status %d\n",__FUNCTION__, 
+			onoff, prox_is_power_on);
 
 	if (onoff) {
-		if(proxi_power_status == PROXI_POWER_OFF)
-		{
+		if (prox_is_power_on == PROX_POWER_OFF) {
+#ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
+			vreg_set_level(gp6_vreg, 2900);
+#else
 			vreg_set_level(gp6_vreg, 2800);
+#endif
 			vreg_enable(gp6_vreg);
-			proxi_power_status = PROXI_POWER_ON;
+
+			prox_is_power_on = PROX_POWER_ON;
 		}
-	} else {
-		if(proxi_power_status == PROXI_POWER_ON)
-		{
+	} 
+	else {
+		if (prox_is_power_on == PROX_POWER_ON) {
 			vreg_disable(gp6_vreg);
-			proxi_power_status = PROXI_POWER_OFF;
+
+			prox_is_power_on = PROX_POWER_OFF;
 		}
 	}
 
 	return ret;
 }
-//20100810 myeonggyu.son@lge.com [MS690] 3V MOTION PMIC Power control [END]
 
 static struct proximity_platform_data proxi_pdata = {
 	.irq_num	= PROXI_GPIO_DOUT,
 	.power		= prox_power_set,
-	.methods			= 0,
-	.operation_mode		= 0,
+	.methods		= 0, // normal mode (1 - interrupt mode)
+	.operation_mode		= 0, // A mode (1 - B1, 2 - B2)
 	.debounce	 = 0,
 	.cycle = 2,
 };

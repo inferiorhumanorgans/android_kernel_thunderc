@@ -39,15 +39,3 @@ int lg_get_board_pcb_version(void);
 void lg_set_hw_version_string(char *pcb_version);
 
 #endif
-
-//20100929 yongman.kwon@lge.com [MS690] for check prl version for wifi on/off [START]
-//LG_FW_CHECK_PRL_VERSION
-extern void lg_set_prl_version_string(char * prl_version);
-//20100929 yongman.kwon@lge.com [MS690] for check prl version for wifi on/off [END]
-
-//20101130 yongman.kwon@lge.com [MS690] support HITACHI & SHARP [START]
-#if defined(CONFIG_FB_MSM_MDDI_NOVATEK_HITACHI_HVGA)
-void lg_get_lcd_version_string(char * lcd_version);
-#endif
-//20101130 yongman.kwon@lge.com [MS690] support HITACHI & SHARP [END]
-

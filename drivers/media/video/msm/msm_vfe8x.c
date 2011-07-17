@@ -45,8 +45,6 @@ static void vfe_release(struct platform_device *dev)
 	msm_camio_disable(dev);
 	vfe_cmd_release(dev);
 	update_axi_qos(PM_QOS_DEFAULT_VALUE);
-	/* release AXI frequency request */
-	release_axi_qos();
 	vfe_syncdata = NULL;
 }
 

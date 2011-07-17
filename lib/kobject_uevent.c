@@ -242,6 +242,9 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 	}
 #endif
 
+#ifdef CONFIG_LGE_BLOCK_HOTPLUG
+	// nothing
+#else
 	/* call uevent_helper, usually only enabled during early boot */
 	if (uevent_helper[0]) {
 		char *argv [3];
@@ -260,6 +263,7 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 		retval = call_usermodehelper(argv[0], argv,
 					     env->envp, UMH_WAIT_EXEC);
 	}
+#endif
 
 exit:
 	kfree(devpath);

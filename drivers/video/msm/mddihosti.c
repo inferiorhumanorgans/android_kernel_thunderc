@@ -1321,13 +1321,9 @@ static void mddi_host_isr(void)
 	int_reg = int_reg & int_en;
 	pmhctl->int_type.count++;
 
-	//printk("[INFORPC]%s  int_reg : %x\n", __func__, int_reg);
-	
+
 #ifndef FEATURE_MDDI_DISABLE_REVERSE
 	status_reg = mddi_host_reg_in(STAT);
-
-
-	//printk("[INFORPC]%s  status_reg : %x\n", __func__, status_reg);
 
 	if ((int_reg & MDDI_INT_MDDI_IN) ||
 	    ((int_en & MDDI_INT_MDDI_IN) &&
@@ -1870,128 +1866,6 @@ uint32 mddi_get_client_id(void)
 
 	return mddi_client_id;
 }
-#else
-static uint32 mddi_client_id;
-
-uint32 mddi_get_client_id(void)
-{
-
-#ifndef FEATURE_MDDI_DISABLE_REVERSE
-	mddi_host_type host_idx = MDDI_HOST_PRIM;
-	static boolean client_detection_try = FALSE;
-	mddi_host_cntl_type *pmhctl;
-	unsigned long flags;
-	uint16 saved_rev_pkt_size;
-
-	if (!client_detection_try) {
-		/* Toshiba display requires larger drive_lo value */
-		mddi_host_reg_out(DRIVE_LO, 0x0050);
-
-		pmhctl = &(mhctl[MDDI_HOST_PRIM]);
-
-		saved_rev_pkt_size = pmhctl->rev_pkt_size;
-
-		/* Increase Rev Encap Size */
-		pmhctl->rev_pkt_size = MDDI_CLIENT_CAPABILITY_REV_PKT_SIZE;
-		mddi_host_reg_out(REV_ENCAP_SZ, pmhctl->rev_pkt_size);
-
-		/* disable hibernation temporarily */
-		if (!pmhctl->disable_hibernation)
-			mddi_host_reg_out(CMD, MDDI_CMD_HIBERNATE);
-
-		mddi_rev_user.waiting = TRUE;
-		INIT_COMPLETION(mddi_rev_user.done_comp);
-
-		spin_lock_irqsave(&mddi_host_spin_lock, flags);
-
-		/* turn on clock(s), if they have been disabled */
-		mddi_host_enable_hclk();
-		mddi_host_enable_io_clock();
-
-		mddi_client_capability_request = TRUE;
-
-		if (pmhctl->rev_state == MDDI_REV_IDLE) {
-			/* attempt to send the reverse encapsulation now */
-			mddi_issue_reverse_encapsulation();
-		}
-		spin_unlock_irqrestore(&mddi_host_spin_lock, flags);
-
-		wait_for_completion_killable(&(mddi_rev_user.done_comp));
-
-		/* Set Rev Encap Size back to its original value */
-		pmhctl->rev_pkt_size = saved_rev_pkt_size;
-		mddi_host_reg_out(REV_ENCAP_SZ, pmhctl->rev_pkt_size);
-
-		/* reenable auto-hibernate */
-		if (!pmhctl->disable_hibernation)
-			mddi_host_reg_out(CMD, MDDI_CMD_HIBERNATE | 1);
-
-		mddi_host_reg_out(DRIVE_LO, 0x0032);
-		client_detection_try = TRUE;
-
-//20101124 yongman.kwon@lge.com [MS690] for supporting HITACHI & Sharp [START]
-#if 0
-//		mddi_client_id = (mddi_client_capability_pkt.Mfr_Name<<16) |
-//				mddi_client_capability_pkt.Product_Code;
-//		if (!mddi_client_id)
-//			mddi_disable(1);
-#else
-//if mddi_client_id is 1, this means Novatek LCD.
-//if mddi_client_id is 0, this means Samsung(HITACHI) LCD.
-		if((mddi_client_capability_pkt.Product_Code==0x5451)&&(mddi_client_capability_pkt.Display_Window_Width==0x140))
-			mddi_client_id = 1;
-		else if((mddi_client_capability_pkt.Product_Code==0x00)&&(mddi_client_capability_pkt.Display_Window_Width==0x168))
-			mddi_client_id = 0;
-		else
-			mddi_client_id = 0xffffffff;
-
-		if (mddi_client_id == 0xffffffff)
-			mddi_disable(1);
-#endif		
-//20101124 yongman.kwon@lge.com [MS690] for supporting HITACHI & Sharp [END]		
-	}
-
-#if 0
-	switch (mddi_client_capability_pkt.Mfr_Name) {
-	case 0x4474:
-		if ((mddi_client_capability_pkt.Product_Code != 0x8960) &&
-		    (target == DISPLAY_1)) {
-			ret = PRISM_WVGA;
-		}
-		break;
-
-	case 0xD263:
-		if (target == DISPLAY_1)
-			ret = TOSHIBA_VGA_PRIM;
-		else if (target == DISPLAY_2)
-			ret = TOSHIBA_QCIF_SECD;
-		break;
-
-	case 0:
-		if (mddi_client_capability_pkt.Product_Code == 0x8835) {
-			if (target == DISPLAY_1)
-				ret = SHARP_QVGA_PRIM;
-			else if (target == DISPLAY_2)
-				ret = SHARP_128x128_SECD;
-		}
-		break;
-
-	default:
-		break;
-	}
-
-	if ((!client_detection_try) && (ret != TOSHIBA_VGA_PRIM)
-	    && (ret != TOSHIBA_QCIF_SECD)) {
-		/* Not a Toshiba display, so change drive_lo back to default value */
-		mddi_host_reg_out(DRIVE_LO, 0x0032);
-	}
-#endif
-
-#endif
-
-	return mddi_client_id;
-}
-
 #endif
 
 void mddi_host_powerdown(mddi_host_type host_idx)

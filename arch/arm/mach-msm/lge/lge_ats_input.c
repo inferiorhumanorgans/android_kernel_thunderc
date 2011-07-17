@@ -32,6 +32,7 @@ struct input_dev *get_ats_input_dev(void)
 	return ats_input_dev;
 }
 EXPORT_SYMBOL(get_ats_input_dev);
+
 static int  __init ats_input_probe(struct platform_device *pdev)
 {
 	int rc = 0;
@@ -73,7 +74,7 @@ static struct platform_driver ats_input_driver = {
 		.name = DRIVER_NAME,
 		.owner = THIS_MODULE,
 	},
-	.probe	 = ats_input_probe,
+	.probe = ats_input_probe,
 	.remove = ats_input_remove,
 };
 

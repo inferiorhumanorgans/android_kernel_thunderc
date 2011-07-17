@@ -26,10 +26,6 @@
 #endif
 
 #ifdef CONFIG_ANDROID_RAM_CONSOLE
-/* allocate 128K * 2 instead of ram_console's original size 128K
- * this is for storing kernel panic log which is used by lk loader
- * 2010-03-03, cleaneye.kim@lge.com
- */
 #define MSM7X27_EBI1_CS0_BASE	PHYS_OFFSET
 #define LGE_RAM_CONSOLE_SIZE    (128 * SZ_1K * 2)
 #endif
@@ -45,11 +41,11 @@
 
 #ifdef CONFIG_ARCH_MSM7X27
 #define MSM_PMEM_MDP_SIZE	0x1B76000
-#define MSM_PMEM_ADSP_SIZE	0xB71000
-#define MSM_PMEM_AUDIO_SIZE	0x5B000
-#define MSM_FB_SIZE		0x177000
-#define MSM_GPU_PHYS_SIZE	SZ_2M
-#define PMEM_KERNEL_EBI1_SIZE	0x1C000
+#define MSM_PMEM_ADSP_SIZE     0xE4E1C0
+#define MSM_PMEM_AUDIO_SIZE    0x5B000
+#define MSM_FB_SIZE            0x177000
+#define MSM_GPU_PHYS_SIZE      SZ_2M
+#define PMEM_KERNEL_EBI1_SIZE  0x1C000
 
 /* Using lower 1MB of OEMSBL memory for GPU_PHYS */
 #define MSM_GPU_PHYS_START_ADDR	 0xD600000ul
@@ -58,26 +54,13 @@
 /* Using upper 1/2MB of Apps Bootloader memory*/
 #define MSM_PMEM_AUDIO_START_ADDR	0x80000ul
 
+#ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
 /* TA charger */
-#define GISELE_TA_CHG_CURRENT	600
-#define GISELE_USB_CHG_CURRENT	400
+#define LS670_TA_CHG_CURRENT	700
+#define LS670_USB_CHG_CURRENT	400
+#endif
 
 /* board revision information */
-enum {
-	EVB         = 0,
-	LGE_REV_A,
-	LGE_REV_B,
-	LGE_REV_C,
-	LGE_REV_D,
-	LGE_REV_E,
-	LGE_REV_F,
-	LGE_REV_10,
-	LGE_REV_11,
-	LGE_REV_12,
-	LGE_REV_13,
-	LGE_REV_TOT_NUM,
-};
-
 extern int lge_bd_rev;
 
 /* define gpio pin number of i2c-gpio */
@@ -221,7 +204,7 @@ struct aat1270_flash_platform_data {
 struct android_vibrator_platform_data {
 	int enable_status;
 	int (*power_set)(int enable); 		/* LDO Power Set Function */
-	int (*pwm_set)(int enable, int gain); 		/* PWM Set Function */
+	int (*pwm_set)(int enable, int gain); 	/* PWM Set Function */
 	int (*ic_enable_set)(int enable); 	/* Motor IC Set Function */
 	int amp_value;				/* PWM tuning value */
 };
@@ -331,6 +314,8 @@ unsigned lge_get_lpm_info(void);
 #define CAMERA_POWER_ON				0
 #define CAMERA_POWER_OFF			1
 
+int camera_status(void);
+
 typedef void (gpio_i2c_init_func_t)(int bus_num);
 int __init init_gpio_i2c_pin(struct i2c_gpio_platform_data *i2c_adap_pdata,
 		struct gpio_i2c_pin gpio_i2c_pin,
@@ -356,6 +341,4 @@ void __init lge_add_misc_devices(void);
 void __init lge_add_gpio_i2c_device(gpio_i2c_init_func_t *init_func);
 void __init lge_add_gpio_i2c_devices(void);
 int __init lge_get_uart_mode(void);
-void __init lge_add_pm_devices(void);
-
 #endif

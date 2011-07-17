@@ -223,23 +223,6 @@ static void msm_otg_start_host(struct otg_transceiver *xceiv, int on)
 		dev->start_host(xceiv->host, on);
 }
 
-#if 1 // Q_PATCH_MSM7x27_4120_USB
-static int msm_otg_are_interrupts_pending(struct msm_otg *dev)
-{
-	unsigned otgsc = readl(USB_OTGSC);
-
-	/* check if there are any pending otg interrupts */
-	if (((otgsc & OTGSC_INTR_MASK) >> 8) & otgsc) {
-		pr_info("%s: Interrupts while suspending phy: "
-			"otgsc:%08x\n", __func__, otgsc);
-		return 1;
-	}
-
-	return 0;
-
-}
-#endif
-
 static int msm_otg_suspend(struct msm_otg *dev)
 {
 	unsigned long timeout;
@@ -277,25 +260,11 @@ static int msm_otg_suspend(struct msm_otg *dev)
 	disable_phy_clk();
 	while (!is_phy_clk_disabled()) {
 		if (time_after(jiffies, timeout)) {
-#if 1 // Q_PATCH_MSM7x27_4120_USB
-			if (msm_otg_are_interrupts_pending(dev))
-				goto out;
-#endif
-
 			pr_err("%s: Unable to suspend phy\n", __func__);
-#if 1 // Q_PATCH_MSM7x27_4120_USB
-			/* check if there any pending interrupts
-			 * before re-setting the h/w
-			 */
-#endif
 			otg_reset(&dev->otg);
 			goto out;
 		}
 		msleep(1);
-#if 1 // Q_PATCH_MSM7x27_4120_USB
-		if (msm_otg_are_interrupts_pending(dev))
-			goto out;
-#endif
 	}
 
 	writel(readl(USB_USBCMD) | ASYNC_INTR_CTRL | ULPI_STP_CTRL, USB_USBCMD);

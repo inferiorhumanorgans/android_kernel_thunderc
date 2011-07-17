@@ -604,10 +604,6 @@ rndis_bind(struct usb_configuration *c, struct usb_function *f)
 	struct f_rndis		*rndis = func_to_rndis(f);
 	int			status;
 	struct usb_ep		*ep;
-/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-08-12, Fix fail to release RNDIS */
-	int vendorID= 0x1004;
-    char *manufacturer="LG Electronics Inc.";
-/* LGE_CHANGE_E [hyunhui.park@lge.com] 2010-08-12 */	
 
 	/* allocate instance-specific interface IDs */
 	status = usb_interface_id(c, f);
@@ -713,14 +709,12 @@ rndis_bind(struct usb_configuration *c, struct usb_function *f)
 	rndis_set_param_medium(rndis->config, NDIS_MEDIUM_802_3, 0);
 	rndis_set_host_mac(rndis->config, rndis->ethaddr);
 
-/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-08-12, Fix fail to release RNDIS */
-#if 1 
+#if 0
 // FIXME
 	if (rndis_set_param_vendor(rndis->config, vendorID,
 				manufacturer))
-		goto fail;
+		goto fail0;
 #endif
-/* LGE_CHANGE_E [hyunhui.park@lge.com] 2010-08-12 */	
 
 	/* NOTE:  all that is done without knowing or caring about
 	 * the network link ... which is unavailable to this code

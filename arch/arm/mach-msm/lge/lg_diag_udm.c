@@ -1,21 +1,26 @@
 /*
-  Program : UDM 
+ * Copyright (c) 2010 LGE. All rights reserved.
+ *
+ * This software is licensed under the terms of the GNU General Public
+ * License version 2, as published by the Free Software Foundation, and
+ * may be copied, distributed, and modified under those terms.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * Program : UDM 
+ * Author : khlee
+ * Date : 2010.01.26
+ */
 
-  Author : khlee
-
-  Date : 2010.01.26
-*/
-/* ==========================================================================
-===========================================================================*/
 #include <linux/module.h>
 #include <mach/lg_diag_udm.h>
 #include <mach/lg_diagcmd.h>
 #include <mach/lg_diag_testmode.h>
 
-/* ==========================================================================
-===========================================================================*/
 extern PACK(void *) diagpkt_alloc (diagpkt_cmd_code_type code, unsigned int length);
-/*==========================================================================*/
 
 PACK (void *)LGF_Udm (
         PACK (void	*)req_pkt_ptr,	/* pointer to request packet  */
