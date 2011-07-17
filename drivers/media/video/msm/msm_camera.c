@@ -143,6 +143,21 @@ static void msm_enqueue(struct msm_device_queue *queue,
 	qcmd;							\
 })
 
+ #define msm_delete_entry(queue, member, q_cmd) ({               \
+         unsigned long flags;                                    \
+         struct msm_device_queue *__q = (queue);                 \
+         struct msm_queue_cmd *qcmd = 0;                         \
+         spin_lock_irqsave(&__q->lock, flags);                   \
+         if (!list_empty(&__q->list)) {                          \
+                 list_for_each_entry(qcmd, &__q->list, member)   \
+                 if (qcmd == q_cmd) {                            \
+                         __q->len--;                             \
+                         list_del_init(&qcmd->member);           \
+                         break;                                  \
+                 }                                               \
+         }                                                       \
+         spin_unlock_irqrestore(&__q->lock, flags);              \
+ })
 #define msm_queue_drain(queue, member) do {			\
 	unsigned long flags;					\
 	struct msm_device_queue *__q = (queue);			\
@@ -150,6 +165,7 @@ static void msm_enqueue(struct msm_device_queue *queue,
 	spin_lock_irqsave(&__q->lock, flags);			\
 	CDBG("%s: draining queue %s\n", __func__, __q->name);	\
 	while (!list_empty(&__q->list)) {			\
+                 __q->len--;                                     \
 		qcmd = list_first_entry(&__q->list,		\
 			struct msm_queue_cmd, member);		\
 		if (qcmd) {                                                             \
@@ -157,7 +173,7 @@ static void msm_enqueue(struct msm_device_queue *queue,
                                list_del_init(&qcmd->member);                           \
                        free_qcmd(qcmd);                                                                \
                }                       \
-	};							\
+         }                                                       \
 	spin_unlock_irqrestore(&__q->lock, flags);		\
 } while (0)
 
@@ -596,6 +612,7 @@ static struct msm_queue_cmd *__msm_control(struct msm_sync *sync,
 			rc = -ETIMEDOUT;
 		if (rc < 0) {
 			pr_err("%s: wait_event error %d\n", __func__, rc);
+                         msm_delete_entry(&sync->event_q, list_config, qcmd);
 			return ERR_PTR(rc);
 		}
 	}
@@ -1976,7 +1993,9 @@ static int __msm_release(struct msm_sync *sync)
 	struct hlist_node *n;
 
 	mutex_lock(&sync->lock);
+	
 	#if defined (CONFIG_MACH_LGE)
+	
     	   if (!sync->opencnt) {
                mutex_unlock(&sync->lock);
                return 0;
@@ -1985,11 +2004,12 @@ static int __msm_release(struct msm_sync *sync)
 	if (sync->opencnt)
 		sync->opencnt--;
 	if (!sync->opencnt) {
-		/*sensor release*/
-		sync->sctrl.s_release();
 		/* need to clean up system resource */
 		if (sync->vfefn.vfe_release)
 			sync->vfefn.vfe_release(sync->pdev);
+		/*sensor release*/
+		sync->sctrl.s_release();
+		msm_camio_sensor_clk_off(sync->pdev);
 		kfree(sync->cropinfo);
 		sync->cropinfo = NULL;
 		sync->croplen = 0;
@@ -2272,16 +2292,22 @@ static int __msm_open(struct msm_sync *sync, const char *const apps_id)
 		msm_camvfe_fn_init(&sync->vfefn, sync);
 		if (sync->vfefn.vfe_init) {
 			sync->get_pic_abort = 0;
-			rc = sync->vfefn.vfe_init(&msm_vfe_s,
-				sync->pdev);
+			rc = msm_camio_sensor_clk_on(sync->pdev);
 			if (rc < 0) {
-				pr_err("%s: vfe_init failed at %d\n",
+				 pr_err("%s: setting sensor clocks failed: %d\n",
 					__func__, rc);
 				goto msm_open_done;
 			}
 			rc = sync->sctrl.s_init(sync->sdata);
 			if (rc < 0) {
 				pr_err("%s: sensor init failed: %d\n",
+					__func__, rc);
+				goto msm_open_done;
+			}
+			rc = sync->vfefn.vfe_init(&msm_vfe_s,
+	 				sync->pdev);
+ 			if (rc < 0) {
+ 				pr_err("%s: vfe_init failed at %d\n",
 					__func__, rc);
 				goto msm_open_done;
 			}

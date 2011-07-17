@@ -166,6 +166,7 @@ void smsm_reset_modem(unsigned mode);
 void smsm_reset_modem_cont(void);
 void smd_sleep_exit(void);
 #ifdef CONFIG_MACH_LGE
+
 int smsm_change_state_nonotify(uint32_t smsm_entry,
 		      uint32_t clear_mask, uint32_t set_mask);
 #endif

@@ -2,7 +2,7 @@
  *
  * Copyright (C) 2008 Google, Inc.
  * Copyright (C) 2009 LGE.
- * Author: SungEun Kim
+ * Author: SungEun Kim 
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -168,6 +168,25 @@ static int __init lge_uart_mode(char *uart_mode)
 
 __setup("uart_console=", lge_uart_mode);
 #if defined(CONFIG_MACH_MSM7X27_THUNDERC)
+
+/*
+static int recovery_mode;
+int lge_get_recovery_state(void)
+{
+	return recovery_mode;
+}
+
+static int __init lge_recovery_state(char* s)
+{
+	if(!strcmp(s,"on"))
+		recovery_mode = 1;
+	else
+		recovery_mode = 0;
+	printk("%s: recovery mode = %s\n",__func__,s);
+	return 1;
+}
+__setup("recovery=",lge_recovery_state);
+*/
 #endif
 
 #ifdef CONFIG_ANDROID_RAM_CONSOLE

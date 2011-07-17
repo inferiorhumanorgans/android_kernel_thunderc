@@ -594,6 +594,7 @@ static void mdp_load_lut_param(void)
 }
 
 #if defined(CONFIG_MACH_MSM7X27_THUNDERG) || defined(CONFIG_MACH_MSM7X27_THUNDERC)
+
 #if defined(CONFIG_FB_MSM_MDDI_NOVATEK_HITACHI_HVGA) || defined(CONFIG_FB_MSM_MDDI_HITACHI_HVGA)
 static u32 thunder_lut_normal[256] = {
 	0x00000000, 0x00010101, 0x00010101, 0x00020202, 0x00030302, 0x00030303, 0x00040404, 0x00040504,
@@ -743,6 +744,12 @@ static u32 thunder_lut_camera_novatek[256] = {
 void mdp_load_thunder_lut(int lut_type)
 {
 	int i=0;
+
+
+#if 1
+	if (g_mddi_lcd_probe == 0) /* Hitachi LCD */
+		return;
+#endif		
 	
 	if(lut_type != 0)
 	{
@@ -809,6 +816,7 @@ void mdp_load_thunder_lut(int lut_type)
 		mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_OFF, FALSE);		
 	}
 }
+/* LGE_CHANGE_E */
 #endif
 
 #define   IRQ_EN_1__MDP_IRQ___M    0x00000800
@@ -878,6 +886,7 @@ void mdp_hw_init(void)
 #endif
 
 #if defined(CONFIG_MACH_MSM7X27_THUNDERG) || defined(CONFIG_MACH_MSM7X27_THUNDERC)
+	
 	mdp_load_thunder_lut(1);	/* type = 1 : Normal LUT */
 #endif
 

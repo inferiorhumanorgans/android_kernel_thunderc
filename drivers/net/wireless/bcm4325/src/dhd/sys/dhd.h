@@ -295,6 +295,7 @@ extern void dhd_os_sdunlock_txq(dhd_pub_t * pub);
 extern void dhd_os_sdlock_rxq(dhd_pub_t * pub);
 extern void dhd_os_sdunlock_rxq(dhd_pub_t * pub);
 extern void dhd_os_sdlock_sndup_rxq(dhd_pub_t * pub);
+
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 extern void dhd_customer_gpio_wlan_ctrl(int onoff, int irq_detect_ctrl);
 #else /* CONFIG_LGE_BCM432X_PATCH */
@@ -392,14 +393,16 @@ extern uint dhd_pktgen_len;
 #endif
 
 
-/* optionally set by a module_param_string() */
+
 #if 0
 #define MOD_PARAM_PATHLEN	2048
 #else
 #define MOD_PARAM_PATHLEN	512
 #endif
+
 extern char fw_path[MOD_PARAM_PATHLEN];
 extern char nv_path[MOD_PARAM_PATHLEN];
+
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 extern char config_path[MOD_PARAM_PATHLEN];
 #endif /* CONFIG_LGE_BCM432X_PATCH */

@@ -1,6 +1,6 @@
 /* arch/arm/mach-msm/include/mach/board_thunderg.h
  * Copyright (C) 2009 LGE, Inc.
- * Author: SungEun Kim
+ * Author: SungEun Kim <
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and

@@ -89,6 +89,7 @@ typedef enum {
 	BT_TEST_MODE_RELEASE = 5,
 	BT_TEST_MODE_11 = 11	// 11~42
 } test_mode_req_bt_type;
+
 typedef enum {
 	BT_ADDR_WRITE = 0,
 	BT_ADDR_READ
@@ -121,13 +122,17 @@ typedef enum {
 typedef enum {
 	EXTERNAL_SOCKET_MEMORY_CHECK,
 	EXTERNAL_FLASH_MEMORY_SIZE,
+	
 	EXTERNAL_SOCKET_ERASE,
 	EXTERNAL_FLASH_MEMORY_USED_SIZE = 4,
+	
 } test_mode_req_socket_memory;
+
 
 typedef enum {
 	FIRST_BOOTING_COMPLETE_CHECK,
 } test_mode_req_fboot;
+
 
 typedef enum {
 	MEMORY_TOTAL_CAPA_TEST,
@@ -149,11 +154,13 @@ typedef enum {
 	FACTORY_RESET_ARM9_END = 2,
 	FACTORY_RESET_COLD_BOOT_START = 3,
 	FACTORY_RESET_COLD_BOOT_END = 5,
+	
 	FACTORY_RESET_USER_START = 6,
 	FACTORY_RESET_NA = 7,
 } test_mode_factory_reset_status_type;
 
 #endif
+
 
 typedef enum {
 	SLEEP_MODE_ON,
@@ -198,17 +205,21 @@ typedef enum {
 	CAL_DATA_CHECK,
 } test_mode_req_cal_check_type;
 
+
 typedef enum {
 	DB_INTEGRITY_CHECK = 0,
 	DB_CHECK_DUMP_TO_INTERNAL_MEMORY,
 	DB_CHECK_COPY_TO_SD_CARD
 } test_mode_req_db_check;
 
+
 typedef union {
 	test_mode_req_version_type version;
 	test_mode_req_bt_type bt;
+	
 	byte bt_rw[BT_RW_CNT];
 	test_mode_req_socket_memory esm;	// external socket memory
+	
 	test_mode_req_fboot fboot;
 	test_mode_req_memory_capa_type mem_capa;
 	word key_data;
@@ -246,21 +257,19 @@ typedef union {
 	test_mode_brew_type brew;
 	test_mode_req_mp3_test_type mp3_play;
 	test_mode_req_bt_type bt;
-	// LG_FW 2004.05.10 hieonn created -----------------------------------------
 #ifdef LG_FW_FACTORY_MODE_KEY_DETECTION
 	boolean if_key_pressed_is_started_or_not;	/* to test key_pressed event */
-#endif				// LG_FW_FACTORY_MODE_KEY_DETECTION
+#endif				
 #ifdef LG_FW_FACTORY_MODE	// race 2005.10.28
 	test_mode_req_factory_mode_type factory_mode;
-#endif				/* LG_FW_FACTORY_MODE */
+#endif				
 
-	// LG_FW : 2006.04.07 louvethee--------------------
+	
 #ifdef LG_FW_TEST_MODE_V6_4
 	test_mode_req_batter_bar_type batt;
 	test_mode_req_speaker_phone_type speaker_phone;
 	byte Volume_Level_Test;
-#endif				// LG_FW_TEST_MODE_V6_4
-	// ----------------------------------------------------------
+#endif	
 
 	test_mode_req_memory_capa_type mem_capa;
 
@@ -277,7 +286,7 @@ typedef union {
 
 #ifdef LG_FW_BMA020_TESTMODE
 	test_mode_req_geomagnetic_sensor_type geomagnetism;
-#endif				//LG_FW_BMA020_SENSOR
+#endif				
 
 #ifdef LG_FW_PROXI_CAL
 	test_mode_req_proximity_type test_mode_test_proxi_mode;
@@ -285,12 +294,10 @@ typedef union {
 
 	test_mode_req_manual_test_mode_type test_manual_mode;
 
-	// LG_FW : 2008.07.29 hoonylove004--------------------------------------------
-	// RF CAL backup
+	
 #ifdef LG_FW_TEST_MODE_V7_1
 	test_mode_req_test_script_mode_type test_mode_test_scr_mode;
-#endif				/*LG_FW_TEST_MODE_V7_1 */
-	//----------------------------------------------------------------------------
+#endif				
 #endif
 } test_mode_req_type;
 
@@ -327,8 +334,11 @@ typedef union {
 	test_mode_req_volume_level_type volume_level;
 	char key_pressed_buf[MAX_KEY_BUFF_SIZE];
 	char memory_check;
+	
 	unsigned int socket_memory_size;
+	
 	unsigned int socket_memory_usedsize;
+	
 	int boot_complete;
 	test_mode_req_cam_type camera;
 	unsigned int mem_capa;
@@ -336,10 +346,12 @@ typedef union {
 	test_mode_req_pid_type pid;
 	test_mode_req_sw_version_type sw_version;
 	test_mode_req_cal_check_type cal_check;
+	
 	test_mode_req_db_check db_check;
 #ifndef SKW_TEST
 	test_mode_req_factory_reset_mode_type factory_reset;
 #endif
+	
 	byte read_bd_addr[BT_RW_CNT];
 #if 0
 	test_mode_req_lcd_type lcd;
@@ -362,13 +374,12 @@ typedef union {
 	unsigned long brew_size;
 	byte batt_bar_count;
 
-	// LG_FW : 2006.04.07 louvethee--------------------
+	
 #ifdef LG_FW_TEST_MODE_V6_4
 	char batt_voltage[5];
 	byte chg_stat;
 	test_mode_req_mp3_test_type mp3_play;
-#endif				// LG_FW_TEST_MODE_V6_4
-	// ----------------------------------------------------------
+#endif				
 	byte ant_bar_count;
 	unsigned int mem_capa;
 #ifdef LG_FW_FACTORY_MODE	// race 2005.10.28
@@ -448,6 +459,7 @@ typedef enum {
 	TEST_MODE_MOBILE_SYSTEM_CHANGE_TEST,
 	TEST_MODE_STANDALONE_GPS_TEST,
 	TEST_MODE_PRELOAD_INTEGRITY_TEST,
+	
 	TEST_MODE_FIRST_BOOT_COMPLETE_TEST = 58,
 
 	TEST_MODE_PID_TEST = 70,	// pid R/W
@@ -462,14 +474,16 @@ typedef enum {
 	TEST_MODE_SIM_ID_TEST = 79,
 
 	TEST_MODE_CAL_CHECK = 82,
+	
 	TEST_MODE_BLUETOOTH_TEST_RW = 83,
 	TEST_MODE_SKIP_WELCOM_TEST = 87,
+	
 	TEST_MODE_MAC_READ_WRITE = 88,
-
+	
 	TEST_MODE_DB_INTEGRITY_CHECK = 91,
+	
 	MAX_TEST_MODE_SUBCMD = 0xFFFF
-	//TEST_MODE_CURRENT,
-	//TEST_MODE_BREW_FILES,
+	
 } PACKED test_mode_sub_cmd_type;
 
 #define TESTMODE_MSTR_TBL_SIZE   128
@@ -485,6 +499,7 @@ typedef struct {
 	testmode_func_type func_ptr;
 	byte which_procesor;	// to choose which processor will do act.
 } testmode_user_table_entry_type;
+
 
 typedef struct {
 	uint16 countresult;

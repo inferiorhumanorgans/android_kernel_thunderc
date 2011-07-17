@@ -1,3 +1,4 @@
+
 struct atcmd_dev {
 //	const char	*name;
 	char	*name;
@@ -20,6 +21,7 @@ static inline int atcmd_get_state(struct atcmd_dev *sdev)
 
 extern void update_atcmd_state(struct atcmd_dev *sdev, char *cmd, int state);
 extern struct atcmd_dev *atcmd_get_dev(void);
+
 
 
 struct ats_mtc_key_log_type{

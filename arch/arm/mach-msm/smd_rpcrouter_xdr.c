@@ -72,6 +72,7 @@ int xdr_send_bytes(struct msm_rpc_xdr *xdr, const void **data,
 	uint32_t temp;
 
 	#if defined(CONFIG_MACH_MSM7X27_THUNDERC)
+	
 	if (!size || !data)
 	#else
 	if (!size || !data || !*data)

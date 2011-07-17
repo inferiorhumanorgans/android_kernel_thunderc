@@ -395,8 +395,10 @@ static struct flash_identification supported_flash[] =
 {
 	/* Flash ID   ID Mask Density(MB)  Wid Pgsz   Blksz   oobsz    Manuf */
 	{0x00000000, 0xFFFFFFFF,         0, 0,    0,         0,  0, }, /*ONFI*/
+	
 	{0x5500bcec, 0xFF00FFFF, (512<<20), 1, 2048, (2048<<6), 64, }, /*Samsung K524G2GACB-A050, 512MB*/
 	{0x5510bcad, 0xFF00FFFF, (512<<20), 1, 2048, (2048<<6), 64, }, /*Hynix H8BCS0UN0MCR-46M (45ns DDR333), 512MB*/
+	
 	{0x1500aaec, 0xFF00FFFF, (256<<20), 0, 2048, (2048<<6), 64, }, /*Sams*/
 	{0x5500baec, 0xFF00FFFF, (256<<20), 1, 2048, (2048<<6), 64, }, /*Sams*/
 	{0x6600bcec, 0xFF00FFFF, (512<<20), 1, 4096, (4096<<6), 128,}, /*Sams*/

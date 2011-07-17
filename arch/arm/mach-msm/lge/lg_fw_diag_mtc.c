@@ -197,6 +197,7 @@ void mtc_send_key_log_packet(unsigned long keycode, unsigned long state)
 	ext_msg_type msg;
 	dword sendKeyValue = 0;
 
+	
 	if (mtc_running)
 		return;
 
@@ -390,6 +391,7 @@ DIAG_MTC_F_rsp_type *mtc_capture_screen(DIAG_MTC_F_req_type * pReq)
 
 	printk(KERN_INFO "[MTC]mtc_capture_screen\n");
 
+	
 	rsp_len = sizeof(mtc_capture_rsp_type) + MTC_SCRN_BUF_SIZE_MAX;
 	printk(KERN_INFO "[MTC] mtc_capture_screen rsp_len :(%d)\n", rsp_len);
 
@@ -399,6 +401,7 @@ DIAG_MTC_F_rsp_type *mtc_capture_screen(DIAG_MTC_F_req_type * pReq)
 			(DIAG_MTC_F_rsp_type *) diagpkt_alloc(DIAG_MTC_F, rsp_len);
 		if (pCaputureRsp == NULL) {
 			printk(KERN_ERR "[MTC] diagpkt_alloc failed\n");
+			
 			return pCaputureRsp;
 		}
 	}
@@ -456,6 +459,7 @@ extern unsigned int ats_mtc_log_mask;
 void ats_eta_mtc_key_logging(int scancode, unsigned char keystate)
 {
 
+	
 	if (mtc_running)
 		return;
 
@@ -602,6 +606,8 @@ void mtc_send_key_log_data(struct ats_mtc_key_log_type *p_ats_mtc_key_log)
 	pRsp = (DIAG_MTC_F_rsp_type *) diagpkt_alloc(DIAG_MTC_F, rsp_len);
 	if (pRsp == NULL) {
 		printk(KERN_ERR "[MTC] diagpkt_alloc failed\n");
+		/* LGE_CHANGE [dojip.kim@lge.com] 2010-06-04, null check */
+		//diagpkt_commit(pRsp);
 		return;
 	}
 
@@ -764,6 +770,7 @@ DIAG_MTC_F_rsp_type *mtc_execute(DIAG_MTC_F_req_type * pReq)
 		printk("\n [MTC]execute /system/bin/mtc, %s\n", cmdstr);
 		sys_close(fd);
 	}
+	// END: eternalblue@lge.com.2009-10-23
 
 	printk(KERN_INFO "[MTC]execute mtc : data - %s\n\n", cmdstr);
 	ret = call_usermodehelper(argv[0], argv, envp, UMH_WAIT_PROC);

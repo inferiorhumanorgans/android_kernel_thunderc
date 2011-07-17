@@ -2,8 +2,8 @@
  * drivers/input/sensor/gp2ap002.c - Proximity Sensor driver
  *
  * Copyright (C) 2009 - 2010 LGE, Inc.
- * Author: Lee, Kenobi
- *         Cho, EunYoung
+ * Author: Lee, Kenobi 
+ *         Cho, EunYoung 
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

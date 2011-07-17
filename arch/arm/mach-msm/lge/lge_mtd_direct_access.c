@@ -23,15 +23,20 @@
 #include "lg_fw_diag_communication.h"
 
 #if defined(CONFIG_MACH_MSM7X27_THUNDERC)
+//#define MISC_PART_NUM 6
 #define MISC_PART_NUM 7
 #define MISC_PART_SIZE 4
+//#define PERSIST_PART_NUM 7
 #define PERSIST_PART_NUM 8
 #define PERSIST_PART_SIZE 12
+//#define PAGE_NUM_PER_BLK 64
+//#define PAGE_SIZE_BYTE 2048
 #else
 #define MISC_PART_NUM	4
 #endif
 
 static struct mtd_info *mtd;
+
 
 void *lge_mtd_direct_access_addr;
 static unsigned char *global_buf;
@@ -109,8 +114,6 @@ static int test_write_block(const char *val, struct kernel_param *kp)
 		test_string="FACT_RESET_6";
 	else if (3 == flag)
 		test_string="FACT_RESET_3";
-	else if (7 == flag)
-		test_string="FACT_RESET_7";
 	else
 		return -1;
 
@@ -385,5 +388,5 @@ module_init(lge_mtd_direct_access_init);
 module_exit(lge_mtd_direct_access_exit);
 
 MODULE_DESCRIPTION("LGE mtd direct access apis");
-MODULE_AUTHOR("SungEun Kim");
+MODULE_AUTHOR("SungEun Kim ");
 MODULE_LICENSE("GPL");

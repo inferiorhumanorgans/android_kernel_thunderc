@@ -105,6 +105,7 @@ typedef struct
   unsigned int size;        /* Size of usable buffer (diagpkt_q_type->pkt) */
   unsigned int length;      /* Size of packet */
 
+
 #if defined (CONFIG_MACH_MSM7X27_THUNDERC) || defined (LG_FW_DIAG_SCREEN_CAPTURE) || defined (LG_FW_MTC)
   byte pkt[4096];               /*LG_FW size up*/
 #else

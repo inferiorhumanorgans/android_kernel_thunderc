@@ -36,10 +36,12 @@ struct batt_info {
 	u32 valid_batt_id;
 	u32 batt_therm;
 	u32 batt_temp;
+	
 #if defined(CONFIG_MACH_MSM7X27_THUNDERC_SPRINT)
 	u32 chg_current;
 	u32 batt_thrm_state;
 #endif
+	
 };
 
 struct pseudo_batt_info_type {
@@ -56,14 +58,19 @@ enum {
 	POWER_SUPPLY_PROP_BATTERY_ID_CHECK = POWER_SUPPLY_PROP_SERIAL_NUMBER + 1,
 	POWER_SUPPLY_PROP_BATTERY_TEMP_ADC,
 	POWER_SUPPLY_PROP_PSEUDO_BATT,
+	
 	POWER_SUPPLY_PROP_CHARGING_TIMER,
+	
 	POWER_SUPPLY_PROP_BLOCK_CHARGING,
+	
 #if defined(CONFIG_MACH_MSM7X27_THUNDERC_SPRINT)
 	POWER_SUPPLY_PROP_BATTERY_THRM_STATE,
+	
 #if defined(CONFIG_LGE_THERM_NO_STOP_CHARGING)
 	POWER_SUPPLY_PROP_THERM_NO_STOP_CHARGING,
 #endif
 #endif
+	
 };
 
 #endif

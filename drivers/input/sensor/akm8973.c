@@ -2,9 +2,7 @@
  *
  * Copyright (C) 2007-2008 HTC Corporation.
  * Author: Hou-Kun Chen <houkun.chen@gmail.com>
- *
- * rework by hyesung.shin on 2010-1-21, for <Sensor driver structure>
- *
+ 
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
  * may be copied, distributed, and modified under those terms.
@@ -73,12 +71,13 @@ static atomic_t mv_flag;
 static atomic_t p_flag;
 static int first_start = 0 ;
 
-static int powerDownOrOff=0;
+static int powerDownOrOff=0; //For used current
 static int akm8973_set_vreg_check=  0;
 
 //static int failure_count = 0;
 
 static short akmd_delay = 0;
+
 
 short pitch, roll;
 #if defined(CONFIG_PM)

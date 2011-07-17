@@ -79,6 +79,7 @@ static int mddi_hitachi_pmic_backlight(int level)
 }
 
 #if 1//def CONFIG_MACH_MSM7X27_ALOHAG
+		
 	static struct msm_panel_hitachi_pdata mddi_hitachi_panel_data = {
 		.gpio = 102,				/* lcd reset_n */
 		.pmic_backlight = mddi_hitachi_pmic_backlight,

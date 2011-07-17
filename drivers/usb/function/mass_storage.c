@@ -2740,9 +2740,7 @@ static void fsg_bind(void *_ctxt)
 #if defined(CONFIG_LGE_UMS_WORKAROUND_PATCH)
 	int nCount = 0;
 
-	/* LG_FW khlee 2010.01.20 :  
-	 * After composite switching, Mass driver is not working.   
-	 * to prevent the binding until mass thread is killed.  */  
+	
 	while(fsg->thread_task != NULL)
 	{
 		msleep(10);
@@ -2751,6 +2749,7 @@ static void fsg_bind(void *_ctxt)
 		if( nCount++ > 20)
 			break;
 	}
+	
 #endif
 
 	dev_attr_file.attr.mode = 0644;

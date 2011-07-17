@@ -444,7 +444,7 @@ static int mmc_blk_issue_rq(struct mmc_queue *mq, struct request *req)
 #endif
 		}
 
-		// don't redo I/O when nomedium error
+		
 #if defined(CONFIG_MACH_LGE)
 		if (brq.cmd.error == -ENOMEDIUM) {
 			goto cmd_err;
@@ -506,7 +506,7 @@ static int mmc_blk_issue_rq(struct mmc_queue *mq, struct request *req)
 
 	spin_lock_irq(&md->lock);
 	while (ret) {
-		// supressed the error message
+		
 #if defined(CONFIG_MACH_LGE)
 		req->cmd_flags |= REQ_QUIET;
 #endif

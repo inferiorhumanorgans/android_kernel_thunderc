@@ -11,6 +11,11 @@
  * GNU General Public License for more details.
  *
  */
+/*
+ *
+ * kiwone creates this file for audio test mode, 
+ * and the use of another function to send framework.
+ */
 
 #include <linux/module.h>
 #include <linux/kernel.h>

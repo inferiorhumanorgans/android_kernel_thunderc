@@ -40,6 +40,7 @@ void map_zero_page_strongly_ordered(void);
 
 #include <asm/mach-types.h>
 
+
 #if defined(CONFIG_MACH_LGE)
 #define arch_barrier_extra() do \
 	{  \

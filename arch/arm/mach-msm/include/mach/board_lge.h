@@ -26,6 +26,7 @@
 #endif
 
 #ifdef CONFIG_ANDROID_RAM_CONSOLE
+
 #define MSM7X27_EBI1_CS0_BASE	PHYS_OFFSET
 #define LGE_RAM_CONSOLE_SIZE    (128 * SZ_1K * 2)
 #endif
@@ -41,6 +42,7 @@
 
 #ifdef CONFIG_ARCH_MSM7X27
 #define MSM_PMEM_MDP_SIZE	0x1B76000
+
 #define MSM_PMEM_ADSP_SIZE     0xE4E1C0
 #define MSM_PMEM_AUDIO_SIZE    0x5B000
 #define MSM_FB_SIZE            0x177000
@@ -53,6 +55,7 @@
 
 /* Using upper 1/2MB of Apps Bootloader memory*/
 #define MSM_PMEM_AUDIO_START_ADDR	0x80000ul
+
 
 #ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
 /* TA charger */
@@ -259,6 +262,7 @@ struct msm_panel_hitachi_pdata {
 	int *gpio_num;
 	int initialized;
 };
+
 
 struct msm_panel_novatek_pdata {
 	int gpio;

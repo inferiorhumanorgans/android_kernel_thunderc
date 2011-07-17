@@ -57,7 +57,7 @@ static struct snd_ctxt the_snd;
 #define SND_AGC_CTL_PROC 30
 
 #if defined (CONFIG_MACH_MSM7X27_ALOHAV) 
-//#if (CONFIG_LGE_AUDIO_HIDDEN_MENU_TEST_PATCH)
+
 #define SND_SET_LOOPBACK_MODE_PROC 61
 #else
 #define SND_SET_LOOPBACK_MODE_PROC 61
@@ -78,7 +78,7 @@ static struct snd_ctxt the_snd;
 #endif
 
 #if defined (CONFIG_MACH_MSM7X27_ALOHAV) 
-//#if (CONFIG_LGE_AUDIO_HIDDEN_MENU_TEST_PATCH)
+
 #define SND_SET_CALL_ACOUSTIC_PATH_ONOFF_PROC 62
 #endif
 
@@ -135,7 +135,7 @@ struct snd_agc_ctl_msg {
 struct snd_endpoint *get_snd_endpoints(int *size);
 
 #if defined (CONFIG_MACH_MSM7X27_ALOHAV) 
-//#if (CONFIG_LGE_AUDIO_HIDDEN_MENU_TEST_PATCH)
+
 struct snd_set_loopback_param_rep {
 	struct rpc_reply_hdr hdr;
 	uint32_t get_mode;
@@ -151,6 +151,7 @@ struct snd_set_loopback_mode_msg {
     struct rpc_snd_set_loopback_mode_args args;
 };
 #else
+
 
 struct snd_set_loopback_param_rep {
 	struct rpc_reply_hdr hdr;
@@ -516,6 +517,7 @@ static long snd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			SND_SET_DEVICE_PROC,
 			&dmsg, sizeof(dmsg), 5 * HZ);
 #ifndef CONFIG_MACH_MSM7X27_ALOHAV
+/* LGE_CHANGE_S, [junyoub.an] , 2010-02-19, for sound cal tool*/
 		if (dev.device == VOC_CODEC_FM_RADIO_HEADSET_MEDIA
 			|| dev.device == VOC_CODEC_FM_RADIO_SPEAKER_MEDIA){
 				fm_radio_flag =1;
@@ -527,6 +529,7 @@ static long snd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			&& (fm_radio_flag == 1)){
 			fm_radio_flag = 0;
 		}
+/* LGE_CHANGE_S, [junyoub.an] , 2010-02-19, for sound cal tool*/
 #endif
 		break;
 
@@ -1041,6 +1044,8 @@ static long snd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			}
 		}
 		break;
+/* LGE_CHANGE_S, [junyoub.an] , 2010-02-19, for sound cal tool*/
+/* LGE_CHANGE_S, [junyoub.an] , 2010-02-28, for hook key*/
 	case SND_SET_HOOK_MODE:
 		if (copy_from_user(&hook_param, (void __user *) arg, sizeof(hook_param))) {
 			pr_err("snd_ioctl set_loopback_mode: invalid pointer.\n");
@@ -1071,6 +1076,7 @@ static long snd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			}
 		}
 		break;
+/* LGE_CHANGE_E, [junyoub.an] , 2010-02-28, for hook key*/
 #endif
 
 #if defined (CONFIG_MACH_MSM7X27_ALOHAV) 

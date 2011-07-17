@@ -206,11 +206,13 @@ struct gs_dev {
 
 	/*interface, endpoint descriptors*/
 #if defined (CONFIG_USB_SUPPORT_LGDRIVER)
+	
 	struct usb_interface_descriptor gs_com_ifc_desc;
 	struct usb_interface_descriptor gs_data_ifc_desc;
 #else /* origin */
 	struct usb_interface_descriptor gs_ifc_desc;
 #endif
+	
 	struct usb_endpoint_descriptor gs_hs_bulkin_desc, gs_fs_bulkin_desc;
 	struct usb_endpoint_descriptor gs_hs_bulkout_desc, gs_fs_bulkout_desc;
 	struct usb_endpoint_descriptor gs_hs_notifyin_desc, gs_fs_notifyin_desc;
@@ -359,6 +361,7 @@ static const struct usb_cdc_header_desc gs_header_desc = {
 };
 
 #if defined (CONFIG_USB_SUPPORT_LGDRIVER)
+
 struct usb_interface_assoc_descriptor acm_interface_assoc_desc = {
 	.bLength           = 8, //USB_DT_INTERFACE_ASSOCIATION_SIZE,
 	.bDescriptorType   = 0xb, USB_DT_INTERFACE_ASSOCIATION,
@@ -436,7 +439,7 @@ static void gs_init_data_ifc_desc(struct usb_interface_descriptor *ifc_desc)
 	ifc_desc->bInterfaceProtocol =	0;
 	ifc_desc->iInterface =		0;
 }
-/* LG_FW 2009.11.23 add NMEA(single interface) */
+
 static void gs_init_ifc_desc(struct usb_interface_descriptor *ifc_desc)
 {
 	ifc_desc->bLength =		USB_DT_INTERFACE_SIZE;
@@ -481,6 +484,7 @@ static void gs_init_ep_desc(struct usb_endpoint_descriptor *ep_desc,
 
 		ep_desc->bmAttributes = USB_ENDPOINT_XFER_INT;
 #if defined (CONFIG_USB_SUPPORT_LGDRIVER)
+		
 		ep_desc->wMaxPacketSize = 16; // 10
 		if (speed == HIGHSPEED)
 			ep_desc->bInterval = 5+4;
@@ -494,12 +498,14 @@ static void gs_init_ep_desc(struct usb_endpoint_descriptor *ep_desc,
 }
 
 #if defined (CONFIG_USB_SUPPORT_LGDRIVER)
+
 static void gs_init_header_desc(struct gs_dev *dev)
 {
 	/* Highspeed descriptor */
 	int index_desc = 0 ;
 
 	index_desc = 0;
+	
 	if(!strcmp(dev->func->name,"modem")){
 		dev->gs_highspeed_header[index_desc++] =
 			(struct usb_descriptor_header *)&dev->gs_com_ifc_desc;
@@ -534,6 +540,7 @@ static void gs_init_header_desc(struct gs_dev *dev)
 	}
 
 	index_desc = 0;
+	
 	if(!strcmp(dev->func->name,"modem")){
 		dev->gs_fullspeed_header[index_desc++] =
 			(struct usb_descriptor_header *)&dev->gs_com_ifc_desc;
@@ -657,6 +664,7 @@ static int __init gs_module_init(void)
 		func = &usb_function_serial[i];
 
 #if defined (CONFIG_USB_SUPPORT_LGDRIVER)
+		
 		func->name = a[i];
 #endif
 		gs_devices[i] = kzalloc(sizeof(struct gs_dev), GFP_KERNEL);
@@ -668,6 +676,7 @@ static int __init gs_module_init(void)
 		/*1 - Interface, 3 Endpoints-> Total 4 + 1 for NULL*/
 
 #if defined (CONFIG_USB_SUPPORT_LGDRIVER)
+		
 		if( i == 0 ) { // modem 
 			gs_devices[i]->gs_fullspeed_header =
 				kmalloc(sizeof(struct usb_descriptor_header *) * 11, GFP_KERNEL);
@@ -1622,6 +1631,7 @@ static void gs_bind(void *_ctxt)
 	}
 
 #if defined (CONFIG_USB_SUPPORT_LGDRIVER)
+	
 	if( !strcmp(func->name,"modem")){
 		ret = usb_msm_get_next_ifc_number(func);
 		dev->gs_com_ifc_desc.bInterfaceNumber = ret;

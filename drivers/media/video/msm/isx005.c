@@ -251,6 +251,7 @@ static int isx005_reg_init(void)
 	
 	return rc;
 }
+
 static int dequeue_sensor_config(int cfgtype, int mode);
 
 static void dequeue_cfg_wq(struct config_work_queue *cfg_wq)
@@ -309,6 +310,7 @@ int isx005_reg_tuning(void *data)
 	kfree(cfg_wq);
 	tuning_thread_run = 0;
 	mutex_unlock(&isx005_tuning_mutex);
+
 	return rc;
 }
 
@@ -316,6 +318,7 @@ static int isx005_reg_preview(void)
 {
 	int rc = 0;
 	int i;
+	
 	if(prev_af_mode == FOCUS_MACRO){
 		isx005_i2c_write(isx005_client->addr, 0x002E, 0x02, BYTE_LEN);
 		isx005_i2c_write(isx005_client->addr, 0x0012, 0x01, BYTE_LEN);
@@ -333,6 +336,7 @@ static int isx005_reg_preview(void)
 		if (rc < 0)
 			return rc;
 	}
+	
 	for(i = 0; i < 300; i++)
 	{
 		unsigned short cm_changed_status = 0;
@@ -346,6 +350,7 @@ static int isx005_reg_preview(void)
 		else
 			msleep(10);
 	}
+	
 
 
 	return rc;
@@ -368,6 +373,7 @@ static int isx005_reg_snapshot(void)
 			return rc;
 	}
 
+	
 	for(i = 0; i < 300; i++)
 	{
 		CDBG("[%s]:Sensor Snapshot Mode Start\n", __func__);
@@ -384,8 +390,10 @@ static int isx005_reg_snapshot(void)
 
 		CDBG("[%s]:Sensor Snapshot Mode checking : %d \n", __func__, cm_changed_status);
 		}
+	
 	return rc;
 }
+
 
 
 static int isx005_set_sensor_mode(int mode)
@@ -570,8 +578,9 @@ static int isx005_check_focus(int *lock)
 	if(result_macro_AF_2<0){
 		printk("isx005_macro_AF_2 read fail");
 		return rc;
-	}
+	}	
 	
+	//When the result of af is success 
 	if (af_result == 1) {		
 			if((macro_AF_1 != macro_AF_2) ){					
 				*lock = CFG_AF_LOCKED;  // success
@@ -834,6 +843,7 @@ static int isx005_set_effect(int effect)
 		
 		break;
 
+	
 	case CAMERA_EFFECT_AQUA:
 		rc = isx005_i2c_write(isx005_client->addr, 0x005F, 0x03, BYTE_LEN);
 		if (rc < 0)
@@ -844,16 +854,6 @@ static int isx005_set_effect(int effect)
 			return rc;
 		break;
 
-	/*case CAMERA_EFFECT_PASTEL:
-		rc = isx005_i2c_write(isx005_client->addr, 0x005F, 0x05, BYTE_LEN);
-		if (rc < 0)
-			return rc;
-
-		rc = isx005_i2c_write(isx005_client->addr, 0x038A, 0x6911, WORD_LEN);
-		if (rc < 0)
-			return rc;
-		break;		
-	*/
 	default:
 		return -EINVAL;
 	}
@@ -1254,7 +1254,7 @@ static int32_t isx005_set_brightness(int8_t brightness)
 static int isx005_init_sensor(const struct msm_camera_sensor_info *data)
 {
 	int rc;
-	int nNum = 0;
+	int nNum = 0;	
 	struct task_struct *p;
 
 	rc = data->pdata->camera_power_on();
@@ -1286,32 +1286,12 @@ static int isx005_init_sensor(const struct msm_camera_sensor_info *data)
 
 	mdelay(16);  // T3+T4
 
-	/*tuning register write
-	rc = isx005_reg_tuning();
-	if (rc < 0) {
-		for(nNum = 0; nNum<5 ;nNum++)
-		{
-		  msleep(2);
-			printk(KERN_ERR "[ERROR]%s:Set initial register error! retry~! \n", __func__);
-			rc = isx005_reg_tuning();
-			if(rc < 0)
-			{
-				nNum++;
-				printk(KERN_ERR "[ERROR]%s:Set tuning register error! loop no:%d\n", __func__, nNum);
-			}
-			else
-			{
-				printk(KERN_DEBUG"[%s]:Set initial tuning Success!\n", __func__);
-				break;
-			}
-		}
 	
-	}
-	*/
 	p = kthread_run(isx005_reg_tuning, 0, "reg_tuning");
 
 	if (IS_ERR(p))
 		return PTR_ERR(p);
+	
 	
 	return rc;
 }
@@ -1329,6 +1309,7 @@ static int isx005_sensor_init_probe(const struct msm_camera_sensor_info *data)
 
 #if defined(CONFIG_MACH_MSM7X27_THUNDERG) || \
 	defined(CONFIG_MACH_MSM7X27_THUNDERC)
+	
 	mdp_load_thunder_lut(2);	/* Camera LUT */
 #endif
 	rc = isx005_init_sensor(data);
@@ -1336,6 +1317,7 @@ static int isx005_sensor_init_probe(const struct msm_camera_sensor_info *data)
 		printk(KERN_ERR "[ERROR]%s:failed to initialize sensor!\n", __func__);
 		goto init_probe_fail;
 	}
+	
 	tuning_thread_run = 0;
 	cfg_wq = 0;
 
@@ -1379,6 +1361,7 @@ init_fail:
 int isx005_sensor_release(void)
 {
 	int rc = 0;
+
 #if 1//def LG_CAMERA_HIDDEN_MENU
 	if(sensorAlwaysOnTest ==true)
 	{
@@ -1391,7 +1374,7 @@ int isx005_sensor_release(void)
 		printk("==========================isx005_sensor_release sensorAlwaysOnTest is false ==========================");
 	}
 #endif
-		
+
 	mutex_lock(&isx005_mutex);
 
 	rc = isx005_ctrl->sensordata->pdata->camera_power_off();
@@ -1402,11 +1385,14 @@ int isx005_sensor_release(void)
 
 #if defined(CONFIG_MACH_MSM7X27_THUNDERG) || \
 	defined(CONFIG_MACH_MSM7X27_THUNDERC)
+	
 	mdp_load_thunder_lut(1);	/* Normal LUT */
 #endif
 
 			return rc;
 	}
+
+
 	
 	static int dequeue_sensor_config(int cfgtype, int mode)
 	{
@@ -1455,6 +1441,7 @@ int isx005_sensor_release(void)
 		}
 	return rc;
 }
+	
 
 int isx005_sensor_config(void __user *argp)
 {
@@ -1470,6 +1457,7 @@ int isx005_sensor_config(void __user *argp)
 	CDBG("isx005_ioctl, cfgtype = %d, mode = %d\n",
 		cfg_data.cfgtype, cfg_data.mode);
 	
+	
 	mutex_lock(&isx005_tuning_mutex);
 	if (tuning_thread_run) {
 		if (cfg_data.cfgtype == CFG_MOVE_FOCUS)
@@ -1480,6 +1468,8 @@ int isx005_sensor_config(void __user *argp)
 		return rc;
 	}
 	mutex_unlock(&isx005_tuning_mutex);
+	
+	
 	mutex_lock(&isx005_mutex);
 
 	switch (cfg_data.cfgtype) {

@@ -849,12 +849,16 @@ wl_iw_get_rssi(
 	static wlc_ssid_t ssid = {0};
 	int error = 0;
 	char *p = extra;
+
 #if !defined(CONFIG_LGE_BCM432X_PATCH)
 	static char ssidbuf[SSID_FMT_BUF_LEN];
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+
 	scb_val_t scb_val;
 
+
 	memset(&ssid ,0 ,sizeof(wlc_ssid_t));
+
 	bzero(&scb_val, sizeof(scb_val_t));
 
 	if (g_onoff == G_WLAN_SET_ON) {
@@ -867,13 +871,14 @@ wl_iw_get_rssi(
 	}
 
 
+
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 	p += snprintf(p, MAX_WX_STRING, "ssid rssi %d", rssi);
 #else /* CONFIG_LGE_BCM432X_PATCH */
 	wl_format_ssid(ssidbuf, ssid.SSID, dtoh32(ssid.SSID_len));
 	p += snprintf(p, MAX_WX_STRING, "%s rssi %d ", ssidbuf, rssi);
 #endif /* CONFIG_LGE_BCM432X_PATCH */
-	
+
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 	if( rssi < -92 ){
 		less_than_rssi ++;
@@ -889,6 +894,7 @@ wl_iw_get_rssi(
 		less_than_rssi =0 ;
 	}
 #endif	/* defined(CONFIG_LGE_BCM432X_PATCH) */
+
 
 	wrqu->data.length = p - extra + 1;
 
@@ -921,9 +927,11 @@ wl_iw_send_priv_event(
 	return 0;
 }
 
+
 #if defined(CONFIG_LGE_BCM432X_PATCH) && defined(CONFIG_BRCM_USE_DEEPSLEEP)
 extern int dhd_deep_sleep(struct net_device *dev, int flag);
 #endif /* CONFIG_LGE_BCM432X_PATCH && CONFIG_BRCM_USE_DEEPSLEEP */
+
 
 #if !defined(CONFIG_LGE_BCM432X_PATCH) || defined(CONFIG_BRCM_USE_GPIO_RESET) || defined(CONFIG_BRCM_USE_DEEPSLEEP)
 #if defined(CONFIG_LGE_BCM432X_PATCH)
@@ -1085,9 +1093,10 @@ wl_iw_control_wl_off(
 
 	return ret;
 }
+
 #if defined(CONFIG_LGE_BCM432X_PATCH) && defined(CONFIG_BRCM_USE_GPIO_RESET)
 #include <linux/sched.h>
-#endif	/* defined(CONFIG_LGE_BCM432X_PATCH) && defined(CONFIG_BRCM_USE_GPIO_RESET) */
+#endif	
 static int
 wl_iw_control_wl_on(
 	struct net_device *dev,
@@ -1099,6 +1108,7 @@ wl_iw_control_wl_on(
 	WL_TRACE(("Enter %s \n", __FUNCTION__));
 
 	if (g_onoff == G_WLAN_SET_OFF) {
+
 #if defined(CONFIG_BRCM_USE_DEEPSLEEP)
 		/* Use Deep Sleep instead of WL RESET */
 		dhd_deep_sleep(dev, FALSE);
@@ -1121,6 +1131,7 @@ wl_iw_control_wl_on(
 		 sdioh_start(NULL, 1);
 #endif
 #else
+
 #if defined(BCMLXSDMMC)
 		sdioh_start(NULL, 1);
 #endif
@@ -1128,6 +1139,7 @@ wl_iw_control_wl_on(
 		dhd_dev_reset(dev, 0);
 
 		schedule_timeout((100*HZ)/1000);
+
 #endif	/* !defined(CONFIG_LGE_BCM432X_PATCH) */
 
 		 dhd_dev_init_ioctl(dev);
@@ -1140,11 +1152,14 @@ wl_iw_control_wl_on(
 
 		g_onoff = G_WLAN_SET_ON;
 	}
+
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 	 else
 #endif	 	
+
 	wl_iw_send_priv_event(dev, "START");
 	 
+
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 /* If do broadscan here, specific scan fail */
 	//wl_iw_iscan_set_scan_broadcast_prep(dev, 0);
@@ -1154,6 +1169,7 @@ wl_iw_control_wl_on(
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 //	 bcm_mdelay(1000);
 #endif
+
 
 	WL_TRACE(("Exited %s \n", __FUNCTION__));
 
@@ -1694,6 +1710,7 @@ wl_iw_config_commit(
 
 	WL_TRACE(("%s: SIOCSIWCOMMIT\n", dev->name));
 
+
 	memset(&ssid ,0 ,sizeof(wlc_ssid_t));
 
 	if ((error = dev_wlc_ioctl(dev, WLC_GET_SSID, &ssid, sizeof(ssid))))
@@ -1792,7 +1809,9 @@ wl_iw_get_freq(
 
 	WL_TRACE(("%s: SIOCGIWFREQ\n", dev->name));
 
+
 	memset(&ci ,0 ,sizeof(channel_info_t));
+
 
 	if ((error = dev_wlc_ioctl(dev, WLC_GET_CHANNEL, &ci, sizeof(ci))))
 		return error;
@@ -1890,7 +1909,9 @@ wl_iw_get_range(
 	dwrq->length = sizeof(struct iw_range);
 	memset(range, 0, sizeof(range));
 
+
 	memset(&rateset, 0, sizeof(wl_rateset_t));
+
 	
 	range->min_nwid = range->max_nwid = 0;
 
@@ -2295,7 +2316,9 @@ wl_iw_iscan_get_aplist(
 
 	WL_TRACE(("%s: SIOCGIWAPLIST\n", dev->name));
 
+
 	memset(qual, 0, (sizeof(struct iw_quality)*IW_MAX_AP));
+
 
 	if (!extra)
 		return -EINVAL;
@@ -3274,7 +3297,9 @@ wl_iw_get_scan(
 
 	WL_TRACE(("%s: buflen_from_user %d: \n", dev->name, buflen_from_user));
 
+
 	memset(&ci, 0, sizeof(channel_info_t));
+
 
 	if (!extra) {
 		WL_TRACE(("%s: wl_iw_get_scan return -EINVAL\n", dev->name));
@@ -3323,6 +3348,7 @@ wl_iw_get_scan(
 	if ((error = dev_wlc_ioctl(dev, WLC_SCAN_RESULTS, list, len))) {
 		WL_TRACE(("%s: %s : Scan_results ERROR %d\n", dev->name, __FUNCTION__, len));
 		dwrq->length = len;
+
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 		if (g_scan_specified_ssid) {
 			list->count = 0;
@@ -3334,7 +3360,9 @@ wl_iw_get_scan(
 			kfree(list);
 		return 0;
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+
 	}
+
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 	else {
 #endif /* CONFIG_LGE_BCM432X_PATCH */		
@@ -3641,7 +3669,9 @@ wl_iw_get_essid(
 
 	WL_TRACE(("%s: SIOCGIWESSID\n", dev->name));
 
+
 	memset(&ssid ,0 ,sizeof(wlc_ssid_t));
+
 
 	if (!extra)
 		return -EINVAL;
@@ -3721,7 +3751,9 @@ static int wl_iw_set_rate(
 
 	WL_TRACE(("%s: SIOCSIWRATE\n", dev->name));
 
+
 	memset(&rateset, 0, sizeof(wl_rateset_t));
+
 	
 	if ((error = dev_wlc_ioctl(dev, WLC_GET_CURR_RATESET, &rateset, sizeof(rateset))))
 		return error;
@@ -3777,7 +3809,9 @@ static int wl_iw_get_rate(
 	char *extra
 )
 {
+
 	int error = 0, rate = 0;
+
 
 	WL_TRACE(("%s: SIOCGIWRATE\n", dev->name));
 
@@ -3932,7 +3966,9 @@ wl_iw_get_txpow(
 	char *extra
 )
 {
+
 	int error = 0, disable = 0, txpwrdbm = 0;
+
 	uint8 result;
 
 	WL_TRACE(("%s: SIOCGIWTXPOW\n", dev->name));
@@ -3995,7 +4031,9 @@ wl_iw_get_retry(
 	char *extra
 )
 {
+
 	int error = 0, lrl = 0, srl = 0;
+
 
 	WL_TRACE(("%s: SIOCGIWRETRY\n", dev->name));
 
@@ -4133,6 +4171,7 @@ wl_iw_get_encode(
 {
 	wl_wsec_key_t key;
 
+
 	int error = 0, val = 0, wsec = 0, auth = 0;
 
 	WL_TRACE(("%s: SIOCGIWENCODE\n", dev->name));
@@ -4216,7 +4255,9 @@ wl_iw_get_power(
 	char *extra
 )
 {
+
 	int error = 0, pm = 0;
+
 
 	WL_TRACE(("%s: SIOCGIWPOWER\n", dev->name));
 
@@ -4686,7 +4727,9 @@ wl_iw_get_wpaauth(
 }
 #endif 
 
+
 #if defined(CONFIG_LGE_BCM432X_PATCH)
+
 #if 1 /* "POWERMODE"applied from Raptor2 RC60 */
 static int
 wl_iw_set_powermode(
@@ -4714,6 +4757,7 @@ wl_iw_set_powermode(
 	return error;
 }
 #endif /* "POWERMODE"applied from Raptor2 RC60 */
+
 
 static int
 wl_iw_set_scan_channels(
@@ -4786,6 +4830,7 @@ wl_iw_set_roam_off(
 	return error;
 }
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+
 
 #ifdef SOFTAP
 
@@ -5816,6 +5861,7 @@ static int wl_iw_set_priv(
 	int ret = 0;
 	char * extra;
 #if defined(CONFIG_LGE_BCM432X_PATCH)
+
 	wl_iw_t *iw;
 
 	if (!dev) {
@@ -5823,6 +5869,7 @@ static int wl_iw_set_priv(
 		return -EFAULT;
 	}
 	iw = *(wl_iw_t **)netdev_priv(dev);
+
 #else
 #if defined(BCMDONGLEHOST)
 	wl_iw_t *iw = *(wl_iw_t **)netdev_priv(dev);
@@ -5848,6 +5895,8 @@ static int wl_iw_set_priv(
 		WAKE_LOCK(iw->pub, WAKE_LOCK_PRIV);
 #endif 
 
+
+/* only if receiving regular START command */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 		if (g_onoff == G_WLAN_SET_OFF) {
 			if (strnicmp(extra, "START", strlen("START")) != 0) {
@@ -5858,6 +5907,7 @@ static int wl_iw_set_priv(
 				return -EFAULT;
 			} else {
 				ret = wl_iw_control_wl_on(dev, info);
+			
 				WL_TRACE(("%s, Received regular START command\n", __FUNCTION__));
 			}
 		} else if(strnicmp(extra, "START", strlen("START")) == 0) {
@@ -5915,6 +5965,7 @@ static int wl_iw_set_priv(
 	    else if (strnicmp(extra, "POWERMODE", strlen("POWERMODE")) == 0)
 			ret = wl_iw_set_btcoex_dhcp(dev, info, (union iwreq_data *)dwrq, extra);
 #endif
+
 #ifdef SOFTAP
 	    else if (strnicmp(extra, "ASCII_CMD", strlen("ASCII_CMD")) == 0) {
 	        
@@ -5926,19 +5977,25 @@ static int wl_iw_set_priv(
 	    }
 #endif 
 #if defined(CONFIG_LGE_BCM432X_PATCH)
+
 #if 1 /* "POWERMODE"applied from Raptor2 RC60 */
 		else if (strnicmp(extra, "POWERMODE", 9) == 0){
+
 			if ( PM_control	== TRUE )
+		
 			ret = wl_iw_set_powermode(dev, info, (union iwreq_data *)dwrq, extra);
 		}	
 #endif /* "POWERMODE"applied from Raptor2 RC60 */
+
 		else if (strnicmp(extra, "SCAN-CHANNELS", 13) == 0)
 			ret = wl_iw_set_scan_channels(dev, info,
 					(union iwreq_data *)dwrq, extra);
 		else if (strnicmp(extra, "ROAM-OFF", 8) == 0)
 			ret = wl_iw_set_roam_off(dev, info,
 					(union iwreq_data *)dwrq, extra);		
+
 		else if (strnicmp(extra, "BTCOEXSCAN-START", 16) == 0){
+
 			if ( roam_off_control == TRUE ) {
 			sprintf(extra, "ROAM-OFF %d", 1);
 			dwrq->length = strlen(extra) + 1;

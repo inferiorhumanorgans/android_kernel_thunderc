@@ -56,6 +56,7 @@
 #include <dhd_dbg.h>
 
 
+
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 #include <asm/gpio.h>
 #endif /* CONFIG_LGE_BCM432X_PATCH */
@@ -65,6 +66,7 @@
 #define alloc_etherdev(sizeof_priv) \
 	alloc_netdev(sizeof_priv, "wlan%d", ether_setup)
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)) && defined(CONFIG_PM_SLEEP)
 #include <linux/suspend.h>
@@ -162,9 +164,11 @@ volatile bool          g_dhd_registration_status;
 /* load firmware and/or nvram values from the filesystem */
 module_param_string(firmware_path, firmware_path, MOD_PARAM_PATHLEN, 0);
 module_param_string(nvram_path, nvram_path, MOD_PARAM_PATHLEN, 0);
+
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 module_param_string(config_path, config_path, MOD_PARAM_PATHLEN, 0);
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+
 
 /* Error bits */
 module_param(dhd_msg_level, int, 0);
@@ -1955,9 +1959,11 @@ dhd_net_attach(dhd_pub_t *dhdp, int ifidx)
 	printf("%s: Broadcom Dongle Host Driver mac=%.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n", net->name,
 		dhd->pub.mac.octet[0], dhd->pub.mac.octet[1], dhd->pub.mac.octet[2],
 		dhd->pub.mac.octet[3], dhd->pub.mac.octet[4], dhd->pub.mac.octet[5]);
+
 #if 0
 	wl_iw_iscan_set_scan_broadcast_prep(net, 1);
 #endif
+
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)) && 1
 	g_dhd_registration_status = TRUE;
@@ -2070,6 +2076,7 @@ dhd_module_cleanup(void)
 	DHD_TRACE(("%s: Enter\n", __FUNCTION__));
 
 	dhd_bus_unregister();
+
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 #if defined(CONFIG_BCM4325_GPIO_WL_REGON)
 	/* Call customer gpio to turn off power with WL_REG_ON signal */
@@ -2101,6 +2108,7 @@ dhd_module_init(void)
 		printk("Invalid module parameters.\n");
 		return -EINVAL;
 	} while (0);
+
 
 #if !defined(CONFIG_LGE_BCM432X_PATCH)
 	/* Call customer gpio to turn on power with WL_REG_ON signal */

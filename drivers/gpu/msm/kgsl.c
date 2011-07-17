@@ -1347,6 +1347,7 @@ static long kgsl_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 	return result;
 }
 
+
 #if 0
 static int kgsl_mmap(struct file *file, struct vm_area_struct *vma)
 {
@@ -1399,6 +1400,7 @@ static const struct file_operations kgsl_fops = {
 	.owner = THIS_MODULE,
 	.release = kgsl_release,
 	.open = kgsl_open,
+	
 	.unlocked_ioctl = kgsl_ioctl,
 };
 

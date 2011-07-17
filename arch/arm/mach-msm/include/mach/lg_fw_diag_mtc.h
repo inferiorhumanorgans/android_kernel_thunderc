@@ -218,6 +218,7 @@ typedef struct
   unsigned short bmp_height;
   mtc_bits_pixel_type bits_pixel;
   mtc_mask_type mask;
+ 
   unsigned char bmp_data[0];
 } PACKED mtc_capture_rsp_type;
 

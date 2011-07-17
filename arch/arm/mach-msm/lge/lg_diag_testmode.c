@@ -34,8 +34,10 @@ extern void send_to_arm9(void *pReq, void *pRsp);
 extern testmode_user_table_entry_type testmode_mstr_tbl[TESTMODE_MSTR_TBL_SIZE];
 extern int diag_event_log_start(void);
 extern int diag_event_log_end(void);
+
 extern void set_operation_mode(boolean isOnline);
 extern struct input_dev* get_ats_input_dev(void);
+
 extern void remote_set_ftm_boot(int info);
 
 extern int boot_info;
@@ -178,6 +180,7 @@ void *LGF_TestModeBlueTooth(test_mode_req_type * pReq,
 	return pRsp;
 }
 
+
 byte *pReq_valid_address(byte *pstr)
 {
 	int pcnt=0;
@@ -215,6 +218,7 @@ void* LGF_TestModeBlueTooth_RW(
 	if (diagpdev != NULL) {
 		//250-83-0 bluetooth write
 		if(strlen(p_Req_addr) > 0) {
+			
 			//update_diagcmd_state(diagpdev, "BT_TEST_MODE_RW", 0);
 			update_diagcmd_state(diagpdev, "BT_TEST_MODE_RW", (int)p_Req_addr);
 			memset((void*)g_bd_addr, 0x00, BT_RW_CNT);
@@ -240,6 +244,7 @@ void* LGF_TestModeBlueTooth_RW(
 	}
 	return pRsp;
 }
+
 
 void *LGF_TestPhotoSensor(test_mode_req_type * pReq,
 			  DIAG_TEST_MODE_F_rsp_type * pRsp)
@@ -368,12 +373,14 @@ void *LGT_TestModeKeyTest(test_mode_req_type * pReq,
 		if_condition_is_on_key_buffering = TRUE;
 		memset((void *)key_buf, 0x00, MAX_KEY_BUFF_SIZE);
 		count_key_buf = 0;
+		
 		diag_event_log_start();
 	} 
 	else {
 		if_condition_is_on_key_buffering = FALSE;
 		memcpy((void *)((DIAG_TEST_MODE_KEY_F_rsp_type *) pRsp)->
 		       key_pressed_buf, (void *)key_buf, MAX_KEY_BUFF_SIZE);
+		
 		diag_event_log_end();
 	}
 	return pRsp;
@@ -388,6 +395,7 @@ void *LGF_TestCam(test_mode_req_type * pReq, DIAG_TEST_MODE_F_rsp_type * pRsp)
 	case CAM_TEST_CAMERA_SELECT:
 	case CAM_TEST_FLASH_ON:
 	case CAM_TEST_FLASH_OFF:
+	
 	case CAM_TEST_CAMCORDER_FLASH_ON:
 	case CAM_TEST_CAMCORDER_FLASH_OFF:
 	case CAM_TEST_STROBE_LIGHT_ON:
@@ -450,6 +458,9 @@ void* LGF_PowerSaveMode(test_mode_req_type* pReq, DIAG_TEST_MODE_F_rsp_type* pRs
 		remote_set_ftm_boot(0); // clear flag
 		if_condition_is_on_air_plain_mode = 1;
 		set_operation_mode(FALSE);
+		break;
+	case FTM_BOOT_ON: /* kernel mode */
+		remote_set_ftm_boot(1); // set flag
 		break;
 	default:
 		pRsp->ret_stat_code = TEST_NOT_SUPPORTED_S;
@@ -544,10 +555,12 @@ void *LGF_ExternalSocketMemory(test_mode_req_type * pReq,
 		printk(KERN_ERR "blocks %d  \n", sf.f_blocks);
 		printk(KERN_ERR "block size %d \n", sf.f_bsize);
 
+		
 		pRsp->test_mode_rsp.socket_memory_size = 
 			(((sf.f_blocks / 1024) * sf.f_bsize) / 1024);
 		break;
 	case EXTERNAL_SOCKET_ERASE:
+		
 		if (external_memory_copy_test())
 		{
 			pRsp->ret_stat_code = TEST_FAIL_S;
@@ -555,6 +568,7 @@ void *LGF_ExternalSocketMemory(test_mode_req_type * pReq,
 		}
 		if (diagpdev != NULL) {
 			update_diagcmd_state(diagpdev, "MMCFORMAT", 1);
+			
 			ssleep(10);
 			pRsp->ret_stat_code = TEST_OK_S;
 		} 
@@ -570,10 +584,12 @@ void *LGF_ExternalSocketMemory(test_mode_req_type * pReq,
 			pRsp->ret_stat_code = TEST_FAIL_S;
 			break;
 		}
+		
 		pRsp->test_mode_rsp.socket_memory_usedsize = 
 			((long long)(sf.f_blocks - 
 			 (long long)sf.f_bfree) * sf.f_bsize);
 		break;
+	
 	default:
 		pRsp->ret_stat_code = TEST_NOT_SUPPORTED_S;
 		break;
@@ -590,6 +606,7 @@ void * LGF_TestModeFboot ( test_mode_req_type* pReq ,DIAG_TEST_MODE_F_rsp_type	*
 	case FIRST_BOOTING_COMPLETE_CHECK:
 		pRsp->test_mode_rsp.boot_complete = boot_info;
 		printk("LOG Very Very emergency!!!!%d \n",boot_info);
+		
 		if (boot_info == 1) {
 			pRsp->ret_stat_code = TEST_OK_S;
 		} 
@@ -749,6 +766,7 @@ void *LGF_TestModeFactoryReset(test_mode_req_type * pReq,
 				      sizeof(word)), pRsp);
 		printk(KERN_INFO "[Testmode]send_to_arm9 end\n");
 
+		
 		if (firstStartStatus == FACTORY_RESET_COLD_BOOT_END || 
 			firstStartStatus == FACTORY_RESET_USER_START) 
 			test_mode_factory_reset_status = FACTORY_RESET_COLD_BOOT_START;
@@ -1006,8 +1024,7 @@ void *LGF_TestScriptItemSet(test_mode_req_type * pReq,
 		} 
 		else
 #endif /*CONFIG_LGE_MTD_DIRECT_ACCESS */
-		// LG_FW khlee 2010.03.16 - 
-		// They want to ACL on state in test script state.
+		
 		update_diagcmd_state(diagpdev, "ALC", 1);
 	}
 
@@ -1036,6 +1053,8 @@ void* LGF_TestModeDBIntegrityCheck(test_mode_req_type* pReq,
 
 	return pRsp;
 }
+
+
 testmode_user_table_entry_type testmode_mstr_tbl[TESTMODE_MSTR_TBL_SIZE] = {
 	/*    sub_command    fun_ptr   which procesor         */
 	/* 0 ~ 5 */
@@ -1075,10 +1094,15 @@ testmode_user_table_entry_type testmode_mstr_tbl[TESTMODE_MSTR_TBL_SIZE] = {
 	/* 41 ~ 45 */
 	{TEST_MODE_MEMORY_CAPA_TEST, LGF_MemoryVolumeCheck, ARM11_PROCESSOR}
 	,
+	//{TEST_MODE_SLEEP_MODE_TEST, linux_app_handler, ARM11_PROCESSOR}
 	{TEST_MODE_SLEEP_MODE_TEST, LGF_PowerSaveMode, ARM11_PROCESSOR}
 	,
 	{TEST_MODE_SPEAKER_PHONE_TEST, LGF_TestModeSpeakerPhone, ARM11_PROCESSOR}
 	,
+	/*
+	{TEST_MODE_PHOTO_SENSER_TEST, linux_app_handler, ARM11_PROCESSOR}
+	,
+	*/
 
 	/* 46 ~ 50 */
 	{TEST_MODE_MRD_USB_TEST, NULL, ARM9_PROCESSOR}
@@ -1093,6 +1117,7 @@ testmode_user_table_entry_type testmode_mstr_tbl[TESTMODE_MSTR_TBL_SIZE] = {
 	/* 51 ~ */
 	{TEST_MODE_VOLUME_TEST, LGT_TestModeVolumeLevel, ARM11_PROCESSOR}
 	,
+	
 	{ TEST_MODE_FIRST_BOOT_COMPLETE_TEST, LGF_TestModeFboot, ARM11_PROCESSOR}
 	,
 	/*70~    */
@@ -1119,13 +1144,16 @@ testmode_user_table_entry_type testmode_mstr_tbl[TESTMODE_MSTR_TBL_SIZE] = {
 	/*80~   */
 	{TEST_MODE_CAL_CHECK, NULL, ARM9_PROCESSOR}
 	,
+	
 	{TEST_MODE_BLUETOOTH_TEST_RW, LGF_TestModeBlueTooth_RW, ARM11_PROCESSOR}
 	,
 	{TEST_MODE_SKIP_WELCOM_TEST, NULL, ARM9_PROCESSOR}
 	,
+	
 	{ TEST_MODE_MAC_READ_WRITE, linux_app_handler, ARM11_PROCESSOR }
 	,
 	/*90~	*/
 	{ TEST_MODE_DB_INTEGRITY_CHECK,	LGF_TestModeDBIntegrityCheck, ARM11_PROCESSOR}
 	,
+	
 };

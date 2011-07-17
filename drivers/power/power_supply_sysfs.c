@@ -28,6 +28,11 @@
  * (as a macro let's say).
  */
 #if defined (CONFIG_MACH_MSM7X27_ALOHAV) || defined (CONFIG_MACH_MSM7X27_THUNDERC)
+/*
+ * ADD THUNDERC feature to use VS740 BATT DRIVER IN THUNDERC
+ * 
+ */
+
 #include <mach/msm_battery.h>
 #include <mach/msm_battery_thunderc.h>
 #endif
@@ -44,6 +49,11 @@
  * (as a macro let's say).
  */
 #if defined (CONFIG_MACH_MSM7X27_ALOHAV) || defined (CONFIG_MACH_MSM7X27_THUNDERC)
+/* 
+ * ADD THUNDERC feature to use VS740 BATT DRIVER IN THUNDERC
+ * 
+ */
+
 #define PSEUDO_BATT_ATTR(_name)					\
 {									\
 	.attr = { .name = #_name, .mode = 0666 },	\
@@ -58,12 +68,14 @@
 	.store = charging_timer_store_property,				\
 }
 
+
 #define BLOCK_CHARGING_ATTR(_name)					\
 {									\
 	.attr = { .name = #_name, .mode = 0666 },	\
 	.show = block_charging_show_property,				\
 	.store = block_charging_store_property,				\
 }
+
 
 #if defined(CONFIG_LGE_THERM_NO_STOP_CHARGING)
 #define THERM_NO_STOP_CHARGING_ATTR(_name)				\
@@ -129,6 +141,7 @@ static ssize_t power_supply_show_property(struct device *dev,
 	else if (off == POWER_SUPPLY_PROP_CAPACITY_LEVEL)
 		return sprintf(buf, "%s\n", capacity_level_text[value.intval]);
 #if defined (CONFIG_MACH_MSM7X27_ALOHAV) || defined (CONFIG_MACH_MSM7X27_THUNDERC)
+
 	else if (off >= POWER_SUPPLY_PROP_MODEL_NAME && off <= POWER_SUPPLY_PROP_SERIAL_NUMBER)
 #else
 	else if (off >= POWER_SUPPLY_PROP_MODEL_NAME)
@@ -232,6 +245,7 @@ static ssize_t charging_timer_store_property(struct device *dev,
 out:
 	return ret;
 }
+
 
 extern void batt_block_charging_set(int);
 static ssize_t block_charging_store_property(struct device *dev,
@@ -338,6 +352,7 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(voltage_min_design),
 #if defined (CONFIG_MACH_MSM7X27_ALOHAV) || \
 	defined (CONFIG_MACH_MSM7X27_GISELE) || defined (CONFIG_MACH_MSM7X27_THUNDERC)
+
 	POWER_SUPPLY_ATTR(batt_vol),
 #else	/* origin */
 	POWER_SUPPLY_ATTR(voltage_now),
@@ -364,6 +379,7 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(capacity_level),
 #if defined (CONFIG_MACH_MSM7X27_ALOHAV) || \
 	defined (CONFIG_MACH_MSM7X27_GISELE) || defined (CONFIG_MACH_MSM7X27_THUNDERC)
+
 	POWER_SUPPLY_ATTR(batt_temp),
 #else
 	POWER_SUPPLY_ATTR(temp),
@@ -378,17 +394,22 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(manufacturer),
 	POWER_SUPPLY_ATTR(serial_number),
 #if defined (CONFIG_MACH_MSM7X27_ALOHAV) || defined (CONFIG_MACH_MSM7X27_THUNDERC)
+
 	POWER_SUPPLY_ATTR(valid_batt_id),
 	POWER_SUPPLY_ATTR(batt_therm),
 	PSEUDO_BATT_ATTR(pseudo_batt),
+	
 	CHARGING_TIMER_ATTR(charging_timer),
+	
 	BLOCK_CHARGING_ATTR(block_charging),
 #if defined(CONFIG_MACH_MSM7X27_THUNDERC_SPRINT)
 	POWER_SUPPLY_ATTR(batt_therm_state),
+	
 #if defined(CONFIG_LGE_THERM_NO_STOP_CHARGING)
 	THERM_NO_STOP_CHARGING_ATTR(therm_no_stop_charging),	
 #endif /* #if defined(CONFIG_LGE_THERM_NO_STOP_CHARGING) */
 #endif
+	
 #endif
 };
 

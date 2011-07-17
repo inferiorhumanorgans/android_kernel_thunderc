@@ -386,6 +386,7 @@ int msm_chg_usb_charger_connected(uint32_t device)
 	} req;
 
 #if defined(CONFIG_MACH_MSM7X27_ALOHAV) || defined(CONFIG_MACH_MSM7X27_THUNDERC)
+
 	charger_type = device;
 #endif
 
@@ -437,6 +438,7 @@ int msm_chg_usb_i_is_not_available(void)
 	} req;
 
 #if defined(CONFIG_MACH_MSM7X27_ALOHAV) || defined(CONFIG_MACH_MSM7X27_THUNDERC)
+
 	charger_type = 3;	/* CHG_UNDEFINDED */
 #endif
 
@@ -639,6 +641,7 @@ EXPORT_SYMBOL(hsusb_chg_connected);
 #endif
 
 #if defined(CONFIG_MACH_MSM7X27_ALOHAV) || defined(CONFIG_MACH_MSM7X27_THUNDERC)
+
 int msm_hsusb_get_charger_type(void)
 {
 	return charger_type;

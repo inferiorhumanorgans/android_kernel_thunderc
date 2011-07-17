@@ -53,7 +53,9 @@
 #include "pm.h"
 #include "spm.h"
 
+
 #if defined(CONFIG_MACH_MSM7X27_THUNDERC)
+
 #endif
 /******************************************************************************
  * Debug Definitions
@@ -1680,6 +1682,7 @@ static uint32_t restart_reason = 0x776655AA;
 
 #ifdef CONFIG_MACH_LGE
 
+
 static bool console_flushed;
 
 void msm_pm_flush_console(void)
@@ -1706,16 +1709,19 @@ void msm_pm_flush_console(void)
 }
 #endif
 
+
 #if defined(CONFIG_LGE_RAM_CONSOLE_CLEAN)
 extern void ram_console_clean_buffer(void);
 #endif
 
 static void msm_pm_power_off(void)
 {
+	
 #if defined(CONFIG_LGE_RAM_CONSOLE_CLEAN)
 	ram_console_clean_buffer();
 #endif
 #ifdef CONFIG_MACH_LGE
+	
 	smsm_change_state_nonotify(SMSM_APPS_STATE,
 				   0, SMSM_SYSTEM_POWER_DOWN);
 #endif
@@ -1728,6 +1734,7 @@ static void msm_pm_power_off(void)
 static void msm_pm_restart(char str, const char *cmd)
 {
 #ifdef CONFIG_MACH_LGE
+	
 	msm_pm_flush_console();
 #endif
 

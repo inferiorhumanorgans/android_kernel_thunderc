@@ -60,6 +60,7 @@ extern struct workqueue_struct *mdp_dma_wq;
 
 int vsync_start_y_adjust = 4;
 
+
 #if defined(CONFIG_FB_MSM_MDDI_HITACHI_HVGA) || \
 	defined(CONFIG_FB_MSM_MDDI_NOVATEK_HITACHI_HVGA)
 	
@@ -86,6 +87,7 @@ static struct hitachi_display_table mddi_hitachi_position_table[] = {
 };
 extern void hitachi_display_table(struct hitachi_display_table *table, unsigned int count);
 #endif
+
 
 #if defined(CONFIG_FB_MSM_MDDI_NOVATEK_HVGA) || \
 	defined(CONFIG_FB_MSM_MDDI_NOVATEK_HITACHI_HVGA)	
@@ -226,6 +228,7 @@ static void mdp_dma2_update_lcd(struct msm_fb_data_type *mfd)
 	}
 #elif defined(CONFIG_FB_MSM_MDDI_HITACHI_HVGA) 
 #if defined(CONFIG_MACH_MSM7X27_THUNDERG) || defined(CONFIG_MACH_MSM7X27_THUNDERC)
+	
 	hitachi_display_table(mddi_hitachi_position_table,
 			sizeof(mddi_hitachi_position_table) / 
 			sizeof(struct hitachi_display_table));
@@ -234,6 +237,7 @@ static void mdp_dma2_update_lcd(struct msm_fb_data_type *mfd)
 			sizeof(mddi_hitachi_2c) / 
 			sizeof(struct hitachi_display_table));
 #endif
+	
 #elif CONFIG_FB_MSM_MDDI_NOVATEK_HVGA
 	display_table(mddi_novatek_position_table, 
 		sizeof(mddi_novatek_position_table) / 
@@ -274,6 +278,7 @@ static void mdp_dma2_update_lcd(struct msm_fb_data_type *mfd)
 			 (iBuf->dma_y << 16) | iBuf->dma_x);
 		MDP_OUTP(MDP_CMD_DEBUG_ACCESS_BASE + 0x01a0, mddi_ld_param);
 
+		
 #if defined(CONFIG_FB_MSM_MDDI_NOVATEK_HITACHI_HVGA)		
 		if (g_mddi_lcd_probe == 0) { /* Hitachi LCD */
 			MDP_OUTP(MDP_CMD_DEBUG_ACCESS_BASE + 0x01a4,
@@ -284,6 +289,7 @@ static void mdp_dma2_update_lcd(struct msm_fb_data_type *mfd)
 				(mddi_pkt_desc << 16) | mddi_vdo_packet_reg);
 		}
 #elif defined (CONFIG_FB_MSM_MDDI_HITACHI_HVGA)		
+		
 		MDP_OUTP(MDP_CMD_DEBUG_ACCESS_BASE + 0x01a4,
 			(MDDI_VDO_PACKET_DESC << 16) | mddi_vdo_packet_reg);
 #else
@@ -294,6 +300,7 @@ static void mdp_dma2_update_lcd(struct msm_fb_data_type *mfd)
 		MDP_OUTP(MDP_BASE + 0x90010, (iBuf->dma_y << 16) | iBuf->dma_x);
 		MDP_OUTP(MDP_BASE + 0x00090, mddi_ld_param);
 
+		/* LGE_CHANGE [james.jang@lge.com] 2010-08-29 */
 #if defined(CONFIG_FB_MSM_MDDI_NOVATEK_HITACHI_HVGA)		
 		if (g_mddi_lcd_probe == 1) {
 			MDP_OUTP(MDP_BASE + 0x00094,
@@ -305,9 +312,11 @@ static void mdp_dma2_update_lcd(struct msm_fb_data_type *mfd)
 				(MDDI_VDO_PACKET_DESC << 16) | mddi_vdo_packet_reg);
 		}
 #elif defined(CONFIG_FB_MSM_MDDI_NOVATEK_HVGA)
+
 		MDP_OUTP(MDP_BASE + 0x00094,
 			 (0x5565 /*MDDI_VDO_PACKET_DESC*/ << 16) | mddi_vdo_packet_reg);
 #elif defined (CONFIG_FB_MSM_MDDI_HITACHI_HVGA)
+		
 		MDP_OUTP(MDP_BASE + 0x00094,
 			(MDDI_VDO_PACKET_DESC << 16) | mddi_vdo_packet_reg);
 #else

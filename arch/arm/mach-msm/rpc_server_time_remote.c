@@ -108,6 +108,7 @@ static int handle_rpc_call(struct msm_rpc_server *server,
 		args = (struct rpc_time_tod_set_apps_bases_args *)(req + 1);
 		args->tick = be32_to_cpu(args->tick);
 		args->stamp = be64_to_cpu(args->stamp);
+		
 		rtc_hctosys();
 		return 0;
 	}

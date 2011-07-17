@@ -192,6 +192,7 @@ static int rpc_send_accepted_void_reply(struct msm_rpc_endpoint *client,
 	return rc;
 }
 
+
 #ifdef CONFIG_LGE_SUPPORT_AT_CMD
 static int AT_rpc_send_accepted_void_reply(struct msm_rpc_endpoint *client,
 					uint32_t xid, uint32_t accept_status, struct msm_rpc_server *server)
@@ -296,6 +297,7 @@ static int AT_rpc_send_accepted_void_reply(struct msm_rpc_endpoint *client,
 	return rc;
 }
 #endif
+
 void *msm_rpc_server_start_accepted_reply(struct msm_rpc_server *server,
 					  uint32_t xid, uint32_t accept_status)
 {
@@ -674,6 +676,7 @@ static int rpc_servers_thread(void *data)
 			rc = server->rpc_call(server, req1, rc);
 		}
 
+
 #ifdef CONFIG_LGE_SUPPORT_AT_CMD
 		switch (rc) {
 		case 0:
@@ -684,6 +687,8 @@ static int rpc_servers_thread(void *data)
 
 			break;
 		
+		
+		// give Error result to ARM9 AT Command
 		case RPC_RETURN_RESULT_OK:
 		case RPC_RETURN_RESULT_ERROR:
 			{
@@ -701,6 +706,7 @@ static int rpc_servers_thread(void *data)
 				(rc), server);
 
 			break;
+		/* LGE_CHANGES LGE_FACTORY_AT_COMMANDS  */
 
 		
 		default:
@@ -726,6 +732,7 @@ static int rpc_servers_thread(void *data)
 			msm_rpc_server_send_accepted_reply(server, 0);
 		}
 #endif
+
  free_buffer:
 		xdr_clean_input(&server_xdr);
 		server_xdr.out_index = 0;

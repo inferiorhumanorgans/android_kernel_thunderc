@@ -36,7 +36,7 @@ init_reg_settings_array[] = {
 
 	{0x00FC, 0x1F   ,BYTE_LEN},		//   
  	{0x000b, 0x02, BYTE_LEN},		// PLL_CKSEL    
-	{0x3208, 0x01   ,BYTE_LEN},		// 
+	{0x3208, 0x01   ,BYTE_LEN},		// [LGE_CODE] 
  	{0x0009, 0x06   ,BYTE_LEN},		// INCK_SET 
 	{0x02C7, 0x01, BYTE_LEN},		// SRCCK_DIV 
  	{0x0038, 0x0D  ,BYTE_LEN},		// sync masking on off   - for QCT      
@@ -184,7 +184,7 @@ init_reg_settings_array[] = {
 	{0x4C16,0xE001,WORD_LEN},
 	{0x4C18,0x8001,WORD_LEN},
 	{0x4C1A,0xC000,WORD_LEN},
-	{0x000E,0x12,BYTE_LEN},
+	{0x000E,0x12,BYTE_LEN},	
 	{0x02CD,0xBE,BYTE_LEN},
 	{0x003A,0x0002,WORD_LEN},
 	{0x001C,0x00,BYTE_LEN},
@@ -333,6 +333,7 @@ init_reg_settings_array[] = {
 	{0xB116, 0x1800   ,WORD_LEN},
 	{0xB118, 0x40EC   ,WORD_LEN},
 	{0xB11A, 0x3000   ,WORD_LEN},
+	
 	{0x0009, 0x16   ,BYTE_LEN},
 
 
@@ -1810,7 +1811,9 @@ tuning_reg_settings_array[] = {	//091214
 	{0x484E,0x08,BYTE_LEN},
 	{0x4808,0x9600,WORD_LEN},
 	{0x480A,0xFA00,WORD_LEN},
-	{0x480C,0xE803,WORD_LEN},
+	{0x480C,0xE803,WORD_LEN},	
+	//{0x480E,0x4B00,WORD_LEN},
+	//{0x4810,0x4B00,WORD_LEN},
 	{0x480E,0x7701,WORD_LEN},
 	{0x4810,0x7701,WORD_LEN},
 	{0x4812,0xE803,WORD_LEN},
@@ -1822,7 +1825,7 @@ tuning_reg_settings_array[] = {	//091214
 	{0x4832,0x2C01,WORD_LEN},
 	{0x4838,0x1600,WORD_LEN},
 	{0x4844,0x5000,WORD_LEN},
-	{0x484F,0x00,BYTE_LEN},
+	{0x484F,0x00,BYTE_LEN},	
 	{0x4856,0x28,BYTE_LEN},
 	{0x486A,0x6400,WORD_LEN},
 	{0x486C,0x2800,WORD_LEN},
@@ -2843,6 +2846,8 @@ preview_mode_reg_settings_array[] = {
 #define ISX005_CAPTURE_SIZE_WIDTH		0x0008	//0x0280	//0x0500	// 1280
 #define ISX005_CAPTURE_SIZE_HIGHT		0x0006	//0x01E0	//0x03C0	//  960
 
+
+
 static struct isx005_register_address_value_pair const
 snapshot_mode_reg_settings_array[] = {
 
@@ -2882,6 +2887,7 @@ af_normal_mode_reg_settings_array[] =
 	{0x01DC, 0x04, BYTE_LEN},	//AF_SN10
 	{0x01DD, 0x04, BYTE_LEN},	//AF_SN11
 	{0x01DE, 0x04, BYTE_LEN},	//AF_SN12
+	
 	{0x4C4C,0x1003,WORD_LEN},
 	{0x4C4E,0x1002,WORD_LEN},
 	{0x4C50,0x5002,WORD_LEN},
@@ -2913,7 +2919,7 @@ af_auto_mode_reg_settings_array[] =
 	{0x01DB, 0x04, BYTE_LEN},	//AF_SN9
 	{0x01DC, 0x04, BYTE_LEN},	//AF_SN10
 	{0x01DD, 0x04, BYTE_LEN},	//AF_SN11
-	{0x01DE, 0x04, BYTE_LEN},	//AF_SN12
+	{0x01DE, 0x04, BYTE_LEN},	//AF_SN12	
 	{0x4C4C,0x1003,WORD_LEN},
 	{0x4C4E,0x1002,WORD_LEN},
 	{0x4C50,0x5002,WORD_LEN},
@@ -2924,7 +2930,7 @@ af_auto_mode_reg_settings_array[] =
 	{0x4C5A,0xA002,WORD_LEN},
 	{0x4856,0x14,BYTE_LEN},
 	{0x4857,0x0a,BYTE_LEN},	
-	{0x4844,0x5000,WORD_LEN},
+	{0x4844,0x5000,WORD_LEN},	
 	{0x002E, 0x02, BYTE_LEN},
 	{0x0012, 0x01, BYTE_LEN},
 	{0x4852, 0x3200, WORD_LEN},	
@@ -2946,7 +2952,7 @@ af_macro_mode_reg_settings_array[] =
 	{0x01DB, 0x02, BYTE_LEN},	//AF_SN9
 	{0x01DC, 0x02, BYTE_LEN},	//AF_SN10
 	{0x01DD, 0x02, BYTE_LEN},	//AF_SN11
-	{0x01DE, 0x02, BYTE_LEN},	//AF_SN12
+	{0x01DE, 0x02, BYTE_LEN},	//AF_SN12	
 	{0x4C4C,0x0002,WORD_LEN},
 	{0x4C4E,0x0001,WORD_LEN},
 	{0x4C50,0x5004,WORD_LEN},
@@ -2957,7 +2963,7 @@ af_macro_mode_reg_settings_array[] =
 	{0x4C5A,0x6004,WORD_LEN},
 	{0x4856,0x1e,BYTE_LEN},
 	{0x4857,0x14,BYTE_LEN},
-	{0x4844,0x2800,WORD_LEN},
+	{0x4844,0x2800,WORD_LEN},	
 	{0x002E, 0x02, BYTE_LEN},
 	{0x0012, 0x01, BYTE_LEN},
 	{0x4852, 0x4402, WORD_LEN},		
@@ -3108,10 +3114,10 @@ struct isx005_reg isx005_regs = {
 		
 	.af_normal_reg_settings = af_normal_mode_reg_settings_array,
 	.af_normal_reg_settings_size = ARRAY_SIZE(
-		af_normal_mode_reg_settings_array),
+		af_normal_mode_reg_settings_array),	
 	.af_auto_reg_settings = af_auto_mode_reg_settings_array,
 	.af_auto_reg_settings_size = ARRAY_SIZE(
-		af_auto_mode_reg_settings_array),
+		af_auto_mode_reg_settings_array),	
 	.af_macro_reg_settings = af_macro_mode_reg_settings_array,
 	.af_macro_reg_settings_size = ARRAY_SIZE(
 		af_macro_mode_reg_settings_array),

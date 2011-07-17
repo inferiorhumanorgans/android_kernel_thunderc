@@ -912,6 +912,8 @@ void mmc_power_up(struct mmc_host *host)
 	host->ios.timing = MMC_TIMING_LEGACY;
 	mmc_set_ios(host);
 
+	printk("%s: mmc power up\n", mmc_hostname(host));
+
 	/*
 	 * This delay should be sufficient to allow the power supply
 	 * to reach the minimum voltage.
@@ -943,6 +945,7 @@ void mmc_power_off(struct mmc_host *host)
 	host->ios.bus_width = MMC_BUS_WIDTH_1;
 	host->ios.timing = MMC_TIMING_LEGACY;
 	mmc_set_ios(host);
+	printk("%s: mmc power down\n", mmc_hostname(host));
 }
 EXPORT_SYMBOL(mmc_power_off);
 
@@ -1092,6 +1095,7 @@ void mmc_rescan(struct work_struct *work)
 	int extend_wakelock = 0;
 	int ret;
 
+    
 	if (host->ops->get_status){
 		ret = host->ops->get_status(host);
 		if (ret == 1) {
@@ -1322,13 +1326,14 @@ int mmc_suspend_host(struct mmc_host *host, pm_message_t state)
 	}
 	mmc_bus_put(host);
 
-			 if (!strcmp(mmc_hostname(host), "mmc1")){
-					 if (!err)
-							 mmc_power_off(host);
-			 } else
-					 printk("sd card suspend...\n");
-			 return err;
 
+
+	if (!strcmp(mmc_hostname(host), "mmc1")){
+		if (!err)
+			mmc_power_off(host);
+	} else
+		printk("sd card suspend...\n");
+	return err;
 }
 
 EXPORT_SYMBOL(mmc_suspend_host);

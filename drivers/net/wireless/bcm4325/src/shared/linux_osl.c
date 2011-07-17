@@ -53,7 +53,9 @@ typedef struct bcm_static_buf {
 
 static bcm_static_buf_t *bcm_static_buf = 0;
 
+
 #define USE_STATIC_SKB	/* Use DHD_USE_STATIC_BUF at SKB */
+
 
 #ifdef USE_STATIC_SKB
 #define MAX_STATIC_PKT_NUM 8
@@ -154,10 +156,12 @@ osl_attach(void *pdev, uint bustype, bool pkttag)
 {
 	osl_t *osh;
 
+
 	if(!(osh = kmalloc(sizeof(osl_t), GFP_ATOMIC))){
 	ASSERT(osh);
 		return NULL;
 	}
+
 
 	bzero(osh, sizeof(osl_t));
 
@@ -191,6 +195,7 @@ osl_attach(void *pdev, uint bustype, bool pkttag)
 
 #ifdef DHD_USE_STATIC_BUF
 
+
 	if (!bcm_static_buf) {
 		if (!(bcm_static_buf = (bcm_static_buf_t *)dhd_os_prealloc(3, STATIC_BUF_SIZE+
 			STATIC_BUF_TOTAL_LEN))) {
@@ -202,6 +207,7 @@ osl_attach(void *pdev, uint bustype, bool pkttag)
 			bcm_static_buf->buf_ptr = (unsigned char *)bcm_static_buf + STATIC_BUF_SIZE;
 		}
 	}
+
 	
 #ifdef USE_STATIC_SKB
 	if (!bcm_static_skb)
@@ -537,10 +543,12 @@ osl_mfree(osl_t *osh, void *addr, uint size)
 		ASSERT(osh->magic == OS_HANDLE_MAGIC);
 		osh->malloced -= size;
 	}
+
 	if(addr != NULL){
 	kfree(addr);
 		addr = NULL;
 	}
+
 }
 
 uint

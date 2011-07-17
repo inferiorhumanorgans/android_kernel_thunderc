@@ -88,6 +88,7 @@ int timecompare_offset(struct timecompare *sync,
 			 * average target time corresponds to measured
 			 * source time
 			 */
+			
 			sample.offset =
 				(ktime_to_ns(end) + ktime_to_ns(start)) / 2 -
 				ts;

@@ -225,8 +225,10 @@ static void handle_modem_crash(void)
 	pr_err("ARM9 has CRASHED\n");
 	smd_diag();
 #ifdef CONFIG_LGE_HANDLE_MODEM_CRASH
+	
 	msm_pm_flush_console();
 	
+
 	smsm_reset_modem(SMSM_SYSTEM_REBOOT);
 #endif
 	/* hard reboot if possible FIXME
@@ -1443,6 +1445,7 @@ uint32_t smsm_get_state(uint32_t smsm_entry)
 
 
 #ifdef CONFIG_MACH_LGE
+
 int smsm_change_state_nonotify(uint32_t smsm_entry,
 		      uint32_t clear_mask, uint32_t set_mask)
 {

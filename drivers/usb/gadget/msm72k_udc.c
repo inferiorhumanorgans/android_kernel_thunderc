@@ -46,10 +46,6 @@
 #include <linux/uaccess.h>
 #include <linux/wakelock.h>
 
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_GADGET
-#include "u_lgeusb.h"
-#endif
-
 static const char driver_name[] = "msm72k_udc";
 
 /* #define DEBUG */
@@ -60,50 +56,10 @@ static const char driver_name[] = "msm72k_udc";
 #define	DRIVER_DESC		"MSM 72K USB Peripheral Controller"
 #define	DRIVER_NAME		"MSM72K_UDC"
 
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-#define	DRIVER_NAME_FOR_AUTORUN		"MSM72K_UDC_AUTORUN"
-#endif
-
 #define EPT_FLAG_IN        0x0001
 
 #define SETUP_BUF_SIZE      4096
 
-
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_GADGET
-
-enum {
-	USB_DEBUG_NORMAL   = 1U << 0,  /* Normal debug */
-	USB_DEBUG_ISR_WQ   = 1U << 1,  /* Isr, wq 		*/
-	USB_DEBUG_PM       = 1U << 2,  /* Power management	*/
-	USB_DEBUG_INIT     = 1U << 3,  /* module_init(), Probe()*/
-	USB_DEBUG_COMPO    = 1U << 4,  /* Function composition */
-	USB_DEBUG_EP       = 1U << 5,  /* Endpoint control */
-	USB_DEBUG_FUNCTION = 1U << 6,  /* Function APIs	*/
-};
-
-static int lge_usb_debug_mask;
-
-module_param_named(debug_mask, lge_usb_debug_mask, int,
-				S_IRUGO | S_IWUSR | S_IWGRP);
-
-#define USB_TRACE(mask, fmt, args...) \
-	do { \
-		if ((mask) & lge_usb_debug_mask) \
-			printk(KERN_INFO "MSM72K_UDC-DBG[%-18s:%5d] " \
-					fmt, __func__, __LINE__, ## args); \
-	} while (0)
-#else
-#define USB_TRACE(mask, fmt, args...) do {} while (0)
-#endif
-
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_GADGET
-
-#define LGE_FACTORY_CABLE 1
-#define LGE_FACTORY_USB_PID_STRING "0x6000"
-
-static int cable_type = -1;
-
-#endif
 
 static const char *const ep_name[] = {
 	"ep0out", "ep1out", "ep2out", "ep3out",
@@ -170,7 +126,6 @@ struct msm_endpoint {
 static void usb_do_work(struct work_struct *w);
 static void usb_do_remote_wakeup(struct work_struct *w);
 
-extern int msm_chg_LG_cable_type(void);
 
 #define USB_STATE_IDLE    0
 #define USB_STATE_ONLINE  1
@@ -237,9 +192,6 @@ struct usb_info {
 	struct usb_gadget		gadget;
 	struct usb_gadget_driver	*driver;
 	struct switch_dev sdev;
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	struct switch_dev sdev_autorun;
-#endif
 
 #define ep0out ept[0]
 #define ep0in  ept[16]
@@ -288,15 +240,6 @@ static enum usb_device_state msm_hsusb_get_state(void)
 	return state;
 }
 
-#ifdef CONFIG_USB_GADGET_LG_MTP_DRIVER
-int mtp_get_usb_state(void)
-{
-  int state;
-  state = (int)msm_hsusb_get_state();
-  return state;
-}
-#endif
-
 static ssize_t print_switch_name(struct switch_dev *sdev, char *buf)
 {
 	return sprintf(buf, "%s\n", DRIVER_NAME);
@@ -307,46 +250,11 @@ static ssize_t print_switch_state(struct switch_dev *sdev, char *buf)
 	struct usb_info *ui = the_usb_info;
 
 	return sprintf(buf, "%s\n",
-			(sdev->state ? "online" : "offline"));
-}
-
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-static ssize_t print_switch_name_for_autorun(struct switch_dev *sdev, char *buf)
-{
-	return sprintf(buf, "%s\n", DRIVER_NAME_FOR_AUTORUN);
-}
-
-static ssize_t print_switch_state_for_autorun(struct switch_dev *sdev, char *buf)
-{
-	struct usb_info *ui = the_usb_info;
-
-	char *state[] = {"USB_STATE_NOTATTACHED", "USB_STATE_ATTACHED",
-			"USB_STATE_POWERED", "USB_STATE_UNAUTHENTICATED",
-			"USB_STATE_RECONNECTING", "USB_STATE_DEFAULT",
-			"USB_STATE_ADDRESS", "USB_STATE_CONFIGURED",
-			"USB_STATE_SUSPENDED"
-	};
-
-	pr_info("%s [AUTORUN]: %s -- [%s] -- [%d]\n", __func__, (atomic_read(&ui->configured) ? "online" : "offline"), state[msm_hsusb_get_state()], sdev->state);
-
-	return sprintf(buf, "%s\n",
 			(atomic_read(&ui->configured) ? "online" : "offline"));
 }
-#endif
 
 static inline enum chg_type usb_get_chg_type(struct usb_info *ui)
 {
-
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_GADGET
-	/* If cable is factory cable, it's value is 1 */
-	cable_type = lge_detect_factory_cable();
-#endif
-
-#ifdef CONFIG_USB_SUPPORT_LGE_FACTORY_USB
-	if (cable_type == LGE_FACTORY_CABLE)
-		return USB_CHG_TYPE__WALLCHARGER;
-#endif
-
 	if ((readl(USB_PORTSC) & PORTSC_LS) == PORTSC_LS)
 		return USB_CHG_TYPE__WALLCHARGER;
 	else
@@ -381,10 +289,6 @@ static int usb_get_max_power(struct usb_info *ui)
 	return bmaxpow;
 }
 
-#ifdef CONFIG_USB_SUPPORT_LGE_GADGET_CDMA			
-static enum chg_type pre_chg_type = USB_CHG_TYPE__INVALID;
-#endif
-
 static void usb_chg_stop(struct work_struct *w)
 {
 	struct usb_info *ui = container_of(w, struct usb_info, chg_stop.work);
@@ -413,63 +317,14 @@ static void usb_chg_detect(struct work_struct *w)
 		return;
 	}
 
-#ifdef CONFIG_USB_SUPPORT_LGE_FACTORY_USB
-	spin_unlock_irqrestore(&ui->lock, flags);
-	if (usb_get_chg_type(ui) == USB_CHG_TYPE__WALLCHARGER) {
-		spin_lock_irqsave(&ui->lock, flags);
-		temp = ui->chg_type = USB_CHG_TYPE__WALLCHARGER;
-		spin_unlock_irqrestore(&ui->lock, flags);
-	} else {
-		spin_lock_irqsave(&ui->lock, flags);
-		temp = ui->chg_type = USB_CHG_TYPE__SDP;
-		spin_unlock_irqrestore(&ui->lock, flags);
-	}
-#else
 	temp = ui->chg_type = usb_get_chg_type(ui);
 	spin_unlock_irqrestore(&ui->lock, flags);
-#endif
-
-
-#ifdef CONFIG_USB_SUPPORT_LGE_GADGET_CDMA
-
-	if (pre_chg_type == temp)
-	{
-		pr_debug("%s: skip re-usb_chg_detect pre: %d cur: %d\r\n", __func__, pre_chg_type, temp);
-		goto skip;
-	}
-	else
-	{
-		pre_chg_type= temp;
-	}
-	
-#endif
-
-
-#ifdef CONFIG_USB_SUPPORT_LGE_GADGET_GSM
-/* FIXME : Because of side effect about TA, we comment out for the meanwhile */
-	if (msm_hsusb_detect_chg_type() == USB_CHG_TYPE__WALLCHARGER) {
-		spin_lock_irqsave(&ui->lock, flags);
-		temp = ui->chg_type = USB_CHG_TYPE__WALLCHARGER;
-		spin_unlock_irqrestore(&ui->lock, flags);
-	}
-#endif
 
 	hsusb_chg_connected(temp);
 	atomic_set(&otg->chg_type, temp);
 	maxpower = usb_get_max_power(ui);
-
-#ifdef CONFIG_USB_SUPPORT_LGE_GADGET_CDMA	
-	if (maxpower >= 0)
-#else
 	if (maxpower > 0)
-#endif
 		hsusb_chg_vbus_draw(maxpower);
-	
-
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_GADGET
-	if(cable_type == LGE_FACTORY_CABLE)
-		goto skip;
-#endif
 
 	/* USB driver prevents idle and suspend power collapse(pc)
 	 * while USB cable is connected. But when dedicated charger is
@@ -488,23 +343,6 @@ static void usb_chg_detect(struct work_struct *w)
 		msm72k_pm_qos_update(0);
 		wake_unlock(&ui->wlock);
 	}
-
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_GADGET
-
-#ifdef CONFIG_USB_SUPPORT_LGE_GADGET_CDMA
-	
-	if (temp == USB_CHG_TYPE__SDP)
-	{
-		pr_info("%s: try to re-usb_chg_detect after 5 seconds \r\n", __func__);
-		schedule_delayed_work(&ui->chg_det, 5 * USB_CHG_DET_DELAY);
-	}
-#endif
-
-skip :
-		
-	return;
-#endif
-
 }
 
 static int usb_ep_get_stall(struct msm_endpoint *ept)
@@ -517,25 +355,6 @@ static int usb_ep_get_stall(struct msm_endpoint *ept)
 		return (CTRL_TXS & n) ? 1 : 0;
 	else
 		return (CTRL_RXS & n) ? 1 : 0;
-}
-
-static unsigned ulpi_read(struct usb_info *ui, unsigned reg)
-{
-	unsigned timeout = 100000;
-
-	/* initiate read operation */
-	writel(ULPI_RUN | ULPI_READ | ULPI_ADDR(reg),
-	       USB_ULPI_VIEWPORT);
-
-	/* wait for completion */
-	while ((readl(USB_ULPI_VIEWPORT) & ULPI_RUN) && (--timeout))
-		;
-
-	if (timeout == 0) {
-		ERROR("ulpi_read: timeout %08x\n", readl(USB_ULPI_VIEWPORT));
-		return 0xffffffff;
-	}
-	return ULPI_DATA_READ(readl(USB_ULPI_VIEWPORT));
 }
 
 static void ulpi_write(struct usb_info *ui, unsigned val, unsigned reg)
@@ -553,21 +372,6 @@ static void ulpi_write(struct usb_info *ui, unsigned val, unsigned reg)
 
 	if (timeout == 0)
 		ERROR("ulpi_write: timeout\n");
-}
-
-static void ulpi_init(struct usb_info *ui)
-{
-	int *seq = ui->phy_init_seq;
-
-	if (!seq)
-		return;
-
-	while (seq[0] >= 0) {
-		dev_dbg(&ui->pdev->dev, "ulpi: write 0x%02x to 0x%02x\n",
-			seq[0], seq[1]);
-		ulpi_write(ui, seq[0], seq[1]);
-		seq += 2;
-	}
 }
 
 static void init_endpoints(struct usb_info *ui)
@@ -1249,8 +1053,7 @@ static irqreturn_t usb_interrupt(int irq, void *data)
 			ui->flags = USB_FLAG_CONFIGURED;
 			spin_unlock_irqrestore(&ui->lock, flags);
 
-			if (ui->driver && ui->driver->resume && &ui->gadget)
-				ui->driver->resume(&ui->gadget);
+			ui->driver->resume(&ui->gadget);
 			schedule_work(&ui->work);
 		} else
 			msm_hsusb_set_state(USB_STATE_DEFAULT);
@@ -1298,9 +1101,7 @@ static irqreturn_t usb_interrupt(int irq, void *data)
 		ui->flags = USB_FLAG_SUSPEND;
 		spin_unlock_irqrestore(&ui->lock, flags);
 
-		if (ui->driver && ui->driver->suspend && &ui->gadget)
-			ui->driver->suspend(&ui->gadget);
-/* DKL TEMPORARY 2010-08-14 */		
+		ui->driver->suspend(&ui->gadget);
 		schedule_work(&ui->work);
 	}
 
@@ -1367,26 +1168,6 @@ static void usb_reset(struct usb_info *ui)
 
 	writel(ui->dma, USB_ENDPOINTLISTADDR);
 
-#ifdef CONFIG_USB_SUPPORT_LGE_FACTORY_USB
-
-
-	if( LG_FACTORY_CABLE_TYPE == msm_chg_LG_cable_type()) 
-	{
-		unsigned tmp = 0; 
-
-		tmp = ulpi_read(ui, 0x04);
-		tmp |= 0x4;
-		ulpi_write(ui, tmp, 0x04);
-		
-		writel(readl(USB_PORTSC) | (1<<24), USB_PORTSC);
-
-		// For factory mode switching
-		extern int android_set_pid(const char *val, struct kernel_param *kp); 
-		android_set_pid(LGE_FACTORY_USB_PID_STRING, NULL);
-	}
-	
-#endif
-
 	configure_endpoints(ui);
 
 	/* marking us offline will cause ept queue attempts to fail */
@@ -1404,13 +1185,6 @@ static void usb_reset(struct usb_info *ui)
 	writel(STS_URI | STS_SLI | STS_UI | STS_PCI, USB_USBINTR);
 
 	atomic_set(&ui->running, 1);
-
-#ifdef CONFIG_USB_SUPPORT_LGE_GADGET_CDMA
-
-	pre_chg_type = USB_CHG_TYPE__INVALID;
-
-#endif
-
 }
 
 static void usb_start(struct usb_info *ui)
@@ -1595,10 +1369,6 @@ static void usb_do_work(struct work_struct *w)
 				}
 
 				switch_set_state(&ui->sdev, 0);
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-				pr_info("%s: switch_set_state() FLAG_VBUS_OFFLINE\n", __func__);
-				switch_set_state(&ui->sdev_autorun, 0);
-#endif
 				/* power down phy, clock down usb */
 				otg->reset(ui->xceiv);
 				otg_set_suspend(ui->xceiv, 1);
@@ -1635,11 +1405,6 @@ static void usb_do_work(struct work_struct *w)
 				 */
 				switch_set_state(&ui->sdev,
 						atomic_read(&ui->configured));
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-				pr_info("%s: switch_set_state() USB_FLAG_CONFIGURED\n", __func__);
-				switch_set_state(&ui->sdev_autorun,
-						atomic_read(&ui->configured));
-#endif
 
 				if (maxpower < 0)
 					break;
@@ -1690,11 +1455,6 @@ static void usb_do_work(struct work_struct *w)
 				ui->irq = otg->irq;
 				enable_irq_wake(otg->irq);
 				msm72k_pullup_internal(&ui->gadget, 1);
-
-#ifdef CONFIG_USB_SUPPORT_LGE_GADGET_CDMA
-				cancel_delayed_work(&ui->chg_det);
-#endif
-
 
 				schedule_delayed_work(
 						&ui->chg_det,
@@ -2330,30 +2090,7 @@ static ssize_t show_usb_chg_type(struct device *dev,
 
 	return count;
 }
-#ifdef CONFIG_USB_GADGET_LG_MTP_DRIVER
-static ssize_t show_mtp_usb_state(struct device *dev, struct device_attribute *attr,
-		char *buf)
-{
-	struct usb_info *ui = the_usb_info;
-	size_t i;
-	char *state[] = {"USB_STATE_NOTATTACHED", "USB_STATE_ATTACHED",
-			"USB_STATE_POWERED", "USB_STATE_UNAUTHENTICATED",
-			"USB_STATE_RECONNECTING", "USB_STATE_DEFAULT",
-			"USB_STATE_ADDRESS", "USB_STATE_CONFIGURED",
-			"USB_STATE_SUSPENDED"
-	};
-
-	i = scnprintf(buf, PAGE_SIZE, "%s\n", state[ui->usb_state]);
-	return i;
-}
-
-static DEVICE_ATTR(mtp_usb_state, S_IRUGO, show_mtp_usb_state, 0);
-#endif
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-static DEVICE_ATTR(usb_state, S_IRUGO, show_usb_state, 0);
-#else
 static DEVICE_ATTR(usb_state, S_IRUSR, show_usb_state, 0);
-#endif
 static DEVICE_ATTR(usb_speed, S_IRUSR, show_usb_speed, 0);
 static DEVICE_ATTR(chg_type, S_IRUSR, show_usb_chg_type, 0);
 static DEVICE_ATTR(chg_current, S_IWUSR | S_IRUSR,
@@ -2367,8 +2104,6 @@ static int msm72k_probe(struct platform_device *pdev)
 	int retval;
 
 	dev_dbg(&pdev->dev, "msm72k_probe\n");
-	pr_info("%s\n", __func__);
-	
 	ui = kzalloc(sizeof(struct usb_info), GFP_KERNEL);
 	if (!ui)
 		return -ENOMEM;
@@ -2414,18 +2149,6 @@ static int msm72k_probe(struct platform_device *pdev)
 	if (retval)
 		return usb_free(ui, retval);
 
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-	ui->sdev_autorun.name = DRIVER_NAME_FOR_AUTORUN;
-	ui->sdev_autorun.print_name = print_switch_name_for_autorun;
-	ui->sdev_autorun.print_state = print_switch_state_for_autorun;
-
-	retval = switch_dev_register(&ui->sdev_autorun);
-	if (retval) {
-		switch_dev_unregister(&ui->sdev);
-		return usb_free(ui, retval);
-	}
-#endif
-
 	the_usb_info = ui;
 
 	wake_lock_init(&ui->wlock,
@@ -2445,9 +2168,6 @@ static int msm72k_probe(struct platform_device *pdev)
 			"%s: Cannot bind the transceiver, retval:(%d)\n",
 			__func__, retval);
 		switch_dev_unregister(&ui->sdev);
-#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
-		switch_dev_unregister(&ui->sdev_autorun);
-#endif
 		wake_lock_destroy(&ui->wlock);
 		return usb_free(ui, retval);
 	}
@@ -2503,13 +2223,6 @@ int usb_gadget_register_driver(struct usb_gadget_driver *driver)
 		goto fail;
 	}
 
-#ifdef CONFIG_USB_GADGET_LG_MTP_DRIVER
-	retval = device_create_file(&ui->gadget.dev, &dev_attr_mtp_usb_state);
-	if (retval != 0)
-		INFO("failed to create sysfs entry: (mtp_usb_state) error: (%d)\n",
-					retval);
-#endif
-
 	retval = device_create_file(&ui->gadget.dev, &dev_attr_usb_state);
 	if (retval != 0)
 		dev_info(&ui->pdev->dev, "failed to create sysfs entry:"
@@ -2554,22 +2267,14 @@ int usb_gadget_unregister_driver(struct usb_gadget_driver *driver)
 		return -EINVAL;
 
 	msm72k_pullup_internal(&dev->gadget, 0);
-	if (dev->irq) { 
-		printk("freeing IRQ\n"); 
-		free_irq(dev->irq, dev); 
-		dev->irq = 0; 
-	} 
+	if (dev->irq) {
+		free_irq(dev->irq, dev);
+		dev->irq = 0;
+	}
 
 	dev->state = USB_STATE_IDLE;
 	atomic_set(&dev->configured, 0);
 	switch_set_state(&dev->sdev, 0);
-
-	if (atomic_read(&dev->running))
-		msleep(300);
-
-#ifdef CONFIG_USB_GADGET_LG_MTP_DRIVER
-	device_remove_file(&dev->gadget.dev, &dev_attr_mtp_usb_state);
-#endif
 	device_remove_file(&dev->gadget.dev, &dev_attr_usb_state);
 	device_remove_file(&dev->gadget.dev, &dev_attr_usb_speed);
 	device_remove_file(&dev->gadget.dev, &dev_attr_chg_type);
@@ -2581,7 +2286,7 @@ int usb_gadget_unregister_driver(struct usb_gadget_driver *driver)
 
 	device_del(&dev->gadget.dev);
 
-	dev_info(&dev->pdev->dev,
+	dev_dbg(&dev->pdev->dev,
 		"unregistered gadget driver '%s'\n", driver->driver.name);
 	return 0;
 }

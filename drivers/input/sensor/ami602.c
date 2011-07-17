@@ -2,7 +2,7 @@
  *
  * Copyright (C) 2009 AMIT Technology Inc.
  * Author: Kyle Chen <sw-support@amit-inc.com>
- * Modified by EunYoung, Cho LGE Inc.
+ * Modified by EunYoung, Cho  LGE Inc.
  *  - Modified power sequence
  *  - I2c driver register(probe, release)
  *
@@ -26,10 +26,14 @@
 #include <linux/delay.h>
 #include <linux/input.h>
 #include <linux/workqueue.h>
+//#include <linux/ami602.h> 
 #include <linux/kobject.h>
 #include <mach/hardware.h>
+//#include <asm-arm/arch/regs-gpio.h> 
+//#include <asm-arm/arch/irqs.h> 
 #include <linux/spinlock.h>
 #include <asm/io.h>
+
 
 #include <linux/interrupt.h>
 #include <mach/vreg.h>
@@ -138,6 +142,96 @@ struct _ami602mid_data {
 	int mag_status;
 } ami602mid_data;
 
+#if 0
+static int
+s3c_irqext_type(unsigned int irq, unsigned int type)
+{
+
+	unsigned long newvalue = 0;
+
+
+	/* Set the external interrupt to pointed trigger type */
+	switch (type) {
+	case IRQT_NOEDGE:
+		printk(KERN_WARNING "No edge setting!\n");
+		break;
+
+	case IRQT_RISING:
+		newvalue = S3C_EXTINT_RISEEDGE;
+		break;
+
+	case IRQT_FALLING:
+		newvalue = S3C_EXTINT_FALLEDGE;
+		break;
+
+	case IRQT_BOTHEDGE:
+		newvalue = S3C_EXTINT_BOTHEDGE;
+		break;
+
+	case IRQT_LOW:
+		newvalue = S3C_EXTINT_LOWLEV;
+		break;
+
+	case IRQT_HIGH:
+		newvalue = S3C_EXTINT_HILEV;
+		break;
+
+	default:
+		printk(KERN_ERR "No such irq type %d", type);
+		return -1;
+	}
+
+	switch (irq) {
+	case AMI602_IRQ:
+		s3c_gpio_cfgpin(S3C_GPN9, S3C_GPN9_EXTINT9);
+		__raw_writel((__raw_readl(S3C_EINTCON0) & ~(0x7 << 16)) |
+			     (newvalue << 16), S3C_EINTCON0);
+		break;
+
+	case IRQ_EINT10:
+		s3c_gpio_cfgpin(S3C_GPN10, S3C_GPN10_EXTINT10);
+		__raw_writel((__raw_readl(S3C_EINTCON0) & ~(0x7 << 20)) |
+			     (newvalue << 20), S3C_EINTCON0);
+		break;
+
+	case IRQ_EINT11:
+		s3c_gpio_cfgpin(S3C_GPN11, S3C_GPN11_EXTINT11);
+		__raw_writel((__raw_readl(S3C_EINTCON0) & ~(0x7 << 20)) |
+			     (newvalue << 20), S3C_EINTCON0);
+		break;
+	case IRQ_EINT12:
+		s3c_gpio_cfgpin(S3C_GPN12, S3C_GPN12_EXTINT12);
+		__raw_writel((__raw_readl(S3C_EINTCON0) & ~(0x7 << 24)) |
+			     (newvalue << 24), S3C_EINTCON0);
+		break;
+
+	case IRQ_EINT13:
+		s3c_gpio_cfgpin(S3C_GPN13, S3C_GPN13_EXTINT13);
+		__raw_writel((__raw_readl(S3C_EINTCON0) & ~(0x7 << 24)) |
+			     (newvalue << 24), S3C_EINTCON0);
+		break;
+
+	case IRQ_EINT14:
+		s3c_gpio_cfgpin(S3C_GPN14, S3C_GPN14_EXTINT14);
+		__raw_writel((__raw_readl(S3C_EINTCON0) & ~(0x7 << 28)) |
+			     (newvalue << 28), S3C_EINTCON0);
+		break;
+
+	case IRQ_EINT15:
+		s3c_gpio_cfgpin(S3C_GPN15, S3C_GPN15_EXTINT15);
+		__raw_writel((__raw_readl(S3C_EINTCON0) & ~(0x7 << 28)) |
+			     (newvalue << 28), S3C_EINTCON0);
+		break;	
+	default:
+		printk(KERN_ERR
+		       "s3c_irqext_type : Only support EINT9,10,11,12,13,14,15 interrupt.\n");
+		break;
+
+	}
+	return 0;
+}
+#endif 
+
 #if 1
 static int AMI602_SendTrigger(void)
 {
@@ -167,15 +261,29 @@ static int AMI602_SetMode(int newmode)
 	u8 databuf[10];	
 	int res = 0;
 
+#if 0
+	read_lock(&ami602_data.lock);
+	mode = ami602_data.mode;
+	read_unlock(&ami602_data.lock);	
+#endif
+
 	if (mode == newmode)
 		return 0;	
 
 	memset(databuf, 0, sizeof(u8)*10);
+#if 0	
+	if (mode==2) {	
+#else
 	if (mode > 2){
+#endif		
 		AMI602_SendTrigger();
 		udelay(1000);		
 	}	
+#if 0	
+	if (newmode==0) {	
+#else		
 	if (newmode == AMI602_HOST_ON) {
+#endif		
 		//Stop 6CH sensor triggered measurement
 		AMI602_SendTrigger();
 		databuf[0] = AMI602_CMD_SET_MES_6CH_AUTO_STOP;
@@ -202,10 +310,16 @@ static int AMI602_SetMode(int newmode)
 		if (res<=0)
 			goto exit_AMI602_SetMode;
 
+#if 1 
 		mode = AMI602_HOST_ON; 
+#endif
 
 	}
+#if 0	
+	else if (newmode == 1){
+#else
 	else if (newmode == AMI602_SENSOR_ON){
+#endif		
 		AMI602_SendTrigger();
 		//Set Enable of accelerometers
 		databuf[0] = AMI602_CMD_SET_AEN;
@@ -233,8 +347,15 @@ static int AMI602_SetMode(int newmode)
 		res = i2c_master_recv(ami602_i2c_client, databuf, 0x01);
 		if (res<=0)
 			goto exit_AMI602_SetMode;	
+#if 1 
+		mode = AMI602_SENSOR_ON;
+#endif
 	}
+#if 0 
+	else if (newmode == 2) {
+#else		
 	else if (newmode == AMI602_HOST_OFF || newmode == AMI602_SENSOR_OFF) {
+#endif		
 		AMI602_SendTrigger();
 		//Transfer to Power Down mode
 		databuf[0] = AMI602_CMD_SET_PWR_DOWN;
@@ -249,13 +370,22 @@ static int AMI602_SetMode(int newmode)
 		if (res<=0)
 			goto exit_AMI602_SetMode;
 
+#if 1 
 		if(mode == AMI602_HOST_ON)
 			mode = AMI602_HOST_OFF;
 		else
 			mode = AMI602_SENSOR_OFF;
+#endif		
 	}
 	else
 		return -3;
+	
+#if 0 				
+	write_lock(&ami602_data.lock);
+	ami602_data.mode = newmode;
+	write_unlock(&ami602_data.lock);			
+	printk(KERN_INFO "Set AMI602 to mode %d\n", newmode);
+#endif	
 	
 exit_AMI602_SetMode:	
 	if (res<=0) {
@@ -266,6 +396,7 @@ exit_AMI602_SetMode:
 	}	
 	return 0;
 }
+
 
 static int AMI602_Power_On(void)
 {
@@ -293,7 +424,7 @@ static int AMI602_Power_On(void)
 	return res;
 }	
 
-#if 1
+#if 1 
 static int AMI602_Init(void)
 {
 	u8 databuf[10];	
@@ -398,6 +529,13 @@ static int AMI602_Init_SensorTrigger(void)
 	u8 databuf[10];	
 	int res = 0;
 	
+#if 0 
+	AMID("SensorTrigger start... \n");
+	write_lock(&ami602_data.lock);
+	ami602_data.mode = 1;//sensor trigger mode
+	write_unlock(&ami602_data.lock);	
+#endif
+
 	AMI602_SendTrigger();
 	
 	memset(databuf, 0, sizeof(u8)*10);	
@@ -429,7 +567,7 @@ static int AMI602_Init_SensorTrigger(void)
 	if (res<=0)
 		goto exit_AMI602_Init_SensorTrigger;	
 	
-#if 1
+#if 1 		
 	mode = AMI602_SENSOR_ON;
 #endif	
 
@@ -449,12 +587,20 @@ static int AMI602_ReadChipInfo(char *buf, int bufsize)
 	char cmd;
 	int res = 0;
 	
+#if 0 
+	int mode = 0;
+	
+	read_lock(&ami602_data.lock);
+	mode = ami602_data.mode;
+	read_unlock(&ami602_data.lock);		
+#endif
+
 	cmd = AMI602_CMD_GET_FIRMWARE;	
 	memset(databuf, 0, sizeof(u8)*10);
 		
 	if ((!buf)||(bufsize<=50))
 		return -1;
-#if 0
+#if 0	
 	if (mode != 0){	
 #else		
 	if (mode != AMI602_HOST_ON){
@@ -514,6 +660,7 @@ static int AMI602_ReadSensorDataFromChip(void)
 		goto exit_AMI602_ReadSensorDataFromChip;	
 	
 	if (databuf[0] == 0) {
+//		write_lock(&ami602_data.lock);  
 		ami602_data.ch1 = ((int) databuf[1]) << 4 | ((int) databuf[2]) >> 4;
 		ami602_data.ch2 = ((int) databuf[2] & 0x0f)   << 8  | ((int) databuf[3]);
 		ami602_data.ch3 = ((int) databuf[4]) << 4 | ((int) databuf[5]) >> 4;
@@ -534,6 +681,7 @@ exit_AMI602_ReadSensorDataFromChip:
 	}
 	return 0;
 }
+
 
 static int AMI602_ReadSensorData_HostMode(char *buf, int bufsize)
 {
@@ -598,13 +746,75 @@ exit_AMI602_ReadSensorData:
 }
 
 
+#if 0	
+static int AMI602_ReadSensorDataHostMode(void)
+{
+	char cmd;
+    u8 databuf[20];
+	int res = 0;
+	int updated = 0;
+
+	memset(databuf, 0, sizeof(u8)*10);
+	if (!ami602_i2c_client)
+		return -3;
+		
+	AMI602_SendTrigger();
+	
+	cmd = AMI602_CMD_REQ_MES;
+	res = i2c_master_send(ami602_i2c_client, &cmd, 0x1);	
+	if (res<=0)
+		goto exit_AMI602_ReadSensorDataHostMode;
+	udelay(350);
+
+	res = i2c_master_recv(ami602_i2c_client, databuf, 1);
+	if (res<=0)
+		goto exit_AMI602_ReadSensorDataHostMode;	
+	
+	write_lock(&ami602_data.lock);
+	ami602_data.updated = 0;
+	write_unlock(&ami602_data.lock);
+
+	do	{
+		read_lock(&ami602_data.lock);
+		updated = ami602_data.updated;
+		msleep(1);
+		read_unlock(&ami602_data.lock);		
+	} while (updated == 0);
+	
+exit_AMI602_ReadSensorDataHostMode:	
+	if (res<=0) {
+		return -1;
+	}
+	else if (databuf[0] != 0) {
+		return -2;
+	}
+	return 0;
+}
+#endif
+
 static int AMI602_ReadSensorData(char *buf, int bufsize)
 {
 	int ch1,ch2,ch3,ch4,ch5,ch6;
+#if 0
+	int mode = 0;
+	int res=0;
+#endif	
 	
 	if ((!buf)||(bufsize<=80))
 		return -10;		
 	
+#if 0 
+	if (mode == AMI602_HOST_ON)
+	{
+		res = AMI602_ReadSensorDataHostMode();	
+		if (res<0)
+		{
+			sprintf(buf, "Error in reading sensor!");		
+			return res;
+		}		
+	}
+#endif
+
 	ch1 = ami602_data.ch1;
 	ch2 = ami602_data.ch2;
 	ch3 = ami602_data.ch3;
@@ -654,7 +864,7 @@ static ssize_t show_chipinfo_value(struct device *dev, struct device_attribute *
 static ssize_t show_sensordata_value(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	char strbuf[AMI602_BUFSIZE];
-#if 1
+#if 1 
 
 	if(mode == AMI602_HOST_ON)
 		AMI602_ReadSensorData_HostMode(strbuf, AMI602_BUFSIZE);
@@ -1279,7 +1489,7 @@ static int ami602_i2c_detach_client(struct i2c_client *client)
 
 static int __init ami602_init(void)
 {
-#if 1
+#if 1 
 	int ret;
 	ami602mid_data.controldata[0] = 50000;
 	ami602mid_data.controldata[1] = 0;

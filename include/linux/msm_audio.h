@@ -339,6 +339,7 @@ struct msm_snd_set_loopback_mode_param {
 	int32_t mode;
 	int get_param;
 };
+/* LGE_CHANGE_S, [junyoub.an] , 2010-02-19, For audio cal tool.*/
 
 typedef enum {
   VOC_CODEC_SPEAKER_MEDIA					= 0,  	/* BT Intercom                      */	

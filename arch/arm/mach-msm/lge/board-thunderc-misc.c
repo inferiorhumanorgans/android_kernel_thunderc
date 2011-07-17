@@ -35,6 +35,9 @@
 static void button_backlight_set(struct led_classdev *led_cdev,
 		enum led_brightness value)
 {
+/* from 0 to 150 mA in 10 mA increments */
+//#define MAX_KEYPAD_BL_LEVEL	16  /* 15: 150 mA */
+//#define MAX_KEYPAD_BL_LEVEL	127 /* 2: 20 mA */
 #define MAX_KEYPAD_BL_LEVEL	255 /* 1: 10 mA */
 	pmic_set_led_intensity(LED_KEYPAD, value / MAX_KEYPAD_BL_LEVEL);
 }
@@ -89,7 +92,11 @@ static void resume_leds(void)
 
 int keypad_led_set(unsigned char value)
 {
+	
 	return 0;
+	/*
+	return pmic_set_led_intensity(LED_KEYPAD, value);
+	*/
 }
 
 static struct msm_pmic_leds_pdata leds_pdata = {
@@ -107,7 +114,6 @@ static struct platform_device msm_device_pmic_leds = {
 	.dev.platform_data	= &leds_pdata,
 };
 #else /* THUNDER_VZW */
-/* add led device for VS660 Rev.D by  younchan.kim 2010-05-27  */
 
 static void pmic_mpp_isink_set(struct led_classdev *led_cdev,
 		enum led_brightness value)
@@ -280,6 +286,7 @@ static struct platform_device msm_batt_device = {
 extern int aat2870bl_ldo_set_level(struct device * dev, unsigned num, unsigned vol);
 extern int aat2870bl_ldo_enable(struct device * dev, unsigned num, unsigned enable);
 
+
 int thunderc_vibrator_power_set(int enable)
 {
 	static int is_enabled = 0;
@@ -353,6 +360,7 @@ static struct android_vibrator_platform_data thunderc_vibrator_data = {
 	.power_set = thunderc_vibrator_power_set,
 	.pwm_set = thunderc_vibrator_pwm_set,
 	.ic_enable_set = thunderc_vibrator_ic_enable_set,
+	
 	.amp_value = 110,
 };
 
@@ -440,8 +448,10 @@ static int thunderc_gpio_earsense_work_func(void)
 			gpio_value?"injected":"ejected");
 	if (gpio_value == EAR_EJECT) {
 		state = EAR_STATE_EJECT;
+		
 	} else {
 		state = EAR_STATE_INJECT;
+		
 	}
 
 	return state;
@@ -490,6 +500,7 @@ static struct platform_device thunderc_earsense_device = {
 };
 
 static struct platform_device *thunderc_misc_devices[] __initdata = {
+	
 	&msm_batt_device, 
 	&msm_device_pmic_leds,
 	&android_vibrator_device,

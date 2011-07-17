@@ -404,6 +404,9 @@ struct msm_snapshot_pp_status {
 #define CFG_SEND_WB_INFO    28
 #define CFG_MAX 			29
 
+/* 2010-05-02: Add auto-focus values */
+/* 2010-05-05: Add setting iso values */
+/* 2010-05-14: Add setting scene values */
 #if defined (CONFIG_ISX005)
 #define CFG_START_AF_FOCUS	101
 #define CFG_CHECK_AF_DONE	102
@@ -436,6 +439,7 @@ struct msm_snapshot_pp_status {
 #define CAMERA_EFFECT_BLACKBOARD	7
 #define CAMERA_EFFECT_AQUA		8
 
+/* 2010-05-13: Add CAMERA_EFFECT values */
 #if defined (CONFIG_ISX005)
 #define CAMERA_EFFECT_NEGATIVE_SEPIA	9
 #define CAMERA_EFFECT_BLUE				10

@@ -133,6 +133,7 @@ static void usb_chg_stop(struct work_struct *w);
 
 #if defined (CONFIG_USB_SUPPORT_LGE_FACTORY_USB) || \
 	defined(CONFIG_USB_SUPPORT_LGE_SERIAL_FROM_ARM9_MEID)
+
 extern int msm_chg_LG_cable_type(void);
 #endif
 
@@ -154,6 +155,7 @@ extern int msm_chg_LG_cable_type(void);
 
 #if defined(CONFIG_USB_SUPPORT_LGE_FACTORY_USB) || \
 	defined(CONFIG_USB_SUPPORT_LGE_SERIAL_FROM_ARM9_MEID)
+
 #define LG_FACTORY_CABLE_TYPE 3
 #define LT_ADB_CABLE 0xff
 #define LG_FACTORY_USB_PID 0x6000
@@ -354,6 +356,7 @@ static void usb_chg_legacy_detect(struct work_struct *w)
 	int ret = 0;
 
 #if defined (CONFIG_USB_SUPPORT_LGE_FACTORY_USB)
+
 	int cable_type;
 
 	cable_type = msm_chg_LG_cable_type();
@@ -372,6 +375,7 @@ static void usb_chg_legacy_detect(struct work_struct *w)
 	}
 
 #if defined (CONFIG_USB_SUPPORT_LGE_FACTORY_USB)
+
 	if( cable_type == LG_FACTORY_CABLE_TYPE) {
 		ui->chg_type = temp = USB_CHG_TYPE__WALLCHARGER;
 		goto chg_legacy_det_out;
@@ -1975,6 +1979,7 @@ static int usb_hw_reset(struct usb_info *ui)
 	writel(ui->dma, USB_ENDPOINTLISTADDR);
 
 #if defined (CONFIG_USB_SUPPORT_LGE_FACTORY_USB)
+
 	if( msm_chg_LG_cable_type() == LG_FACTORY_CABLE_TYPE) {
 		unsigned tmp = 0; 
 
@@ -1991,6 +1996,7 @@ static int usb_hw_reset(struct usb_info *ui)
 }
 
 #if defined (CONFIG_USB_SUPPORT_LGE_FACTORY_USB)
+
 static void lgfw_change_PID(struct usb_info *ui, int pid)
 {
   int i;
@@ -2463,6 +2469,7 @@ void usb_function_enable(const char *function, int enable)
 		return;
 	}
 #if defined(CONFIG_USB_SUPPORT_LGE_FACTORY_USB)
+	
 	if (nCableType == 3) {
 		if (pid == 0x6001) 
 			pid = 0x6000;
@@ -2620,6 +2627,7 @@ static void usb_do_work(struct work_struct *w)
 					msm_pm_app_enable_usb_ldo(0);
 				ui->state = USB_STATE_OFFLINE;
 #if defined(CONFIG_USB_SUPPORT_LGDRIVER)
+				
 				switch_set_state(&ui->sdev, ui->online);
 				enable_irq(ui->irq);
 #else	/* origin */
@@ -3111,6 +3119,7 @@ static void usb_configure_device_descriptor(struct usb_info *ui)
 	if (!strcmp(df_serialno,"00000000000000"))
 		ui->pdata->serial_number = NULL;
 
+	
 	if (msm_chg_LG_cable_type() == LT_ADB_CABLE) {
 		sprintf(df_serialno,"%s","LGE_ANDROID_DE");
 		ui->pdata->serial_number = df_serialno;
@@ -3118,6 +3127,7 @@ static void usb_configure_device_descriptor(struct usb_info *ui)
 #endif
 
 #if(CONFIG_USB_SUPPORT_LGE_FACTORY_USB)
+	
 	if (ui->composition->product_id == LG_FACTORY_USB_PID) {
 		desc_device.idProduct = ui->composition->product_id;
 		ui->pdata->serial_number = NULL;
@@ -3187,6 +3197,7 @@ static ssize_t msm_hsusb_show_compswitch(struct device *dev,
 	if (ui->composition)
 		i = scnprintf(buf, PAGE_SIZE,
 #if defined(CONFIG_USB_SUPPORT_LGDRIVER)
+		
 				"%x\n",
 #else	/* origin */
 				"composition product id = %x\n",
@@ -3298,6 +3309,7 @@ static ssize_t  show_##function(struct device *dev,			\
 									\
 static DEVICE_ATTR(function, S_IRUGO, show_##function, NULL);
 
+
 #if defined (CONFIG_USB_SUPPORT_LGDRIVER)
 msm_hsusb_func_attr(modem, 0);
 msm_hsusb_func_attr(diag, 1);
@@ -3335,6 +3347,7 @@ static struct attribute *msm_hsusb_func_attrs[] = {
 	NULL,
 };
 #endif
+
 
 static struct attribute_group msm_hsusb_func_attr_grp = {
 	.name  = "functions",
@@ -3394,6 +3407,7 @@ static int __init usb_probe(struct platform_device *pdev)
 	ui->pdata = pdev->dev.platform_data;
 
 #if defined(CONFIG_USB_SUPPORT_LGE_FACTORY_USB)
+	
 	if( msm_chg_LG_cable_type() == 3 )  //detect LT cable
 		pid = LG_FACTORY_USB_PID;
 #endif

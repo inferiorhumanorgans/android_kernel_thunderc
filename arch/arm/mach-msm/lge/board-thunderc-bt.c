@@ -118,6 +118,7 @@ static struct platform_device msm_bt_power_device = {
 	},		
 };
 
+
 static void __init bt_power_init(void)
 {
 	int pin, rc;

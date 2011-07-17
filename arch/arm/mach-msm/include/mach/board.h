@@ -44,6 +44,7 @@ struct msm_camera_io_ext {
 	uint32_t csiirq;
 };
 
+
 #if defined (CONFIG_MACH_LGE)
 struct msm_camera_device_platform_data {
 	void (*camera_gpio_on) (void);
@@ -59,6 +60,7 @@ struct msm_camera_device_platform_data {
 	struct msm_camera_io_ext ioext;
 };
 #endif
+
 enum msm_camera_csi_data_format {
 	CSI_8BIT,
 	CSI_10BIT,
