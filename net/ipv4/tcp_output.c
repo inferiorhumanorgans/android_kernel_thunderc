@@ -2323,7 +2323,7 @@ static void tcp_connect_init(struct sock *sk)
 #endif
 
 	/* If user gave his TCP_MAXSEG, record it to clamp */
-
+// LGE_CHANGE_DATA 2010.07.20 [ih.jang@lge.com] adjust_sprint_mtu(mss)_size
 #ifdef CONFIG_LGE_TCP_MTU_1472
 	tp->rx_opt.user_mss = 1432; //adjust_mss=1432[MTU=1472]
 #endif

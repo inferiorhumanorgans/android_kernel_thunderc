@@ -31,18 +31,21 @@
 #include "diagmem.h"
 #include "diagchar.h"
 #include <linux/timer.h>
+/* LGE_CHANGES_S [woonghee@lge.com] 2009-12-29, [VS740] kernel diag service */
 #if defined (CONFIG_LGE_DIAGTEST)
 #include <linux/platform_device.h>
 #include <mach/lg_diagcmd.h>
 #endif
-
+/* LGE_CHANGES_E [woonghee@lge.com] 2009-12-29, [VS740] */
 
 MODULE_DESCRIPTION("Diag Char Driver");
 MODULE_LICENSE("GPL v2");
 MODULE_VERSION("1.0");
 
 struct diagchar_dev *driver;
-
+/* The following variables can be specified by module options */
+ /* for copy buffer */
+/* LG_FW khlee 2010.01.29 - screen capture needs large heap ( lg_diag_screen_capture.c)*/
 #if defined (CONFIG_MACH_MSM7X27_THUNDERC) || defined (LG_FW_DIAG_SCREEN_CAPTURE) || defined (LG_FW_MTC)
 static unsigned int itemsize = 4096; /*Size of item in the mempool */
 #else
@@ -62,13 +65,15 @@ static unsigned int threshold_client_limit = 30;
 struct timer_list drain_timer;
 int timer_in_progress;
 
-
+/* LGE_CHANGES_S [woonghee@lge.com] 2009-12-29, [VS740] kernel diag service */
 #if defined (CONFIG_LGE_DIAGTEST)
 extern void lgfw_diag_kernel_service_init(int);
 extern int lg_diag_cmd_dev_register(struct lg_diag_cmd_dev *sdev);
 extern 	void lg_diag_cmd_dev_unregister(struct lg_diag_cmd_dev *sdev);
 #endif
+/* LGE_CHANGES_E [woonghee@lge.com] 2009-12-29, [VS740] */
 
+/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-29, changed static variable */
 //void *buf_hdlc;
 static void *buf_hdlc;
 module_param(itemsize, uint, 0);
@@ -180,7 +185,8 @@ static int diagchar_open(struct inode *inode, struct file *file)
 					 driver->client_map[i].pid);
 					driver->display_alert = 0;
 
-					
+					// LGE_CHAGNE [dojiop.kim@lge.com] 2010-07-02, 
+					// debugging
 					{
 					char comm[sizeof(current->comm)];
 					printk(KERN_WARNING "Try to open the diag by pid %d (%s)\n",
@@ -221,7 +227,12 @@ static int diagchar_close(struct inode *inode, struct file *file)
 	if (driver) {
 		mutex_lock(&driver->diagchar_mutex);
 		driver->ref_count--;
-		
+		/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-28, [LS670]
+		 * exit iff ref_count is zero
+		 */
+		/* LGE_CHANGE [dojip.kim@lge.com] 2010-07-02, [LS670]
+		 * fix the negative ref count
+		 */
 #ifdef CONFIG_MACH_LGE
 		if (0 >= driver->ref_count) {
 			driver->ref_count = 0;
@@ -768,7 +779,7 @@ static int diagchar_cleanup(void)
 }
 
 #if defined (CONFIG_LGE_DIAGTEST)
-
+/* LGE_CHANGES_S [woonghee@lge.com] 2009-12-29, [VS740] kernel diag service */
 extern int lg_diag_create_file(struct platform_device *pdev);
 extern int lg_diag_remove_file(struct platform_device *pdev);
 
@@ -852,11 +863,12 @@ static int __init diagchar_init(void)
 
 	printk(KERN_INFO "diagchar initialized\n");
 
-
+/* LGE_CHANGES_S [woonghee@lge.com] 2009-12-29, [VS740] kernel diag service */
 #if defined (CONFIG_LGE_DIAGTEST)
 	platform_driver_register(&lg_diag_cmd_driver);
 	lgfw_diag_kernel_service_init((int)driver);
 #endif
+/* LGE_CHANGES_E [woonghee@lge.com] 2009-12-29, [VS740] */
 
 	return 0;
 

@@ -41,6 +41,7 @@ static int bluetooth_toggle_radio(void *data, bool blocked)
 	return ret;
 }
 #endif 
+/* LGE_CHANGES_S [taekeun1.kim@lge.com] 2010-06-06, for bt */
 #if defined (CONFIG_MACH_LGE)
 static struct rfkill_ops bluetooth_power_rfkill_ops;
 #else
@@ -54,6 +55,7 @@ static int bluetooth_power_rfkill_probe(struct platform_device *pdev)
 	struct rfkill *rfkill;
 	int ret;
 
+/* LGE_CHANGES_S [taekeun1.kim@lge.com] 2010-06-06, for bt */
 #if defined (CONFIG_MACH_LGE)
 	bluetooth_power_rfkill_ops.set_block = bt_platform_data->bluetooth_toggle_radio;
 #endif

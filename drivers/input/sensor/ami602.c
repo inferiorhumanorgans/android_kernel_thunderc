@@ -2,7 +2,7 @@
  *
  * Copyright (C) 2009 AMIT Technology Inc.
  * Author: Kyle Chen <sw-support@amit-inc.com>
- * Modified by EunYoung, Cho  LGE Inc.
+ * Modified by EunYoung, Cho <eycho1004@lge.com> LGE Inc.
  *  - Modified power sequence
  *  - I2c driver register(probe, release)
  *
@@ -26,15 +26,15 @@
 #include <linux/delay.h>
 #include <linux/input.h>
 #include <linux/workqueue.h>
-//#include <linux/ami602.h> 
+//#include <linux/ami602.h> /*LGE_CHANGE 2009.09.27 [eycho1004@lge.com]*/
 #include <linux/kobject.h>
 #include <mach/hardware.h>
-//#include <asm-arm/arch/regs-gpio.h> 
-//#include <asm-arm/arch/irqs.h> 
+//#include <asm-arm/arch/regs-gpio.h> /*LGE_CHANGE 2009.09.27 [eycho1004@lge.com]*/
+//#include <asm-arm/arch/irqs.h> /*LGE_CHANGE 2009.10.02 [eycho1004@lge.com]*/
 #include <linux/spinlock.h>
 #include <asm/io.h>
 
-
+/*LGE_CHANGE_S 2009.09.27 [eycho1004@lge.com] - Add head file and defined debug message*/
 #include <linux/interrupt.h>
 #include <mach/vreg.h>
 #include <mach/gpio.h>	
@@ -83,6 +83,7 @@ static int busy_rising = 0;
 
 static int mode = AMI602_INIT;
 
+/*LGE_CHANGE_E 2009.09.27 [eycho1004@lge.com]*/
 
 static struct work_struct ami602_readmeasure_work;
 
@@ -116,6 +117,7 @@ static struct i2c_driver ami602_i2c_driver = {
 
 struct _ami602_data {
 	rwlock_t lock;
+//	int mode; /*LGE_CHANGE 2009.10.02 [eycho1004@lge.com]*/
 	int rate;
 	volatile int updated;
 	int ch1;
@@ -142,7 +144,7 @@ struct _ami602mid_data {
 	int mag_status;
 } ami602mid_data;
 
-#if 0
+#if 0 /*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/
 static int
 s3c_irqext_type(unsigned int irq, unsigned int type)
 {
@@ -231,7 +233,9 @@ s3c_irqext_type(unsigned int irq, unsigned int type)
 	return 0;
 }
 #endif 
+/*LGE_CHANGE_E 2009.10.02 [eycho1004@lge.com]*/
 
+/*LGE_CHANGE_S 2009.09.27 [eycho1004@lge.com] - Changed GPIO API*/
 #if 1
 static int AMI602_SendTrigger(void)
 {
@@ -255,13 +259,15 @@ static int AMI602_SendTrigger(void)
 	return 0;
 }
 #endif
+/*LGE_CHANGE_E 2009.09.27 [eycho1004@lge.com]*/
 
 static int AMI602_SetMode(int newmode)
 {
 	u8 databuf[10];	
 	int res = 0;
+//	int mode = 0; /*LGE_CHANGE 2009.10.02 [eycho1004@lge.com]- AICHI STEEL Orginal Source Code*/
 
-#if 0
+#if 0 /*LGE_CHANGE 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/
 	read_lock(&ami602_data.lock);
 	mode = ami602_data.mode;
 	read_unlock(&ami602_data.lock);	
@@ -271,7 +277,7 @@ static int AMI602_SetMode(int newmode)
 		return 0;	
 
 	memset(databuf, 0, sizeof(u8)*10);
-#if 0	
+#if 0	/*LGE_CHANGE 2009.10.02 [eycho1004@lge.com]- AICHI STEEL Orginal Source Code*/
 	if (mode==2) {	
 #else
 	if (mode > 2){
@@ -279,7 +285,7 @@ static int AMI602_SetMode(int newmode)
 		AMI602_SendTrigger();
 		udelay(1000);		
 	}	
-#if 0	
+#if 0	/*LGE_CHANGE 2009.10.02 [eycho1004@lge.com]- AICHI STEEL Orginal Source Code*/	
 	if (newmode==0) {	
 #else		
 	if (newmode == AMI602_HOST_ON) {
@@ -310,12 +316,13 @@ static int AMI602_SetMode(int newmode)
 		if (res<=0)
 			goto exit_AMI602_SetMode;
 
-#if 1 
+//		flush_scheduled_work();	/*LGE_CHANGE 2009.10.02 [eycho1004@lge.com]- AICHI STEEL Orginal Source Code*/
+#if 1 /*LGE_CHANGE 2009.10.02 [eycho1004@lge.com]- Add MODE STATE STORE*/
 		mode = AMI602_HOST_ON; 
 #endif
 
 	}
-#if 0	
+#if 0	/*LGE_CHANGE 2009.10.02 [eycho1004@lge.com]- AICHI STEEL Orginal Source Code*/
 	else if (newmode == 1){
 #else
 	else if (newmode == AMI602_SENSOR_ON){
@@ -347,11 +354,11 @@ static int AMI602_SetMode(int newmode)
 		res = i2c_master_recv(ami602_i2c_client, databuf, 0x01);
 		if (res<=0)
 			goto exit_AMI602_SetMode;	
-#if 1 
+#if 1 /*LGE_CHANGE 2009.10.02 [eycho1004@lge.com]- Add MODE STATE STORE*/
 		mode = AMI602_SENSOR_ON;
 #endif
 	}
-#if 0 
+#if 0 /*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/
 	else if (newmode == 2) {
 #else		
 	else if (newmode == AMI602_HOST_OFF || newmode == AMI602_SENSOR_OFF) {
@@ -370,7 +377,7 @@ static int AMI602_SetMode(int newmode)
 		if (res<=0)
 			goto exit_AMI602_SetMode;
 
-#if 1 
+#if 1 /*LGE_CHANGE 2009.10.02 [eycho1004@lge.com]- Add MODE STATE STORE*/
 		if(mode == AMI602_HOST_ON)
 			mode = AMI602_HOST_OFF;
 		else
@@ -380,7 +387,7 @@ static int AMI602_SetMode(int newmode)
 	else
 		return -3;
 	
-#if 0 				
+#if 0 /*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/					
 	write_lock(&ami602_data.lock);
 	ami602_data.mode = newmode;
 	write_unlock(&ami602_data.lock);			
@@ -397,7 +404,7 @@ exit_AMI602_SetMode:
 	return 0;
 }
 
-
+/*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - sequence of power*/
 static int AMI602_Power_On(void)
 {
 	int res = 0;
@@ -423,8 +430,9 @@ static int AMI602_Power_On(void)
 	
 	return res;
 }	
+/*LGE_CHANGE_E 2009.10.02 [eycho1004@lge.com]*/
 
-#if 1 
+#if 1 /*LGE_CHANGE_E 2009.10.02 [eycho1004@lge.com] Changed Host Trigger Mode initialization*/
 static int AMI602_Init(void)
 {
 	u8 databuf[10];	
@@ -529,7 +537,7 @@ static int AMI602_Init_SensorTrigger(void)
 	u8 databuf[10];	
 	int res = 0;
 	
-#if 0 
+#if 0 /*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/	
 	AMID("SensorTrigger start... \n");
 	write_lock(&ami602_data.lock);
 	ami602_data.mode = 1;//sensor trigger mode
@@ -567,7 +575,7 @@ static int AMI602_Init_SensorTrigger(void)
 	if (res<=0)
 		goto exit_AMI602_Init_SensorTrigger;	
 	
-#if 1 		
+#if 1 /*LGE_CHANGE 2009.10.02 [eycho1004@lge.com]- Add MODE STATE STORE*/			
 	mode = AMI602_SENSOR_ON;
 #endif	
 
@@ -587,7 +595,7 @@ static int AMI602_ReadChipInfo(char *buf, int bufsize)
 	char cmd;
 	int res = 0;
 	
-#if 0 
+#if 0 /*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/	
 	int mode = 0;
 	
 	read_lock(&ami602_data.lock);
@@ -600,7 +608,7 @@ static int AMI602_ReadChipInfo(char *buf, int bufsize)
 		
 	if ((!buf)||(bufsize<=50))
 		return -1;
-#if 0	
+#if 0	/*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/
 	if (mode != 0){	
 #else		
 	if (mode != AMI602_HOST_ON){
@@ -660,7 +668,7 @@ static int AMI602_ReadSensorDataFromChip(void)
 		goto exit_AMI602_ReadSensorDataFromChip;	
 	
 	if (databuf[0] == 0) {
-//		write_lock(&ami602_data.lock);  
+//		write_lock(&ami602_data.lock);  /*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/
 		ami602_data.ch1 = ((int) databuf[1]) << 4 | ((int) databuf[2]) >> 4;
 		ami602_data.ch2 = ((int) databuf[2] & 0x0f)   << 8  | ((int) databuf[3]);
 		ami602_data.ch3 = ((int) databuf[4]) << 4 | ((int) databuf[5]) >> 4;
@@ -682,7 +690,7 @@ exit_AMI602_ReadSensorDataFromChip:
 	return 0;
 }
 
-
+/*LGE_CHANGE_S [eycho1004@lge.com] changed ReadSensorData*/
 static int AMI602_ReadSensorData_HostMode(char *buf, int bufsize)
 {
 	char cmd;
@@ -744,9 +752,9 @@ exit_AMI602_ReadSensorData:
 	}
 	return 0;
 }
+/*LGE_CHANGE_E [eycho1004@lge.com] changed ReadSensorData*/
 
-
-#if 0	
+#if 0	/*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/
 static int AMI602_ReadSensorDataHostMode(void)
 {
 	char cmd;
@@ -795,7 +803,7 @@ exit_AMI602_ReadSensorDataHostMode:
 static int AMI602_ReadSensorData(char *buf, int bufsize)
 {
 	int ch1,ch2,ch3,ch4,ch5,ch6;
-#if 0
+#if 0 /*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/	
 	int mode = 0;
 	int res=0;
 #endif	
@@ -803,7 +811,7 @@ static int AMI602_ReadSensorData(char *buf, int bufsize)
 	if ((!buf)||(bufsize<=80))
 		return -10;		
 	
-#if 0 
+#if 0 /*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/	
 	if (mode == AMI602_HOST_ON)
 	{
 		res = AMI602_ReadSensorDataHostMode();	
@@ -815,12 +823,14 @@ static int AMI602_ReadSensorData(char *buf, int bufsize)
 	}
 #endif
 
+//	read_lock(&ami602_data.lock);	/*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/
 	ch1 = ami602_data.ch1;
 	ch2 = ami602_data.ch2;
 	ch3 = ami602_data.ch3;
 	ch4 = ami602_data.ch4;
 	ch5 = ami602_data.ch5;
 	ch6 = ami602_data.ch6;	
+//	read_lock(&ami602_data.lock);	/*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/	
 
 	sprintf(buf, "%04x %04x %04x %04x %04x %04x", ch1,ch2,ch3,ch4,ch5,ch6);
 	return 0;
@@ -838,6 +848,7 @@ static int AMI602_ReadCaliData(char *buf, int bufsize)
 {
 	if ((!buf)||(bufsize<=80))
 		return -1;
+//	read_lock(&ami602mid_data.datalock); /*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/	
 	sprintf(buf, "%d %d %d %d %d %d %d", 
 		ami602mid_data.nmx, ami602mid_data.nmy, ami602mid_data.nmz,ami602mid_data.nax,ami602mid_data.nay,ami602mid_data.naz, ami602mid_data.mag_status);		
 //	read_unlock(&ami602mid_data.datalock);
@@ -848,6 +859,7 @@ static int AMI602_ReadMiddleControl(char *buf, int bufsize)
 {
 	if ((!buf)||(bufsize<=80))
 		return -1;
+//	read_lock(&ami602mid_data.datalock);  /*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/	
 	sprintf(buf, "%d %d %d %d %d", 
 		ami602mid_data.controldata[0], ami602mid_data.controldata[1], ami602mid_data.controldata[2],ami602mid_data.controldata[3],ami602mid_data.controldata[4]);		
 //	read_unlock(&ami602mid_data.ctrllock);	
@@ -864,7 +876,7 @@ static ssize_t show_chipinfo_value(struct device *dev, struct device_attribute *
 static ssize_t show_sensordata_value(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	char strbuf[AMI602_BUFSIZE];
-#if 1 
+#if 1 /*LGE_CHANGE 2009.10.02 [eycho1004@lge.com]- SensorData*/	
 
 	if(mode == AMI602_HOST_ON)
 		AMI602_ReadSensorData_HostMode(strbuf, AMI602_BUFSIZE);
@@ -901,11 +913,14 @@ static ssize_t show_midcontrol_value(struct device *dev, struct device_attribute
 
 static ssize_t store_midcontrol_value(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
+//	write_lock(&ami602mid_data.ctrllock); /*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/
 	sscanf(buf, "%d %d %d %d %d", &(ami602mid_data.controldata[0]), &(ami602mid_data.controldata[1]),
 		   &(ami602mid_data.controldata[2]),&(ami602mid_data.controldata[3]),&(ami602mid_data.controldata[4]));	 		   
+//	write_unlock(&ami602mid_data.ctrllock); /*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/
 	return count;			
 }
 #if 1
+/*LGE_CHANGE_S 2009.11.02 [eycho1004@lge.com] - mode to change*/
 static ssize_t show_mode_value(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	char *s;
@@ -950,6 +965,7 @@ static ssize_t store_mode_value(struct device *dev, struct device_attribute *att
 
 	return count;			
 }
+/*LGE_CHANGE_E 2009.11.02 [eycho1004@lge.com] */
 #else
 
 static ssize_t show_mode_value(struct device *dev, struct device_attribute *attr, char *buf)
@@ -1003,6 +1019,7 @@ static int ami602mid_ioctl(struct inode *inode, struct file *file, unsigned int 
 		
 	switch (cmd) {			
 		case AMI602MID_IOCTL_SET_POSTURE:
+//			printk(KERN_INFO "Enter AMI602MID_IOCTL_SET_POSTURE\n"); /*LGE_CHANGE 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/
 			data = (void __user *) arg;
 			if (data == NULL)
 				break;	
@@ -1010,10 +1027,13 @@ static int ami602mid_ioctl(struct inode *inode, struct file *file, unsigned int 
 				retval = -EFAULT;
 				goto err_out;
 			}
+//			printk(KERN_INFO "Set posture to be %d %d %d\n", valuebuf[0],valuebuf[1],valuebuf[2]); /*LGE_CHANGE 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/
+//			write_lock(&ami602mid_data.datalock); /*LGE_CHANGE 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/
 			ami602mid_data.yaw   = valuebuf[0];
 			ami602mid_data.pitch = valuebuf[1];
 			ami602mid_data.roll  = valuebuf[2];
 			ami602mid_data.mag_status = valuebuf[3];
+//			write_unlock(&ami602mid_data.datalock); /*LGE_CHANGE 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/
 			break;		
 			
 		case AMI602MID_IOCTL_SET_CALIDATA:
@@ -1024,6 +1044,7 @@ static int ami602mid_ioctl(struct inode *inode, struct file *file, unsigned int 
 				retval = -EFAULT;
 				goto err_out;
 			}
+//			write_lock(&ami602mid_data.datalock); /*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/
 			ami602mid_data.nmx = calidata[0];
 			ami602mid_data.nmy = calidata[1];
 			ami602mid_data.nmz = calidata[2];
@@ -1031,6 +1052,7 @@ static int ami602mid_ioctl(struct inode *inode, struct file *file, unsigned int 
 			ami602mid_data.nay = calidata[4];
 			ami602mid_data.naz = calidata[5];
 			ami602mid_data.mag_status = calidata[6];	
+//			write_unlock(&ami602mid_data.datalock); /*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/
 			break;								
 	
 		case AMI602MID_IOCTL_GET_CONTROL:
@@ -1052,7 +1074,9 @@ static int ami602mid_ioctl(struct inode *inode, struct file *file, unsigned int 
 				retval = -EFAULT;
 				goto err_out;
 			}
+//			write_lock(&ami602mid_data.ctrllock); /*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/
 			memcpy(&ami602mid_data.controldata[0], controlbuf, sizeof(controlbuf));									
+//			write_unlock(&ami602mid_data.ctrllock);	/*LGE_CHANGE_S 2009.10.02 [eycho1004@lge.com] - AICHI STEEL Orginal Source Code*/
 			break;					
 		default:
 			printk(KERN_ERR "%s not supported = 0x%04x", __FUNCTION__, cmd);
@@ -1179,6 +1203,7 @@ void ami602_read_measure(struct work_struct *work)
 	AMI602_ReadSensorDataFromChip();
 }
 
+/* LGE_CHANGE_S 2009.09.27 [eycho1004@lge.com]- Add GED 6-axis Sensor */
 #if 1	
 /* AMI602 BUSY rising isr */
 static irqreturn_t ami602_busy_rising_isr(int irq, void *dev_id)
@@ -1376,6 +1401,7 @@ static struct i2c_driver ami602_i2c_driver = {
 		},
 		.id	        = 1601,
 };
+/* LGE_CHANGE_E 2009.09.27 [eycho1004@lge.com]  */
 
 #else	/* AICHI STEEL Orginal Source Code */
 static int ami602_interrupt(int irq, void *dev_id)
@@ -1489,7 +1515,7 @@ static int ami602_i2c_detach_client(struct i2c_client *client)
 
 static int __init ami602_init(void)
 {
-#if 1 
+#if 1 /*LGE_CHANGE 2009.09.27 [eycho1004@lge.com] - Add ERROR condition*/
 	int ret;
 	ami602mid_data.controldata[0] = 50000;
 	ami602mid_data.controldata[1] = 0;

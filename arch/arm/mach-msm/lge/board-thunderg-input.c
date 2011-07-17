@@ -27,6 +27,7 @@
 #include "board-thunderg.h"
 static int prox_power_set(unsigned char onoff);
 
+/* LGE_S [ynj.kim@lge.com] 2010-05-15 : atcmd virtual device */
 static unsigned short atcmd_virtual_keycode[ATCMD_VIRTUAL_KEYPAD_ROW][ATCMD_VIRTUAL_KEYPAD_COL] = {
 	{KEY_1, 		KEY_8, 				KEY_Q,  	 KEY_I,          KEY_D,      	KEY_HOME,	KEY_B,          KEY_UP},
 	{KEY_2, 		KEY_9, 		  		KEY_W,		 KEY_O,       	 KEY_F,		 	KEY_RIGHTSHIFT, 	KEY_N,			KEY_DOWN},
@@ -52,6 +53,7 @@ static struct platform_device atcmd_virtual_device = {
 		.platform_data = &atcmd_virtual_pdata,
 	},
 };
+/* LGE_E [ynj.kim@lge.com] 2010-05-15 : atcmd virtual device */
 
 /* head set device */
 static struct msm_handset_platform_data hs_platform_data = {
@@ -143,7 +145,11 @@ int thunderg_matrix_info_wrapper(struct input_dev *input_dev,struct gpio_event_i
 static int thunderg_gpio_matrix_power(
                 const struct gpio_event_platform_data *pdata, bool on)
 {
-	
+	/* this is dummy function to make gpio_event driver register suspend function
+	 * 2010-01-29, cleaneye.kim@lge.com
+	 * copy from ALOHA code
+	 * 2010-04-22 younchan.kim@lge.com
+	 */
 
 	return 0;
 }

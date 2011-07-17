@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2009 LGE, Inc.
  *
- * 
+ * Author: Jinkyu Choi <jinkyu@lge.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ struct timed_vibrator_data {
 #if defined(CONFIG_VIB_USE_WORK_QUEUE)	/* C710 Rev.D */
 static atomic_t nForce = ATOMIC_INIT(128); /* default max gain */
 struct work_struct vib_power_set_work_queue;
+// LGE_CHANGE [dojip.kim@lge.com] 2010-08-06, single thread workqueue
 static struct workqueue_struct *vibrator_wq = NULL;
 #endif	/* CONFIG_VIB_USE_WORK_QUEUE */
 
@@ -119,6 +120,7 @@ static int android_vibrator_force_set(int nForce)
 }
 
 #if defined(CONFIG_VIB_USE_WORK_QUEUE)
+// LGE_CHANGE [dojip.kim@lge.com] 2010-08-06, real time 
 static void vib_power_set_work(struct work_struct *work)
 {
 	struct sched_param s = { .sched_priority = 1 };
@@ -151,6 +153,7 @@ static enum hrtimer_restart vibrator_timer_func(struct hrtimer *timer)
 {
 #if defined(CONFIG_VIB_USE_WORK_QUEUE)
 	atomic_set(&nForce, 0);
+	//LGE_CHANGE [dojip.kim@lge.com] 2010-08-06, single thread workqueue
 	if (vibrator_wq)
 		queue_work(vibrator_wq, &vib_power_set_work_queue);
 	else
@@ -208,6 +211,7 @@ static void vibrator_enable(struct timed_output_dev *dev, int value)
 			value = data->max_timeout;
 #if defined(CONFIG_VIB_USE_WORK_QUEUE)
 		atomic_set(&nForce, gain);
+		//LGE_CHANGE [dojip.kim@lge.com] 2010-08-06, single thread workqueue
 		if (vibrator_wq)
 			queue_work(vibrator_wq, &vib_power_set_work_queue);
 		else
@@ -219,6 +223,7 @@ static void vibrator_enable(struct timed_output_dev *dev, int value)
 	} else {
 #if defined(CONFIG_VIB_USE_WORK_QUEUE)
 		atomic_set(&nForce, 0);
+		//LGE_CHANGE [dojip.kim@lge.com] 2010-08-06, single thread workqueue
 		if (vibrator_wq)
 			queue_work(vibrator_wq, &vib_power_set_work_queue);
 		else
@@ -278,6 +283,7 @@ static int android_vibrator_probe(struct platform_device *pdev)
 	INIT_WORK(&vib_power_set_work_queue, vib_power_set_work);
 
 	atomic_set(&nForce, 0);
+	//LGE_CHANGE [dojip.kim@lge.com] 2010-08-06, single thread workqueue
 	if (vibrator_wq)
 		queue_work(vibrator_wq, &vib_power_set_work_queue);
 	else
@@ -359,6 +365,7 @@ static int __init android_vibrator_init(void)
 {
 	printk(KERN_INFO "LGE: Android Vibrator Driver Init\n");
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-06, single thread workqueue
 #if defined(CONFIG_VIB_USE_WORK_QUEUE)
 	vibrator_wq = create_singlethread_workqueue("vibrator_wq");
 	if (!vibrator_wq) {
@@ -372,6 +379,7 @@ static void __exit android_vibrator_exit(void)
 {
 	printk(KERN_INFO "LGE: Android Vibrator Driver Exit\n");
 	platform_driver_unregister(&android_vibrator_driver);
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-06, single thread workqueue
 #if defined(CONFIG_VIB_USE_WORK_QUEUE)
 	if (vibrator_wq)
 		destroy_workqueue(vibrator_wq);

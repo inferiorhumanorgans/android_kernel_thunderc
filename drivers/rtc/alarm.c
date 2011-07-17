@@ -23,6 +23,7 @@
 #include <linux/spinlock.h>
 #include <linux/sysdev.h>
 #include <linux/wakelock.h>
+// LGE_CHANGE [dojip.kim@lge.com] 2010-07-14, debugging
 #include <linux/sched.h>
 
 #define ANDROID_ALARM_PRINT_ERROR (1U << 0)
@@ -32,8 +33,11 @@
 #define ANDROID_ALARM_PRINT_SUSPEND (1U << 4)
 #define ANDROID_ALARM_PRINT_INT (1U << 5)
 #define ANDROID_ALARM_PRINT_FLOW (1U << 6)
+// LGE_CHANGE [dojip.kim@lge.com] 2010-07-15, alarm add debugging 
 #define ANDROID_ALARM_PRINT_ADD (1U << 7)
 
+// LGE_CHANGE [dojip.kim@lge.com] 2010-07-15, alarm add debugging 
+// LGE_CHANGE [dojip.kim@lge.com] 2010-07-20, disable the alarm add debugging 
 static int debug_mask = ANDROID_ALARM_PRINT_ERROR | \
 			ANDROID_ALARM_PRINT_ADD | \
 			ANDROID_ALARM_PRINT_INIT_STATUS;
@@ -71,6 +75,7 @@ static struct platform_device *alarm_platform_dev;
 struct alarm_queue alarms[ANDROID_ALARM_TYPE_COUNT];
 static bool suspended;
 
+/* LGE_CHANGE [dojip.kim@lge.com] 2010-06-30, [LS670] fix the elapsedtime */
 #ifdef CONFIG_LGE_RTC_INTF_ALARM_SYNC
 static bool alarm_need_to_update = true; /* need to update alarm before first sleep */
 static bool force_to_update = true;
@@ -133,26 +138,30 @@ static void alarm_enqueue_locked(struct alarm *alarm)
 	struct rb_node *parent = NULL;
 	struct alarm *entry;
 	int leftmost = 1;
+	// LGE_CHANGE_S [dojip.kim@lge.com] 2010-07-15, alarm add debugging 
 	s64 stime;
 	ktime_t now;
-	
+	// LGE_CHANGE_E [dojip.kim@lge.com] 2010-07-15
 
 	pr_alarm(FLOW, "added alarm, type %d, func %pF at %lld\n",
 		alarm->type, alarm->function, ktime_to_ns(alarm->expires));
 
+	// LGE_CHANGE_S [dojip.kim@lge.com] 2010-07-15, alarm add debugging 
 	now = alarm_get_elapsed_realtime();
 	stime = ktime_to_ns(alarm->expires) - ktime_to_ns(now);
 	do_div(stime, NSEC_PER_SEC);
 	pr_alarm(ADD, "added alarm, wakeup at %lld (after %lld sec): (now %lld)\n",
 		ktime_to_ns(alarm->expires), stime, ktime_to_ns(now));
+	// LGE_CHANGE_E [dojip.kim@lge.com] 2010-07-15
 
+	// LGE_CHANGE_S [dojip.kim@lge.com] 2010-07-14, debugging
 	{
 		char comm[sizeof(current->comm)];
 		pr_alarm(FLOW, "called alarm by pid %d (%s)\n",
 				task_pid_nr(current),
 				get_task_comm(comm, current));
 	}
-	
+	// LGE_CHANGE_E [dojip.kim@lge.com] 2010-07-14
 
 	if (base->first == &alarm->node)
 		base->first = rb_next(&alarm->node);
@@ -371,6 +380,7 @@ static enum hrtimer_restart alarm_timer_triggered(struct hrtimer *timer)
 	pr_alarm(INT, "alarm_timer_triggered type %d at %lld\n",
 		base - alarms, ktime_to_ns(now));
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-07-15, alarm add debugging 
 	pr_alarm(ADD, "triggerd alarm, wakeup at %lld\n",
 		ktime_to_ns(now));
 
@@ -477,7 +487,7 @@ static int alarm_suspend(struct platform_device *pdev, pm_message_t state)
 			spin_unlock_irqrestore(&alarm_slock, flags);
 		}
 	}
-	
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-06-30, [LS670] fixed the elapsedtime */
 #ifdef CONFIG_LGE_RTC_INTF_ALARM_SYNC
 	if (suspended) {
 		if (force_to_update)

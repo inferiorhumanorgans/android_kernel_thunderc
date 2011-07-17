@@ -182,7 +182,10 @@ static struct msm_acpu_clock_platform_data msm7x2x_clock_data = {
 void msm_serial_debug_init(unsigned int base, int irq,
 			   struct device *clk_device, int signal_irq);
 
-
+/* decrease FB pmem size because thunderg uses hvga
+ * qualcomm's original value depends on wvga resolution
+ * 2010-04-18, cleaneye.kim@lge.com
+ */
 unsigned pmem_fb_size = 0x96000;
 
 static void __init msm7x2x_init(void)

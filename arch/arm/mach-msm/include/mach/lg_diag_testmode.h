@@ -89,13 +89,14 @@ typedef enum {
 	BT_TEST_MODE_RELEASE = 5,
 	BT_TEST_MODE_11 = 11	// 11~42
 } test_mode_req_bt_type;
-
+/* LGE_CHANGE_S [sm.shim@lge.com] 2010-07-27, Testmode cmd 83 Bluetooth RW merge from VS660 */
 typedef enum {
 	BT_ADDR_WRITE = 0,
 	BT_ADDR_READ
 } test_mode_req_bt_rw_type;
 
 #define BT_RW_CNT 20
+/* LGE_CHANGE_E [sm.shim@lge.com] 2010-07-27, Testmode cmd 83 Bluetooth RW merge from VS660 */
 
 typedef enum {
 	CAM_TEST_MODE_OFF = 0,
@@ -122,17 +123,17 @@ typedef enum {
 typedef enum {
 	EXTERNAL_SOCKET_MEMORY_CHECK,
 	EXTERNAL_FLASH_MEMORY_SIZE,
-	
+	/* LGE_CHANGE_S [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
 	EXTERNAL_SOCKET_ERASE,
 	EXTERNAL_FLASH_MEMORY_USED_SIZE = 4,
-	
+	/* LGE_CHANGE_E [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
 } test_mode_req_socket_memory;
 
-
+/* LGE_CHANGE_S [sm.shim@lge.com] 2010-08-22, merge First Boot Complete Test from VS660 */
 typedef enum {
 	FIRST_BOOTING_COMPLETE_CHECK,
 } test_mode_req_fboot;
-
+/* LGE_CHANGE_E [sm.shim@lge.com] 2010-08-22, merge First Boot Complete Test from VS660 */
 
 typedef enum {
 	MEMORY_TOTAL_CAPA_TEST,
@@ -154,14 +155,14 @@ typedef enum {
 	FACTORY_RESET_ARM9_END = 2,
 	FACTORY_RESET_COLD_BOOT_START = 3,
 	FACTORY_RESET_COLD_BOOT_END = 5,
-	
+	/* LGE_CHANGE_S [sm.shim@lge.com] 2010-09-03, add Factory reset flag 6 */
 	FACTORY_RESET_USER_START = 6,
 	FACTORY_RESET_NA = 7,
 } test_mode_factory_reset_status_type;
 
 #endif
 
-
+// LGE_CHANGE [dojip.kim@lge.com] 2010-09-28, kernel mode
 typedef enum {
 	SLEEP_MODE_ON,
 	AIR_PLAIN_MODE_ON,
@@ -205,21 +206,28 @@ typedef enum {
 	CAL_DATA_CHECK,
 } test_mode_req_cal_check_type;
 
-
+/* LGE_CHANGE_S [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
+/* LGE_CHANGES_S, [jaffrhee@lge.com], 2010-08-03, <DB Integrity Check > */
+/* TEST_MODE_DB_INTEGRITY_CHECK */
 typedef enum {
 	DB_INTEGRITY_CHECK = 0,
 	DB_CHECK_DUMP_TO_INTERNAL_MEMORY,
 	DB_CHECK_COPY_TO_SD_CARD
 } test_mode_req_db_check;
-
+/* LGE_CHANGES_E, [jaffrhee@lge.com], 2010-08-03, <DB Integrity Check > */
+/* LGE_CHANGE_E [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
 
 typedef union {
 	test_mode_req_version_type version;
 	test_mode_req_bt_type bt;
-	
+	/* LGE_CHANGE [sm.shim@lge.com] 2010-07-27, 
+	 * Testmode cmd 83 Bluetooth RW merge from VS660 
+	 */
 	byte bt_rw[BT_RW_CNT];
 	test_mode_req_socket_memory esm;	// external socket memory
-	
+	/* LGE_CHANGE [sm.shim@lge.com] 2010-08-22, 
+	 * merge First Boot Complete Test from VS660 
+	 */
 	test_mode_req_fboot fboot;
 	test_mode_req_memory_capa_type mem_capa;
 	word key_data;
@@ -238,6 +246,7 @@ typedef union {
 	test_mode_req_pid_type pid;	// pid Write/Read
 	test_mode_req_sw_version_type sw_version;
 	test_mode_req_cal_check_type cal_check;
+	/* LGE_CHANGE [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
 	test_mode_req_db_check db_check;
 #if 0
 	test_mode_req_lcd_type lcd;
@@ -257,19 +266,21 @@ typedef union {
 	test_mode_brew_type brew;
 	test_mode_req_mp3_test_type mp3_play;
 	test_mode_req_bt_type bt;
+	// LG_FW 2004.05.10 hieonn created -----------------------------------------
 #ifdef LG_FW_FACTORY_MODE_KEY_DETECTION
 	boolean if_key_pressed_is_started_or_not;	/* to test key_pressed event */
-#endif				
+#endif				// LG_FW_FACTORY_MODE_KEY_DETECTION
 #ifdef LG_FW_FACTORY_MODE	// race 2005.10.28
 	test_mode_req_factory_mode_type factory_mode;
-#endif				
+#endif				/* LG_FW_FACTORY_MODE */
 
-	
+	// LG_FW : 2006.04.07 louvethee--------------------
 #ifdef LG_FW_TEST_MODE_V6_4
 	test_mode_req_batter_bar_type batt;
 	test_mode_req_speaker_phone_type speaker_phone;
 	byte Volume_Level_Test;
-#endif	
+#endif				// LG_FW_TEST_MODE_V6_4
+	// ----------------------------------------------------------
 
 	test_mode_req_memory_capa_type mem_capa;
 
@@ -286,7 +297,7 @@ typedef union {
 
 #ifdef LG_FW_BMA020_TESTMODE
 	test_mode_req_geomagnetic_sensor_type geomagnetism;
-#endif				
+#endif				//LG_FW_BMA020_SENSOR
 
 #ifdef LG_FW_PROXI_CAL
 	test_mode_req_proximity_type test_mode_test_proxi_mode;
@@ -294,10 +305,12 @@ typedef union {
 
 	test_mode_req_manual_test_mode_type test_manual_mode;
 
-	
+	// LG_FW : 2008.07.29 hoonylove004--------------------------------------------
+	// RF CAL backup
 #ifdef LG_FW_TEST_MODE_V7_1
 	test_mode_req_test_script_mode_type test_mode_test_scr_mode;
-#endif				
+#endif				/*LG_FW_TEST_MODE_V7_1 */
+	//----------------------------------------------------------------------------
 #endif
 } test_mode_req_type;
 
@@ -334,11 +347,14 @@ typedef union {
 	test_mode_req_volume_level_type volume_level;
 	char key_pressed_buf[MAX_KEY_BUFF_SIZE];
 	char memory_check;
-	
+	/* LGE_CHANGE [sm.shim@lge.com] 2010-08-31, SD card total size bug fix */
 	unsigned int socket_memory_size;
-	
+	/* LGE_CHANGE [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
+	/* LGE_CHANGE [sm.shim@lge.com] 2010-08-31, SD card free size bug fix */
 	unsigned int socket_memory_usedsize;
-	
+	/* LGE_CHANGE [sm.shim@lge.com] 2010-08-22, 
+	 * merge First Boot Complete Test from VS660 
+	 */ 
 	int boot_complete;
 	test_mode_req_cam_type camera;
 	unsigned int mem_capa;
@@ -346,12 +362,14 @@ typedef union {
 	test_mode_req_pid_type pid;
 	test_mode_req_sw_version_type sw_version;
 	test_mode_req_cal_check_type cal_check;
-	
+	/* LGE_CHANGE [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
 	test_mode_req_db_check db_check;
 #ifndef SKW_TEST
 	test_mode_req_factory_reset_mode_type factory_reset;
 #endif
-	
+	/* LGE_CHANGE [sm.shim@lge.com] 2010-07-27, 
+	 * Testmode cmd 83 Bluetooth RW merge from VS660 
+	 */
 	byte read_bd_addr[BT_RW_CNT];
 #if 0
 	test_mode_req_lcd_type lcd;
@@ -374,12 +392,13 @@ typedef union {
 	unsigned long brew_size;
 	byte batt_bar_count;
 
-	
+	// LG_FW : 2006.04.07 louvethee--------------------
 #ifdef LG_FW_TEST_MODE_V6_4
 	char batt_voltage[5];
 	byte chg_stat;
 	test_mode_req_mp3_test_type mp3_play;
-#endif				
+#endif				// LG_FW_TEST_MODE_V6_4
+	// ----------------------------------------------------------
 	byte ant_bar_count;
 	unsigned int mem_capa;
 #ifdef LG_FW_FACTORY_MODE	// race 2005.10.28
@@ -446,6 +465,7 @@ typedef enum {
 	TEST_MODE_SPEAKER_PHONE_TEST,	// Speaker Phone test
 
 	TEST_MODE_VIRTUAL_SIM_TEST = 44,
+	/* LGE_CHANGE [sm.shim@lge.com] 2010-08-22, fix typo */
 	TEST_MODE_PHOTO_SENSOR_TEST,
 	TEST_MODE_VCO_SELF_TUNNING_TEST,
 
@@ -459,7 +479,9 @@ typedef enum {
 	TEST_MODE_MOBILE_SYSTEM_CHANGE_TEST,
 	TEST_MODE_STANDALONE_GPS_TEST,
 	TEST_MODE_PRELOAD_INTEGRITY_TEST,
-	
+	/* LGE_CHANGE [sm.shim@lge.com] 2010-08-22, 
+	 * merge First Boot Complete Test from VS660 
+	 */
 	TEST_MODE_FIRST_BOOT_COMPLETE_TEST = 58,
 
 	TEST_MODE_PID_TEST = 70,	// pid R/W
@@ -474,16 +496,24 @@ typedef enum {
 	TEST_MODE_SIM_ID_TEST = 79,
 
 	TEST_MODE_CAL_CHECK = 82,
-	
+	/* LGE_CHANGE [sm.shim@lge.com] 2010-07-27, 
+	 * Testmode cmd 83 Bluetooth RW merge from VS660 
+	 */
 	TEST_MODE_BLUETOOTH_TEST_RW = 83,
 	TEST_MODE_SKIP_WELCOM_TEST = 87,
-	
+	/* LGE_CHANGE_S [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
+	/* LGE_CHANGE_S, [dongp.kim@lge.com], 2010-07-15, < MAC Read/Write > */
 	TEST_MODE_MAC_READ_WRITE = 88,
-	
+	/* LGE_CHANGE_E, [dongp.kim@lge.com], 2010-07-15, < MAC Read/Write > */
+
+	//[START]LGE_DB_CHECK: jaffrhee@lge.com 2010-08-02
 	TEST_MODE_DB_INTEGRITY_CHECK = 91,
-	
+	//[END]LGE_DB_CHECK: jaffrhee@lge.com 2010-08-02
+	//
+	/* LGE_CHANGE_E [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
 	MAX_TEST_MODE_SUBCMD = 0xFFFF
-	
+	//TEST_MODE_CURRENT,
+	//TEST_MODE_BREW_FILES,
 } PACKED test_mode_sub_cmd_type;
 
 #define TESTMODE_MSTR_TBL_SIZE   128
@@ -500,7 +530,9 @@ typedef struct {
 	byte which_procesor;	// to choose which processor will do act.
 } testmode_user_table_entry_type;
 
-
+/* LGE_CHANGES_S, [dongp.kim@lge.com], 2010-01-10, 
+ * <LGE_FACTORY_TEST_MODE for WLAN RF Test > 
+ */
 typedef struct {
 	uint16 countresult;
 	uint16 wlan_status;
@@ -522,6 +554,9 @@ typedef struct {
 	unsigned long rxbadplcp_new;
 
 } wlan_status;
+/* LGE_CHANGES_E, [dongp.kim@lge.com], 2010-01-10, 
+ * <LGE_FACTORY_TEST_MODE for WLAN RF Test > 
+ */
 
 typedef struct DIAG_TEST_MODE_KEY_F_rsp_tag {
 	diagpkt_header_type xx_header;

@@ -1095,7 +1095,12 @@ void mmc_rescan(struct work_struct *work)
 	int extend_wakelock = 0;
 	int ret;
 
-    
+    /*
+	 * Add checking gpio pin status before initialization of bus.
+	 * If the GPIO pin status is changed, check gpio pin status again.
+	 * Should check until it's stable.
+	 * fred.cho@lge.com, 2010-09-27
+	 */
 	if (host->ops->get_status){
 		ret = host->ops->get_status(host);
 		if (ret == 1) {
@@ -1326,7 +1331,11 @@ int mmc_suspend_host(struct mmc_host *host, pm_message_t state)
 	}
 	mmc_bus_put(host);
 
-
+/*
+ * LGE_CHANGE
+ * Don't turn off the Power of SD card during Suspend
+ * fred.cho@lge.com, 2010-10-31
+ */
 
 	if (!strcmp(mmc_hostname(host), "mmc1")){
 		if (!err)

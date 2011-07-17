@@ -129,6 +129,7 @@ struct kr3dh_data {
 	u8 resume_state[5];
 };
 
+// LGE_CHANGE [dojip.kim@lge.com] 2010-08-19, x, y, z for sysfs
 static unsigned char kr3dh_xyz[3] = {0,};
 
 /*
@@ -351,6 +352,7 @@ static int kr3dh_get_acceleration_data(struct kr3dh_data *kr, int *xyz)
 	hw_d[1] = (int) (((acc_data[3]) << 8) | acc_data[2]);
 	hw_d[2] = (int) (((acc_data[5]) << 8) | acc_data[4]);
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-19, x, y, z for sysfs
 	kr3dh_xyz[0] = (unsigned char)(hw_d[0] >> 4);
 	kr3dh_xyz[1] = (unsigned char)(hw_d[1] >> 4);
 	kr3dh_xyz[2] = (unsigned char)(hw_d[2] >> 4);
@@ -659,6 +661,7 @@ static void kr3dh_input_cleanup(struct kr3dh_data *kr)
 	input_free_device(kr->input_dev);
 }
 
+// LGE_CHANGE_S [dojip.kim@lge.com] 2010-08-19, sysfs
 static ssize_t kr3dh_x_show(struct device *dev, struct device_attribute *attr,
 		char *buf)
 {
@@ -691,6 +694,7 @@ static struct attribute *dev_attrs[] = {
 static struct attribute_group dev_attr_grp = {
 	.attrs = dev_attrs,
 };
+// LGE_CHANGE_E [dojip.kim@lge.com] 2010-08-19, sysfs
 
 static int kr3dh_probe(struct i2c_client *client,
 			   const struct i2c_device_id *id)
@@ -806,6 +810,7 @@ static int kr3dh_probe(struct i2c_client *client,
 
 	mutex_unlock(&kr->lock);
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-19, sysfs
 	sysfs_create_group(&client->dev.kobj, &dev_attr_grp);
 
 	dev_info(&client->dev, "%s kr3dh: Accelerometer chip found\n", client->name);
@@ -833,6 +838,7 @@ static int __devexit kr3dh_remove(struct i2c_client *client)
 	/* TODO: revisit ordering here once _probe order is finalized */
 	struct kr3dh_data *kr = i2c_get_clientdata(client);
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-19, sysfs
 	sysfs_remove_group(&client->dev.kobj, &dev_attr_grp);
 
 	misc_deregister(&kr3dh_misc_device);

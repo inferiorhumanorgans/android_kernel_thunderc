@@ -94,10 +94,10 @@ int diag_device_write(void *buf, int proc_num)
 			driver->usb_write_ptr_svc = (struct diag_request *)
 			(diagmem_alloc(driver, sizeof(struct diag_request),
 				 POOL_TYPE_USB_STRUCT));
-			
+			/* LGE_CHANGE_S [sm.shim@lge.com] 2010-07-14, diagmem_alloc bug fix */
         	if(!driver->usb_write_ptr_svc)
 				return -1;
-			
+			/* LGE_CHANGE_E [sm.shim@lge.com] 2010-07-14, diagmem_alloc bug fix */
 			driver->usb_write_ptr_svc->length = driver->used;
 			driver->usb_write_ptr_svc->buf = buf;
 			err = diag_write(driver->usb_write_ptr_svc);
@@ -465,7 +465,7 @@ void diag_process_hdlc(void *data, unsigned len)
 	hdlc.dest_idx = 0;
 	hdlc.escaping = 0;
 
-
+/* LGE_CHANGES_S [kyuhyung.lee@lge.com] 2010.02.05*/
 /* - In the Radio test process, APP will send packet with double 0x7E tail.  */
 #if defined (CONFIG_LGE_DIAGTEST)
 
@@ -477,6 +477,7 @@ void diag_process_hdlc(void *data, unsigned len)
     }
   }
   
+/* LG_FW : 2009.02.05 khlee - bug fix */
 /* - If packet is started with 0x7E( LG Factory packet), we can not received all of thing.  */
     do
     {
@@ -538,7 +539,7 @@ void diag_process_hdlc(void *data, unsigned len)
 #endif
 	}
 #endif
-
+/* LGE_CHANGES_E [kyuhyung.lee@lge.com] 2010.02.05*/
 
 }
 

@@ -1347,7 +1347,13 @@ static long kgsl_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 	return result;
 }
 
-
+// LGE_CHANGE [dojip.kim@lge.com] 2010-07-29, google patch
+// The mmap(2) functionality of kgsl is no longer used, and it had a
+// bug that would crash the kernel when mmap(2) was called with
+// "odd" parameters.  So we have removed the mmap functionality.
+// If for some reason in the future you want to resurrect this,
+// make sure memdesc is properly initialized in all paths through
+// the kgsl_mmap() routine.
 #if 0
 static int kgsl_mmap(struct file *file, struct vm_area_struct *vma)
 {
@@ -1400,7 +1406,14 @@ static const struct file_operations kgsl_fops = {
 	.owner = THIS_MODULE,
 	.release = kgsl_release,
 	.open = kgsl_open,
-	
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-07-29, google patch
+	// The mmap(2) functionality of kgsl is no longer used, and it had a
+	// bug that would crash the kernel when mmap(2) was called with
+	// "odd" parameters.  So we have removed the mmap functionality.
+	// If for some reason in the future you want to resurrect this,
+	// make sure memdesc is properly initialized in all paths through
+	// the kgsl_mmap() routine.
+	//.mmap = kgsl_mmap,
 	.unlocked_ioctl = kgsl_ioctl,
 };
 

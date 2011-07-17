@@ -144,7 +144,7 @@ struct usb_composition usb_func_composition[] = {
 		.functions = 0x1F	/* 011111      Modem,diag,NMEA,Mass,ADB */
 	},
 	{
-		
+		// LGE_CHANGE [dojip.kim@lge.com] 2010-08-16, LS670 UMS PID: 0x61CC
 		.product_id = 0x61CC,
 		.functions = 0x08	/* 001000      Mass */
 	},
@@ -157,7 +157,9 @@ struct msm_hsusb_platform_data msm_hsusb_pdata = {
 	.phy_info = (USB_PHY_INTEGRATED | USB_PHY_MODEL_65NM),
 	.vendor_id = 0x1004,
 	.product_name = "LG Android USB Device",
-	
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-22, change the serial_number
+	 * for LS670
+	 */
 #ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
 	.serial_number = "LGANDROIDLS670",
 #else
@@ -192,6 +194,7 @@ static struct platform_device lg_diag_cmd_device = {
 	},
 };
 
+// LGE_CHANGE [dojip.kim@lge.com] 2010-09-28
 static struct platform_device testmode_device = {
 	.name = "testmode",
 	.id = -1,
@@ -207,6 +210,7 @@ static struct platform_device *devices[] __initdata = {
 	&msm_device_adspdec,
 	&lg_fw_diagcmd_device,
 	&lg_diag_cmd_device,
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-09-28
 	&testmode_device,
 };
 
@@ -227,7 +231,11 @@ static struct msm_acpu_clock_platform_data msm7x2x_clock_data = {
 void msm_serial_debug_init(unsigned int base, int irq,
 			   struct device *clk_device, int signal_irq);
 
-
+// LGE_CHANGE [dojip.kim@lge.com] 2010-07-22, merged from thunderg
+/* decrease FB pmem size because thunderg uses hvga
+ * qualcomm's original value depends on wvga resolution
+ * 2010-04-18, cleaneye.kim@lge.com
+ */
 unsigned pmem_fb_size = 0x96000;
 
 unsigned pmem_adsp_size = 0xAE4000;
@@ -306,6 +314,7 @@ static void __init msm7x2x_map_io(void)
 #endif
 }
 
+/* LGE_CHANGE [dojip.kim@lge.com] 2010-06-02 [LS670] */
 #ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
 MACHINE_START(MSM7X27_THUNDERC, "THUNDER Sprint board (LGE LS670)")
 #else

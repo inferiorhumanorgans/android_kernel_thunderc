@@ -404,7 +404,7 @@ Don't change previous defines and add new id at the end
 
 #define DIAG_MAX_F                 255
 
-
+/* LGE_CHANGES_E [woonghee@lge.com] 2009-12-29, [VS740] */
 
 typedef enum {
   DIAG_SUBSYS_OEM                = 0,       /* Reserved for OEM use */

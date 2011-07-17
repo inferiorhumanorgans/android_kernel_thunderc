@@ -9,9 +9,10 @@
 #define DBG(args)
 #endif
 
-
+/* BEGIN: 0005337 mingi.sung@lge.com 2010-03-23 */
+/* MOD 0005337: [WLAN] Use static SKB when initializing */
 #define USE_STATIC_SKB	/* Use DHD_USE_STATIC_BUF at SKB */
-
+/* END: 0005337 mingi.sung@lge.com 2010-03-23 */
 
 #define MAX_WIFI_SECTION		4
 #define MAX_STATIC_PKT_NUM		8

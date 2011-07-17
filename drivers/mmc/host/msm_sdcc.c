@@ -50,11 +50,16 @@
 
 
 #include "msm_sdcc.h"
+
+/* LGE_CHANGE_S [jisung.yang@lge.com] 2010-04-24, for gpio_to_irq */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 #include <asm/gpio.h>
+/*LGE_CHANGE_S, [dongp.kim@lge.com], 2010-03-17, mmc_fmax is 24576000Hz for Wi-Fi */ 
 //#define BRCM_WLAN_SLOT 2
 #define BRCM_WLAN_SLOT 100 // give 50MHz for test
+/*LGE_CHANGE_E, [dongp.kim@lge.com], 2010-03-17, mmc_fmax is 24576000Hz for Wi-Fi */ 
 #endif
+/* LGE_CHANGE_E [jisung.yang@lge.com] 2010-04-24, for gpio_to_irq */
 
 #define DRIVER_NAME "msm-sdcc"
 #define TIME_STEP ( 4 * HZ / 5 )
@@ -121,6 +126,7 @@ msmsdcc_print_status(struct msmsdcc_host *host, char *hdr, uint32_t status)
 }
 #endif
 
+/* LGE_CHANGE_S [jisung.yang@lge.com] 2010-04-24, Support Host Wakeup */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
 struct early_suspend dhdpm;
 EXPORT_SYMBOL(dhdpm);
@@ -147,6 +153,7 @@ void unregister_mmc_card_pm(void)
 }
 EXPORT_SYMBOL(unregister_mmc_card_pm);
 #endif
+/* LGE_CHANGE_E [jisung.yang@lge.com] 2010-04-24, Support Host Wakeup */
 
 static void
 msmsdcc_start_command(struct msmsdcc_host *host, struct mmc_command *cmd,

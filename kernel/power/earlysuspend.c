@@ -97,7 +97,7 @@ static void early_suspend(struct work_struct *work)
 		if (pos->suspend != NULL) {
 			pos->suspend(pos);
 #ifdef CONFIG_MACH_LGE
-			
+			// LGE_CHANGE [dojip.kim@lge.com] 2010-09-06
 			printk(KERN_INFO"%s: early suspend funtion [%p]\n",__func__, 
 					pos->suspend);
 #endif
@@ -141,7 +141,7 @@ static void late_resume(struct work_struct *work)
 		if (pos->resume != NULL) {
 			pos->resume(pos);
 #ifdef CONFIG_MACH_LGE
-			
+			// LGE_CHANGE [dojip.kim@lge.com] 2010-09-06
 			printk(KERN_INFO"%s: late resume funtion [%p]\n",__func__, 
 					pos->resume);
 #endif
@@ -154,6 +154,7 @@ abort:
 	mutex_unlock(&early_suspend_lock);
 }
 
+// LGE_CHANGE [dojip.kim@lge.com] 2010-08-24, notify power state to ARM9
 #ifdef CONFIG_LGE_PROC_COMM
 extern int lge_set_sleep_status(int status);
 #endif
@@ -176,7 +177,7 @@ void request_suspend_state(suspend_state_t new_state)
 			ktime_to_ns(ktime_get()),
 			tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
 			tm.tm_hour, tm.tm_min, tm.tm_sec, ts.tv_nsec);
-		
+		// LGE_CHANGE [dojip.kim@lge.com] 2010-08-24, notify power state to ARM9
 #ifdef CONFIG_LGE_PROC_COMM 
 		lge_set_sleep_status(new_state);
 #endif

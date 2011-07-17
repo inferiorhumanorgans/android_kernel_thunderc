@@ -29,8 +29,9 @@
 
 struct msm_pmic_leds_pdata *leds_pdata = 0;
 #endif
-
+// LGE_CHANGE [james.jang@lge.com] 2010-08-07, again reduce the current
 /* from 0 to 150 mA in 10 mA increments */
+// LGE_CHANGE [dojip.kim@lge.com] 2010-07-14, reduce the current
 //#define MAX_KEYPAD_BL_LEVEL	16  /* 15: 150 mA */
 //#define MAX_KEYPAD_BL_LEVEL	127 /* 2: 20 mA */
 #define MAX_KEYPAD_BL_LEVEL	255 /* 1: 10 mA */

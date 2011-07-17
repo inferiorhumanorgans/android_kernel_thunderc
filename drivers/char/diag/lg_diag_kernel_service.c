@@ -20,7 +20,7 @@
 #include "diagchar.h"
 #include "lg_diag_kernel_service.h"
 #include <mach/lg_diag_testmode.h>
-#include <mach/lg_diag_udm.h>		
+#include <mach/lg_diag_udm.h>		// sungkwang2.lee@lge.com 
 #include <linux/timer.h>
 #include <linux/delay.h>
 
@@ -31,11 +31,12 @@ PACK (void *)LGF_LcdQTest (PACK (void	*)req_pkt_ptr, uint16		pkt_len );
 PACK (void *)LGF_KeyPress (PACK (void	*)req_pkt_ptr, uint16		pkt_len );
 PACK (void *)LGF_ScreenShot (PACK (void	*)req_pkt_ptr, uint16		pkt_len ); 
 PACK (void *)LGF_Udm (PACK (void	*)req_pkt_ptr, uint16		pkt_len ); 
-
+/* LGE_CHANGE_S [jihoon.lee@lge.com] 2010-02-07, LG_FW_MTC */
 PACK (void *)LGF_MTCProcess (PACK (void *)req_pkt_ptr, uint16	pkt_len );
-
+/* LGE_CHANGE_E [jihoon.lee@lge.com] 2010-02-07, LG_FW_MTC */
+/* LGE_CHANGE_S [yongman.kwon@lge.com] 2010-03-05, LG_FW_DIAG_SCREEN_CAPTURE */
 PACK (void *)LGF_PartScreenShot (PACK (void *)req_pkt_ptr, uint16 pkt_len ); 
-
+/* LGE_CHANGE_S [yongman.kwon@lge.com] 2010-03-05, LG_FW_DIAG_SCREEN_CAPTURE */
 
 void diagpkt_commit (PACK(void *)pkt);
 
@@ -46,10 +47,10 @@ static const diagpkt_user_table_entry_type registration_table[] =
 	{DIAG_HS_KEY_F,  DIAG_HS_KEY_F, LGF_KeyPress},
 	{DIAG_LGF_SCREEN_SHOT_F, DIAG_LGF_SCREEN_SHOT_F, LGF_ScreenShot},
 	{DIAG_UDM_SMS_MODE, DIAG_UDM_SMS_MODE, LGF_Udm},
-
+/* LGE_CHANGE_S [jihoon.lee@lge.com] 2010-02-07, LG_FW_MTC */
 	{DIAG_MTC_F, DIAG_MTC_F, LGF_MTCProcess},
 	{DIAG_LGF_SCREEN_PARTSHOT_F, DIAG_LGF_SCREEN_PARTSHOT_F, LGF_PartScreenShot},
-
+/* LGE_CHANGE_E [jihoon.lee@lge.com] 2010-02-07, LG_FW_MTC */
 };
 
 /* This is the user dispatch table. */
@@ -68,10 +69,12 @@ static unsigned int gPkt_commit_fail = 0;
 
 void* lg_diag_req_pkt_ptr;
 
-
+/* LGE_CHANGES_S, [dongp.kim@lge.com], 2010-01-10, 
+ * <LGE_FACTORY_TEST_MODE for WLAN RF Test > 
+ */
 wlan_status lg_diag_req_wlan_status={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-
-udm_sms_status_new lg_diag_req_udm_sms_status_new;
+/* LGE_CHANGES_E, [dongp.kim@lge.com] */
+udm_sms_status_new lg_diag_req_udm_sms_status_new; // sungkwang2.lee@lge.com
 uint16 lg_diag_req_pkt_length;
 uint16 lg_diag_rsp_pkt_length;
 char lg_diag_cmd_line[LG_DIAG_CMD_LINE_LEN];
@@ -220,7 +223,9 @@ static ssize_t read_mtc_cmd_pkt_length(struct device *dev, struct device_attribu
 	return read_len;
 }
 
-
+/* LGE_CHANGES_S, [dongp.kim@lge.com], 2010-01-10, 
+ * <LGE_FACTORY_TEST_MODE for WLAN RF Test > 
+ */
 static ssize_t read_wlan_status(struct device *dev, struct device_attribute *attr,
 		char *buf)
 {
@@ -287,7 +292,7 @@ static ssize_t write_wlan_status(struct device *dev,
 
 	return size;
 }
-
+//-> 2010.06.22 inserted by sungkwang2.lee@lge.com
 static ssize_t read_sms_status_new(struct device *dev, struct device_attribute *attr,
 	char *buf)
 {
@@ -303,19 +308,24 @@ static ssize_t write_sms_status_new(struct device *dev,
 {
 	int udm_sms_statu_len = sizeof(udm_sms_status_new);
 	
-	
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-09-14
 	memset((void*)&lg_diag_req_udm_sms_status_new, 0, sizeof(udm_sms_status_new));
 
 	memcpy((void*)&lg_diag_req_udm_sms_status_new, buf, udm_sms_statu_len);
 	return udm_sms_statu_len;
 }
-
+//<- 2010.06.22 inserted by sungkwang2.lee@lge.com
+/* LGE_CHANGES_E, [dongp.kim@lge.com], 2010-01-10  */
 
 static DEVICE_ATTR(cmd_pkt, S_IRUGO | S_IWUSR,read_cmd_pkt, write_cmd_pkt);
 static DEVICE_ATTR(length, S_IRUGO | S_IWUSR,read_cmd_pkt_length, write_cmd_pkt_length);
-
+/* LGE_CHANGES_S, [dongp.kim@lge.com], 2010-01-10, 
+ * <LGE_FACTORY_TEST_MODE for WLAN RF Test > 
+ */
 static DEVICE_ATTR(wlan_status, S_IRUGO | S_IWUSR,read_wlan_status, write_wlan_status);
+/* LGE_CHANGES_E, [dongp.kim@lge.com], 2010-01-10 */
 
+//-> 2010.06.22 inserted by sungkwang2.lee@lge.com
 static DEVICE_ATTR(get_sms, S_IRUGO | S_IWUSR,read_sms_status_new, write_sms_status_new);
 static DEVICE_ATTR(set_sms, S_IRUGO | S_IWUSR,read_sms_status_new, write_sms_status_new);
 
@@ -324,7 +334,7 @@ static DEVICE_ATTR(rsp_get_sms, S_IRUGO | S_IWUSR,read_sms_status_new, write_sms
 static DEVICE_ATTR(rsp_set_sms, S_IRUGO | S_IWUSR,read_sms_status_new, write_sms_status_new);
 
 static DEVICE_ATTR(rsp_sms_status, S_IRUGO | S_IWUSR,read_sms_status_new, write_sms_status_new);
-
+//<- 2010.06.22 inserted by sungkwang2.lee@lge.com
 static DEVICE_ATTR(mtc_cmd_pkt, S_IRUGO | S_IWUSR,read_mtc_cmd_pkt,  NULL);
 static DEVICE_ATTR(mtc_length, S_IRUGO | S_IWUSR,read_mtc_cmd_pkt_length, NULL);
 
@@ -345,7 +355,9 @@ int lg_diag_create_file(struct platform_device *pdev)
 		device_remove_file(&pdev->dev, &dev_attr_length);
 		return ret;
 	}
-	
+	/* LGE_CHANGES_S, [dongp.kim@lge.com], 2010-01-10,
+	 * <LGE_FACTORY_TEST_MODE for WLAN RF Test > 
+	 */
 
 	ret = device_create_file(&pdev->dev, &dev_attr_wlan_status);
 	if (ret) {
@@ -353,7 +365,11 @@ int lg_diag_create_file(struct platform_device *pdev)
 		device_remove_file(&pdev->dev, &dev_attr_wlan_status);
 		return ret;
 	}
-	
+	/* LGE_CHANGES_E, [dongp.kim@lge.com], 2010-01-10, 
+	 * <LGE_FACTORY_TEST_MODE for WLAN RF Test > 
+	 */
+
+	//-> 2010.06.22 inserted by sungkwang2.lee@lge.com
 	ret = device_create_file(&pdev->dev, &dev_attr_sms_status);
 	if (ret) {
 		printk( KERN_DEBUG "LG DIAG : diag device file3 create fail\n");
@@ -396,7 +412,7 @@ int lg_diag_create_file(struct platform_device *pdev)
 		return ret;
 	}
 
-	
+	//<- 2010.06.22 inserted by sungkwang2.lee@lge.com
 	ret = device_create_file(&pdev->dev, &dev_attr_mtc_cmd_pkt);
 	if (ret) {
 		printk( KERN_DEBUG "LG DIAG : diag device file create fail\n");
@@ -417,16 +433,21 @@ EXPORT_SYMBOL(lg_diag_create_file);
 int lg_diag_remove_file(struct platform_device *pdev)
 {
 	device_remove_file(&pdev->dev, &dev_attr_cmd_pkt);
-	
+	/* LGE_CHANGES_S [dongp.kim@lge.com], 2010-01-10, 
+	 * <LGE_FACTORY_TEST_MODE for WLAN RF Test > 
+	 */
 	device_remove_file(&pdev->dev, &dev_attr_wlan_status);
-	
+	/* LGE_CHANGES_E, [dongp.kim@lge.com], 2010-01-10, 
+	 * <LGE_FACTORY_TEST_MODE for WLAN RF Test > 
+	 */ 
+	//-> 2010.06.22 inserted by sungkwang2.lee@lge.com
 	device_remove_file(&pdev->dev, &dev_attr_sms_status);
 	device_remove_file(&pdev->dev, &dev_attr_get_sms);
 	device_remove_file(&pdev->dev, &dev_attr_set_sms);
 	device_remove_file(&pdev->dev, &dev_attr_rsp_sms_status);
 	device_remove_file(&pdev->dev, &dev_attr_rsp_get_sms);
 	device_remove_file(&pdev->dev, &dev_attr_rsp_set_sms);
-	
+	//<- 2010.06.22 inserted by sungkwang2.lee@lge.com
 	device_remove_file(&pdev->dev, &dev_attr_length);
 
 	device_remove_file(&pdev->dev, &dev_attr_mtc_cmd_pkt);
@@ -450,7 +471,8 @@ static int lg_diag_app_execute(void)
 		NULL,
 	};	
 
-	
+	// BEGIN: eternalblue@lge.com.2009-10-23
+	// 0001794: [ARM9] ATS AT CMD added 
 	fd = sys_open((const char __user *) "/system/bin/lg_diag_app", O_RDONLY ,0);
 	if (fd < 0) {
 		printk(KERN_ERR "LG DIAG: can not open /system/bin/lg_diag_app\n");
@@ -459,7 +481,7 @@ static int lg_diag_app_execute(void)
 		printk(KERN_DEBUG "LG DIAG: execute /system/bin/lg_diag_app\n");
 		sys_close(fd);
 	}
-	
+	// END: eternalblue@lge.com.2009-10-23
 
 	printk(KERN_INFO "LG DIAG execute - %s\n", argv[0]);
 	ret = call_usermodehelper(argv[0], argv, envp, UMH_WAIT_PROC);
@@ -518,7 +540,7 @@ static int __diagchar_ioctl(unsigned int iocmd, unsigned long ioarg, int check_u
 	int err = -1;
 	struct mtc_data_buffer *mb;
 
-	
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-29, check the usb connection */
 	if (check_usb && !driver->usb_connected) {
 		/* Drop the diag payload */
 		return -EIO;
@@ -559,7 +581,7 @@ static int __diagchar_ioctl(unsigned int iocmd, unsigned long ioarg, int check_u
 			buf_hdlc = diagmem_alloc(driver, HDLC_OUT_BUF_SIZE,
 							 POOL_TYPE_HDLC);
 
-		
+		/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-29, null check */
 		if (NULL == buf_hdlc) {
 			mutex_unlock(&driver->diagchar_mutex);
 			return -1;
@@ -570,12 +592,13 @@ static int __diagchar_ioctl(unsigned int iocmd, unsigned long ioarg, int check_u
 			(diagmem_alloc(driver, sizeof(struct diag_request),
 					POOL_TYPE_USB_STRUCT));
 
-		
+		/* LGE_CHANGE_S [sm.shim@lge.com] 2010-07-14, diagmem_alloc bug fix */
 		if(NULL == driver->usb_write_ptr_svc) {
 			mutex_unlock(&driver->diagchar_mutex);
 			return -1;
 		}
-		
+		/* LGE_CHANGE_E [sm.shim@lge.com] 2010-07-14, diagmem_alloc bug fix */
+
 		/* TODO: check the length, overflow? */
 		memcpy(buf_hdlc, mb->data, mb->data_length);
 
@@ -584,7 +607,9 @@ static int __diagchar_ioctl(unsigned int iocmd, unsigned long ioarg, int check_u
 
 		err = diag_write(driver->usb_write_ptr_svc);
 		if (err) {
-			
+			/* LGE_CHANGE [dojip.kim@lge.com] 2010-06-06, 
+			 * should free the usb_write_ptr_svc also
+			 */
 			diagmem_free(driver, driver->usb_write_ptr_svc,
 					POOL_TYPE_USB_STRUCT);
 			/* Free the buffer right away if write failed */
@@ -598,7 +623,7 @@ static int __diagchar_ioctl(unsigned int iocmd, unsigned long ioarg, int check_u
 	return err;
 }
 
-
+/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-30, [LS670] no usb check for registration */
 int diagchar_ioctl(unsigned int iocmd, unsigned long ioarg)
 {
 	return __diagchar_ioctl(iocmd, ioarg, 1);
@@ -746,24 +771,24 @@ static int diagchar_write( const char *buf, size_t count)
 	if (NULL == buf_hdlc) {
 		buf_hdlc = diagmem_alloc(driver, HDLC_OUT_BUF_SIZE,
 						 POOL_TYPE_HDLC);	
-		
+		/* LGE_CHANGE_S [sm.shim@lge.com] 2010-07-14, diagmem_alloc bug fix */
 		if (NULL == buf_hdlc) {
 			ret = -ENOMEM;
 			goto fail_free_hdlc;
 		}
-		
+		/* LGE_CHANGE_E [sm.shim@lge.com] 2010-07-14, diagmem_alloc bug fix */
 	}
 
 	if (HDLC_OUT_BUF_SIZE - driver->used <= payload_size + 7) {
 		driver->usb_write_ptr_svc = (struct diag_request *)
 			(diagmem_alloc(driver, sizeof(struct diag_request),
 				POOL_TYPE_USB_STRUCT));
-		
+		/* LGE_CHANGE_S [dojip.kim@lge.com] 2010-06-06 */
 		if (NULL == driver->usb_write_ptr_svc) {
 			ret = -EIO;
 			goto fail_free_usb_struct;
 		}
-		
+		/* LGE_CHANGE_E [dojip.kim@lge.com] 2010-06-06 */
 		driver->usb_write_ptr_svc->buf = buf_hdlc;
 		driver->usb_write_ptr_svc->length = driver->used;
 		err = diag_write(driver->usb_write_ptr_svc);
@@ -788,9 +813,16 @@ static int diagchar_write( const char *buf, size_t count)
 	}
 
 	enc.dest = buf_hdlc + driver->used;
-	
+	/* LG_FW khlee 2010.02.01 - to support screen capture, 
+	 * In that case, it has too many 'ESC_CHAR'
+	 */
+	/* LGE_CHANGES_S [kyuhyung.lee@lge.com] - #ifdef LG_FW_DIAG_SCREEN_CAPTURE */
 	enc.dest_last = (void *)(buf_hdlc + HDLC_OUT_BUF_SIZE -1);
-	
+	/* LG_CHANGES_E -#else */
+	/* LGE_COMMENT_OUT
+	enc.dest_last = (void *)(buf_hdlc + driver->used + payload_size + 7);
+	#endif
+	*/
 	diag_hdlc_encode(&send, &enc);
 
 #ifdef LG_DIAG_DEBUG
@@ -813,12 +845,12 @@ static int diagchar_write( const char *buf, size_t count)
 		driver->usb_write_ptr_svc = (struct diag_request *)
 			(diagmem_alloc(driver, sizeof(struct diag_request),
 				POOL_TYPE_USB_STRUCT));
-		
+		/* LGE_CHANGE_S [dojip.kim@lge.com] 2010-06-06 */
 		if (driver->usb_write_ptr_svc == NULL) {
 			ret = -EIO;
 			goto fail_free_usb_struct;
 		}
-		
+		/* LGE_CHANGE_E [dojip.kim@lge.com] 2010-06-06 */
 		driver->usb_write_ptr_svc->buf = buf_hdlc;
 		driver->usb_write_ptr_svc->length = driver->used;
 		err = diag_write(driver->usb_write_ptr_svc);
@@ -862,12 +894,12 @@ static int diagchar_write( const char *buf, size_t count)
 		driver->usb_write_ptr_svc = (struct diag_request *)
 			(diagmem_alloc(driver, sizeof(struct diag_request),
 				 POOL_TYPE_USB_STRUCT));
-		
+		/* LGE_CHANGE_S [dojip.kim@lge.com] 2010-06-06 */
 		if (NULL == driver->usb_write_ptr_svc) {
 			ret = -EIO;
 			goto fail_free_usb_struct;
 		}
-		
+		/* LGE_CHANGE_E [dojip.kim@lge.com] 2010-06-06 */
 		driver->usb_write_ptr_svc->buf = buf_hdlc;
 		driver->usb_write_ptr_svc->length = driver->used;
 		err = diag_write(driver->usb_write_ptr_svc);
@@ -889,10 +921,10 @@ static int diagchar_write( const char *buf, size_t count)
 	diagmem_free(driver, buf_copy, POOL_TYPE_COPY);
 	return 0;
 
-	
+	/* LGE_CHANGE_S [dojip.kim@lge.com] 2010-06-06 */
 fail_free_usb_struct:
 	diagmem_free(driver, buf_hdlc, POOL_TYPE_HDLC);
-	
+	/* LGE_CHANGE_E [dojip.kim@lge.com] 2010-06-06 */
 fail_free_hdlc:
 	diagmem_free(driver, buf_copy, POOL_TYPE_COPY);
 	mutex_unlock(&driver->diagchar_mutex);
@@ -962,7 +994,9 @@ void diagpkt_tbl_reg (const diagpkt_user_table_type * tbl_ptr)
 	}
 	bind_req_send.params = bind_req;
 
-	
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-30, [LS670] 
+	 * no usb check for registration 
+	 */
 	if(__diagchar_ioctl(DIAG_IOCTL_COMMAND_REG, (unsigned long)&bind_req_send, 0)) {
 		printk(KERN_ERR "LG DIAG:  diagpkt_tbl_reg: DeviceIOControl failed. \n");
 	}
@@ -1007,13 +1041,15 @@ void diagpkt_commit (PACK(void *)pkt)
 
 	while(rsp_len > 0) {
 		if(rsp_len > DIAGPKT_RSP_MAX) {
-			
+			// LGE_CHANGE [dojip.kim@lge.com] 2010-08-28
+			// allocate if not allocated
 			if (NULL == temp) {
 				temp = (unsigned char*) kmalloc(
 					(int)DIAG_REST_OF_DATA_POS + 
 					DIAGPKT_RSP_MAX, GFP_KERNEL);
 			}
-			
+			// LGE_CHANGE [dojip.kim@lge.com] 2010-07-22,
+			// null check
 			if (NULL == temp) {
 				printk(KERN_ERR "LG DIAG: %s(): failed to "
 						"allocate memory\n",
@@ -1048,19 +1084,22 @@ void diagpkt_commit (PACK(void *)pkt)
 			send_index++;
 			rsp_len -= DIAGPKT_RSP_MAX;
 			kfree(temp);
-			
+			// LGE_CHANGE [dojip.kim@lge.com] 2010-07-22,
+			// set the temp as null
 			temp = NULL;
 			msleep(100);
 
 		}
 		else {
-			
+			// LGE_CHANGE [dojip.kim@lge.com] 2010-08-28
+			// allocate if not allocated
 			if (NULL == temp) {
 				temp = (unsigned char*) kmalloc(
 					(int)DIAG_REST_OF_DATA_POS + 
 					(int)(rsp_len), GFP_KERNEL);
 			}
-			
+			// LGE_CHANGE [dojip.kim@lge.com] 2010-07-22,
+			// null check
 			if (NULL == temp) {
 				printk(KERN_ERR "LG DIAG: %s(): failed to "
 						"allocate memory\n",

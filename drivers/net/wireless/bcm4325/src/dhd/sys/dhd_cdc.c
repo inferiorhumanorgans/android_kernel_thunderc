@@ -485,7 +485,7 @@ dhd_prot_dstats(dhd_pub_t *dhd)
 	return;
 }
 
-
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-04-03, configs */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 #include <linux/fs.h>
 #include <linux/ctype.h>
@@ -569,8 +569,13 @@ assoc_listen=1
 
 #endif
 
+/* LGE_CHANGE_S, [jisung.yang@lge.com], 2010-05-27, <Disable setting power save mode if PM is 0> */	
 bool PM_control = TRUE;
+/* LGE_CHANGE_E, [jisung.yang@lge.com], 2010-05-27, <Disable setting power save mode if PM is 0> */	
+
+/* LGE_CHANGE_S, [jisung.yang@lge.com], 2010-05-30, <Disable setting roam_offe if roam_off is 1> */	
 bool roam_off_control = TRUE;
+/* LGE_CHANGE_E, [jisung.yang@lge.com], 2010-05-30, <Disable setting roam_offe if roam_off is 1> */	
 
 
 static int dhd_preinit_proc(dhd_pub_t *dhd, int ifidx, char *name, char *value)
@@ -595,7 +600,7 @@ static int dhd_preinit_proc(dhd_pub_t *dhd, int ifidx, char *name, char *value)
 				WLC_SET_ROAM_TRIGGER : WLC_SET_ROAM_DELTA, &x, sizeof(x));
 	} else if (!strcmp(name, "PM")) {
 		var_int = (int)simple_strtol(value, NULL, 0);
-	
+/* LGE_CHANGE_S, [jisung.yang@lge.com], 2010-05-27, <Disable setting power save mode if PM is 0> */		
 		if (var_int == 0) {
 			printk("[yoohoo] dhd_preinit_proc: do not control power save mode (%d)\n", var_int);
 			PM_control = FALSE;
@@ -604,10 +609,10 @@ static int dhd_preinit_proc(dhd_pub_t *dhd, int ifidx, char *name, char *value)
 			printk("[yoohoo] dhd_preinit_proc: docontrol power save mode (%d)\n", var_int);
 			PM_control = TRUE;			
 		}
-
+/* LGE_CHANGE_E, [jisung.yang@lge.com], 2010-05-27, <Disable setting power save mode if PM is 0> */
 		return dhdcdc_set_ioctl(dhd, ifidx, WLC_SET_PM,
 				&var_int, sizeof(var_int));
-
+/* LGE_CHANGE_S, [jisung.yang@lge.com], 2010-06-28, < MAC write > */
 	} else if(!strcmp(name,"cur_etheraddr")){
         struct ether_addr ea;
         char buf[32];
@@ -637,7 +642,7 @@ static int dhd_preinit_proc(dhd_pub_t *dhd, int ifidx, char *name, char *value)
             memcpy(dhd->mac.octet, (void *)&ea, ETHER_ADDR_LEN);
             return ret;
         }
-	
+/* LGE_CHANGE_E, [jisung.yang@lge.com], 2010-06-28, < MAC write > */		
 	} else {
 		uint iovlen;
 		char iovbuf[WLC_IOCTL_SMLEN];
@@ -647,7 +652,7 @@ static int dhd_preinit_proc(dhd_pub_t *dhd, int ifidx, char *name, char *value)
 
 		/* Setup timeout bcm_timeout from dhd driver 4.217.48 */
 		if(!strcmp(name, "roam_off")) {
-
+/* LGE_CHANGE_S, [jisung.yang@lge.com], 2010-05-30, <Disable setting roam_offe if roam_off is 1> */	
 			if (var_int == 1) {
 				printk("[yoohoo] dhd_preinit_proc: do not control roam_off (%d)\n", var_int);
 				roam_off_control = FALSE;				
@@ -656,7 +661,7 @@ static int dhd_preinit_proc(dhd_pub_t *dhd, int ifidx, char *name, char *value)
 				printk("[yoohoo] dhd_preinit_proc: do control roam_off (%d)\n", var_int);
 				roam_off_control = TRUE;				
 			}
-
+/* LGE_CHANGE_E, [jisung.yang@lge.com], 2010-05-30, <Disable setting roam_offe if roam_off is 1> */	
 
 			/* Setup timeout if Beacons are lost to report link down */
 			if (var_int) {
@@ -665,7 +670,7 @@ static int dhd_preinit_proc(dhd_pub_t *dhd, int ifidx, char *name, char *value)
 				dhdcdc_set_ioctl(dhd, 0, WLC_SET_VAR, iovbuf, sizeof(iovbuf));
 			}
 		}
-		
+		/* Setup timeout bcm_timeout from dhd driver 4.217.48 */
 
 		iovlen = bcm_mkiovar(name, (char *)&var_int, sizeof(var_int),
 				iovbuf, sizeof(iovbuf));
@@ -730,9 +735,11 @@ out:
 	if (fp)
 		dhd_os_close_image(fp);
 	if (buf)
-
+/* BEGIN: 001936 cosmichigh26@lge.com 2009-11-13 */
+/* MOD 0001936: Modify BCM4325 driver(by MMC Technology) */
+/*		MFREE(dhd->osh, buf, stat.size);	* original */
 		MFREE(dhd->osh, buf, stat.size + 1);
-
+/* END: 001936 cosmichigh26@lge.com 2009-11-13 */
 	return ret;
 
 err:
@@ -740,7 +747,7 @@ err:
 	goto out;
 }
 #endif /* CONFIG_LGE_BCM432X_PATCH */
-
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-04-03, configs */
 
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP) && defined(CONFIG_BRCM_LGE_WL_PKTFILTER)
 extern int dhdsdio_set_pktfilters(dhd_pub_t *dhd);
@@ -752,19 +759,20 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 	char eventmask[WL_EVENTING_MASK_LEN];
 	char iovbuf[WLC_IOCTL_SMLEN];	/*  Room for "event_msgs" + '\0' + bitvec  */
 	uint up = 0;
-
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-08-27, roam_off, PM */
 #if !defined(CONFIG_LGE_BCM432X_PATCH)
 	uint roamvar = 1;
 	uint power_mode = PM_FAST;
 #endif /* CONFIG_LGE_BCM432X_PATCH */
-
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-08-27, roam_off, PM */
 	uint32 dongle_align = DHD_SDALIGN;
 	uint32 glom = 0;
 	int ret;
-
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-09-22, bcn_timeout */
 #if !defined(CONFIG_LGE_BCM432X_PATCH)
 	uint bcn_timeout = 3;
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-09-22, bcn_timeout */
 
 	/* Get the device MAC address */
 	strcpy(iovbuf, "cur_etheraddr");
@@ -773,11 +781,11 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 		return BCME_NOTUP;
 	}
 	memcpy(dhd->mac.octet, iovbuf, ETHER_ADDR_LEN);
-
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-04-03, configs */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 	dhd_preinit_config(dhd, 0);
 #endif /* CONFIG_LGE_BCM432X_PATCH */
-
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-04-03, configs */
 
 	/* Set Country code */
 	if (dhd->country_code[0] != 0) {
@@ -787,12 +795,12 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 		}
 	}
 
-
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-08-27, already PM setup is configured */
 #if !defined(CONFIG_LGE_BCM432X_PATCH)
 	/* Set PowerSave mode */
 	dhdcdc_set_ioctl(dhd, 0, WLC_SET_PM, (char *)&power_mode, sizeof(power_mode));
 #endif /* CONFIG_LGE_BCM432X_PATCH */
-
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-08-27, already PM setup is configured */
 
 	/* Match Host and Dongle rx alignment */
 	bcm_mkiovar("bus:txglomalign", (char *)&dongle_align, 4, iovbuf, sizeof(iovbuf));
@@ -801,7 +809,7 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 	/* disable glom option per default */
 	bcm_mkiovar("bus:txglom", (char *)&glom, 4, iovbuf, sizeof(iovbuf));
 	dhdcdc_set_ioctl(dhd, 0, WLC_SET_VAR, iovbuf, sizeof(iovbuf));
-
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-09-22, already setting bcn_timeout in dhd_preinit_config */
 #if !defined(CONFIG_LGE_BCM432X_PATCH)
 	/* Setup timeout if Beacons are lost to report link down */
 	if (roamvar) {
@@ -809,13 +817,15 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 		dhdcdc_set_ioctl(dhd, 0, WLC_SET_VAR, iovbuf, sizeof(iovbuf));
 	}
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-09-22, already setting bcn_timeout in dhd_preinit_config */
 
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-04-08, roam_off */
 #if !defined(CONFIG_LGE_BCM432X_PATCH)
 	/* Disable build-in roaming to allowed ext supplicant to take of romaing */
 	bcm_mkiovar("roam_off", (char *)&roamvar, 4, iovbuf, sizeof(iovbuf));
 	dhdcdc_set_ioctl(dhd, 0, WLC_SET_VAR, iovbuf, sizeof(iovbuf));
 #endif /* CONFIG_LGE_BCM432X_PATCH */
-
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-04-08, roam_off */
 
 	/* Force STA UP */
 	dhdcdc_set_ioctl(dhd, 0, WLC_UP, (char *)&up, sizeof(up));
@@ -877,7 +887,7 @@ dhd_prot_stop(dhd_pub_t *dhd)
 	/* Nothing to do for CDC */
 }
 
-
+/* LGE_CHANGE_S, [yoohoo@lge.com], 2009-11-19, Use deepsleep instead of dhd_dev_reset when driver start or stop */
 #if defined(CONFIG_LGE_BCM432X_PATCH) && defined(CONFIG_BRCM_USE_DEEPSLEEP)
 extern dhd_pub_t * get_dhd_pub_from_dev(struct net_device *dev);
 int dhd_deep_sleep(struct net_device *dev, int flag)
@@ -928,4 +938,4 @@ int dhd_deep_sleep(struct net_device *dev, int flag)
 
 }
 #endif /* CONFIG_LGE_BCM432X_PATCH && CONFIG_BRCM_USE_DEEPSLEEP */
-
+/* LGE_CHANGE_E, [yoohoo@lge.com], 2009-11-19, Use deepsleep instead of dhd_dev_reset when driver start or stop */

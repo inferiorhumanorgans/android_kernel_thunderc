@@ -488,7 +488,9 @@ static void yaffs_RemoveObjectCallback(yaffs_Object *obj)
          ylist_for_each(i, search_contexts) {
                 if (i) {
                         sc = ylist_entry(i, struct yaffs_SearchContext,others);
-			
+			// LGE_CHANGE [dojip.kim@lge.com] 2010-09-27,
+			// sometimes null point exception
+                        //if(sc->nextReturn == obj)
                         if(sc && sc->nextReturn == obj)
                                 yaffs_SearchAdvance(sc);
                 }

@@ -1,6 +1,6 @@
 /* arch/arm/mach-msm/include/mach/board_thunderg.h
  * Copyright (C) 2009 LGE, Inc.
- * Author: SungEun Kim <
+ * Author: SungEun Kim <cleaneye@lge.com>
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -21,6 +21,7 @@
 #include <asm/setup.h>
 #include "pm.h"
 
+/* LGE_S [ynj.kim@lge.com] 2010-05-21 : atcmd - virtual device */
 #define KEY_SPEAKERMODE 241 // KEY_VIDEO_NEXT is not used in GED
 #define KEY_CAMERAFOCUS 242 // KEY_VIDEO_PREV is not used in GED
 #define KEY_FOLDER_HOME 243
@@ -28,6 +29,7 @@
 
 #define ATCMD_VIRTUAL_KEYPAD_ROW	8
 #define ATCMD_VIRTUAL_KEYPAD_COL	8
+/* LGE_E [ynj.kim@lge.com] 2010-05-21 : atcmd - virtual device */
 
 /* sdcard related macros */
 #ifdef CONFIG_MMC_MSM_CARD_HW_DETECTION

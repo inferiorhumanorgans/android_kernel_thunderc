@@ -146,7 +146,7 @@ DHD_SPINWAIT_SLEEP_INIT(sdioh_spinwait_sleep);
 
 int gDK8 = FALSE;			/* Temp flag for DevKit8000 support */
 					/* This will go away soon */
-
+/* LGE_CHANGE_S, [yoohoo@lge.com], 2010-1-13, <Packet filter> */
 #if defined(CONFIG_BRCM_LGE_WL_PKTFILTER)
 typedef struct wl_filter_tag {
 uint32 filterid;
@@ -168,7 +168,7 @@ int dhd_config_pktfilter(dhd_pub_t *dhd, uint32 id ,uint32 flag);
 wl_filter_tag_t filters[MAX_PKT_FILTERS];
 
 #endif /* CONFIG_BRCM_LGE_WL_PKTFILTER */
-
+/* LGE_CHANGE_E, [yoohoo@lge.com], 2010-1-13, <Packet filter> */
 
 extern int dhdcdc_set_ioctl(dhd_pub_t *dhd, int ifidx, uint cmd, void *buf, uint len);
 /* Private data for SDIO bus interaction */
@@ -456,11 +456,13 @@ static int dhdsdio_download_code_array(struct dhd_bus *bus);
 #endif
 
 #if defined(CONFIG_HAS_EARLYSUSPEND)
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-11-19, Support Host Wakeup */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
 #include <linux/wakelock.h>
 extern int dhd_suspend_context;
 extern struct wake_lock wlan_host_wakelock;
 #endif /* CONFIG_BRCM_LGE_WL_HOSTWAKEUP */
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-11-19, Support Host Wakeup */
 extern void *dhd_es_get_dhd_bus(void);
 extern void dhd_es_set_dhd_bus(void *);
 extern bool dhd_early_suspend_state(void);
@@ -3931,16 +3933,20 @@ dhdsdio_dpc(dhd_bus_t *bus)
 
 	/* On frame indication, read available frames */
 	if (PKT_AVAILABLE()) {
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-11-19, Support Host Wakeup */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
 		//Is this location appropriate??.. Need to test more.
 		/*Hold a wake lock to avoid suspend-resume to often if there is continuous data
 	         * transfer. */
 		if(dhd_suspend_context == FALSE)
 		{
+/* LGE_CHANGE_S, [hyuksang], due to power consumption, the below line is discarded to reduce 2s delay */
 
+		//	wake_lock_timeout(&wlan_host_wakelock, 2*HZ);
+/* LGE_CHANGE_E, [hyuksang], due to power consumption, the below line is discarded to reduce 2s delay */
 		}
 #endif /* CONFIG_BRCM_LGE_WL_HOSTWAKEUP */
-
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-11-19, Support Host Wakeup */
 		framecnt = dhdsdio_readframes(bus, rxlimit, &rxdone);
 		if (rxdone || bus->rxskip)
 			intstatus &= ~I_HMB_FRAME_IND;
@@ -4041,11 +4047,11 @@ dhdsdio_isr(void *arg)
 	bus->intdis = TRUE;
 
 #if defined(SDIO_ISR_THREAD)
-
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-11-19, Support Host Wakeup */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
 	bus->dpc_sched = TRUE;
 #endif /* CONFIG_BRCM_LGE_WL_HOSTWAKEUP */
-
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-11-19, Support Host Wakeup */
 	DHD_TRACE(("Calling dhdsdio_dpc() from %s\n", __FUNCTION__));
 	dhdsdio_dpc(bus);
 #else
@@ -5433,6 +5439,7 @@ dhd_bus_devreset(dhd_pub_t *dhdp, uint8 flag)
 	return bcmerror;
 }
 
+/* LGE_CHANGE_S, [yoohoo@lge.com], 2010-1-13, <ARP offload, Packet filter> */
 #if defined(CONFIG_BRCM_LGE_WL_ARPOFFLOAD) || defined(CONFIG_BRCM_LGE_WL_PKTFILTER)
 int dhdsdio_setiovar(struct dhd_bus *bus, char *cmd, void *data, int size)
 {
@@ -5476,7 +5483,9 @@ int dhdsdio_setiovar(struct dhd_bus *bus, char *cmd, void *data, int size)
 
 }
 #endif	/* defined(CONFIG_BRCM_LGE_WL_ARPOFFLOAD) || defined(CONFIG_BRCM_LGE_WL_PKTFILTER) */
+/* LGE_CHANGE_E, [yoohoo@lge.com], 2010-1-13, <ARP offload, Packet filter> */
 
+/* LGE_CHANGE_S, [yoohoo@lge.com], 2010-1-13, <ARP offload> */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP) && defined(CONFIG_BRCM_LGE_WL_ARPOFFLOAD)
 int dhd_config_arp_offload(dhd_bus_t *bus, bool flag)
 
@@ -5569,7 +5578,9 @@ int dhd_config_arp_offload(dhd_bus_t *bus, bool flag)
 		return 0;
 }
 #endif	/* defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP) && defined(CONFIG_BRCM_LGE_WL_ARPOFFLOAD) */
+/* LGE_CHANGE_E, [yoohoo@lge.com], 2010-1-13, <ARP offload> */
 
+/* LGE_CHANGE_S, [yoohoo@lge.com], 2010-1-13, <Packet filter> */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP) && defined(CONFIG_BRCM_LGE_WL_PKTFILTER)
 int dhdsdio_enable_filters(struct dhd_bus *bus)
 {
@@ -5770,4 +5781,4 @@ int dhd_config_pktfilter(dhd_pub_t *dhd, uint32 id ,uint32 flag)
 }
 
 #endif	/* defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP) && defined(CONFIG_BRCM_LGE_WL_PKTFILTER) */
-
+/* LGE_CHANGE_E, [yoohoo@lge.com], 2010-1-13, <Packet filter> */

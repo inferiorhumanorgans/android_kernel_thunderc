@@ -28,11 +28,11 @@
  * (as a macro let's say).
  */
 #if defined (CONFIG_MACH_MSM7X27_ALOHAV) || defined (CONFIG_MACH_MSM7X27_THUNDERC)
-/*
+/* LGE_CHNAGE
  * ADD THUNDERC feature to use VS740 BATT DRIVER IN THUNDERC
- * 
+ * 2010-05-13, taehung.kim@lge.com
  */
-
+/* LGE_CHANGES_S [woonghee@lge.com] 2009-09-25, battery charging */
 #include <mach/msm_battery.h>
 #include <mach/msm_battery_thunderc.h>
 #endif
@@ -49,11 +49,11 @@
  * (as a macro let's say).
  */
 #if defined (CONFIG_MACH_MSM7X27_ALOHAV) || defined (CONFIG_MACH_MSM7X27_THUNDERC)
-/* 
+/* LGE_CHNAGE
  * ADD THUNDERC feature to use VS740 BATT DRIVER IN THUNDERC
- * 
+ * 2010-05-13, taehung.kim@lge.com
  */
-
+/* LGE_CHANGES_S [woonghee@lge.com] 2009-09-25, battery charging */
 #define PSEUDO_BATT_ATTR(_name)					\
 {									\
 	.attr = { .name = #_name, .mode = 0666 },	\
@@ -68,7 +68,7 @@
 	.store = charging_timer_store_property,				\
 }
 
-
+/* LGE_CHANGE [dojipl@kim@lge.com] 2010-08-09 */
 #define BLOCK_CHARGING_ATTR(_name)					\
 {									\
 	.attr = { .name = #_name, .mode = 0666 },	\
@@ -76,7 +76,7 @@
 	.store = block_charging_store_property,				\
 }
 
-
+/* LGE_CHANGE [dojipl@kim@lge.com] 2010-08-09 */
 #if defined(CONFIG_LGE_THERM_NO_STOP_CHARGING)
 #define THERM_NO_STOP_CHARGING_ATTR(_name)				\
 {									\
@@ -141,7 +141,11 @@ static ssize_t power_supply_show_property(struct device *dev,
 	else if (off == POWER_SUPPLY_PROP_CAPACITY_LEVEL)
 		return sprintf(buf, "%s\n", capacity_level_text[value.intval]);
 #if defined (CONFIG_MACH_MSM7X27_ALOHAV) || defined (CONFIG_MACH_MSM7X27_THUNDERC)
-
+/* LGE_CHNAGE
+ * ADD THUNDERC feature to use VS740 BATT DRIVER IN THUNDERC
+ * 2010-05-13, taehung.kim@lge.com
+ */
+	/* LGE_CHANGES_S [woonghee.park@lge.com] 2010-02-09, [VS740] */
 	else if (off >= POWER_SUPPLY_PROP_MODEL_NAME && off <= POWER_SUPPLY_PROP_SERIAL_NUMBER)
 #else
 	else if (off >= POWER_SUPPLY_PROP_MODEL_NAME)
@@ -151,7 +155,12 @@ static ssize_t power_supply_show_property(struct device *dev,
 	return sprintf(buf, "%d\n", value.intval);
 }
 #if defined (CONFIG_MACH_MSM7X27_ALOHAV) || defined (CONFIG_MACH_MSM7X27_THUNDERC)
+/* LGE_CHNAGE
+ * ADD THUNDERC feature to use VS740 BATT DRIVER IN THUNDERC
+ * 2010-05-13, taehung.kim@lge.com
+ */
 
+/* LGE_CHANGES_S [woonghee@lge.com] 2009-09-25, battery charging */
 static ssize_t pseudo_batt_show_property(struct device *dev,
 		struct device_attribute *attr,
 		char *buf)
@@ -246,7 +255,7 @@ out:
 	return ret;
 }
 
-
+/* LGE_CHANGE_S [dojip.kim@lge.com] 2010-08-09 */
 extern void batt_block_charging_set(int);
 static ssize_t block_charging_store_property(struct device *dev,
 		struct device_attribute *attr,
@@ -291,7 +300,9 @@ static ssize_t block_charging_show_property(struct device *dev,
 
 	return 0;
 }
+/* LGE_CHANGE_E [dojip.kim@lge.com] 2010-08-09 */
 
+/* LGE_CHANGE_S [dojip.kim@lge.com] 2010-08-09 */
 #if defined(CONFIG_LGE_THERM_NO_STOP_CHARGING)
 static ssize_t therm_no_stop_charging_show_property(struct device *dev,
 		struct device_attribute *attr,
@@ -352,7 +363,11 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(voltage_min_design),
 #if defined (CONFIG_MACH_MSM7X27_ALOHAV) || \
 	defined (CONFIG_MACH_MSM7X27_GISELE) || defined (CONFIG_MACH_MSM7X27_THUNDERC)
-
+/* LGE_CHNAGE
+ * ADD THUNDERC feature to use VS740 BATT DRIVER IN THUNDERC
+ * 2010-05-13, taehung.kim@lge.com
+ */
+	/* LGE_CHANGES_S [woonghee@lge.com]	2009-09-25, battery charging */
 	POWER_SUPPLY_ATTR(batt_vol),
 #else	/* origin */
 	POWER_SUPPLY_ATTR(voltage_now),
@@ -379,7 +394,12 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(capacity_level),
 #if defined (CONFIG_MACH_MSM7X27_ALOHAV) || \
 	defined (CONFIG_MACH_MSM7X27_GISELE) || defined (CONFIG_MACH_MSM7X27_THUNDERC)
-
+/* LGE_CHNAGE
+ * ADD THUNDERC feature to use VS740 BATT DRIVER IN THUNDERC
+ * 2010-05-13, taehung.kim@lge.com
+ */
+	/* LGE_CHANGES_S [woonghee@lge.com]	2009-09-25, battery charging */
+	/* need to match sysfs name, see BATTERY_TEMPERATURE_PATH */
 	POWER_SUPPLY_ATTR(batt_temp),
 #else
 	POWER_SUPPLY_ATTR(temp),
@@ -394,22 +414,29 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(manufacturer),
 	POWER_SUPPLY_ATTR(serial_number),
 #if defined (CONFIG_MACH_MSM7X27_ALOHAV) || defined (CONFIG_MACH_MSM7X27_THUNDERC)
-
+/* LGE_CHNAGE
+ * ADD THUNDERC feature to use VS740 BATT DRIVER IN THUNDERC
+ * 2010-05-13, taehung.kim@lge.com
+ */
+	/* LGE_CHANGES_S [woonghee.park@lge.com] 2010-02-09, [VS740] */
 	POWER_SUPPLY_ATTR(valid_batt_id),
 	POWER_SUPPLY_ATTR(batt_therm),
 	PSEUDO_BATT_ATTR(pseudo_batt),
-	
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-21, add chargint timer */
 	CHARGING_TIMER_ATTR(charging_timer),
-	
+	/* LGE_CHANGE_S [dojip.kim@lge.com] 2010-05-17, [LS670],
+	 * add extra batt info
+	 */
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-08-09 */
 	BLOCK_CHARGING_ATTR(block_charging),
 #if defined(CONFIG_MACH_MSM7X27_THUNDERC_SPRINT)
 	POWER_SUPPLY_ATTR(batt_therm_state),
-	
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-08-09 */
 #if defined(CONFIG_LGE_THERM_NO_STOP_CHARGING)
 	THERM_NO_STOP_CHARGING_ATTR(therm_no_stop_charging),	
 #endif /* #if defined(CONFIG_LGE_THERM_NO_STOP_CHARGING) */
 #endif
-	
+	/* LGE_CHANGE_E [dojip.kim@lge.com] 2010-05-17 */
 #endif
 };
 

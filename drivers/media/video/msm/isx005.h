@@ -48,7 +48,7 @@ struct isx005_reg {
 	
 	const struct isx005_register_address_value_pair *af_normal_reg_settings;
 	uint16_t af_normal_reg_settings_size;
-	
+	//LGE_CHANGE[byungsik.choi@lge.com]2010-09-09 add auto focus mode
 	const struct isx005_register_address_value_pair *af_auto_reg_settings;
 	uint16_t af_auto_reg_settings_size;
 	const struct isx005_register_address_value_pair *af_macro_reg_settings;
@@ -134,7 +134,8 @@ enum {
 
 #if defined(CONFIG_MACH_MSM7X27_THUNDERG) || \
 	defined(CONFIG_MACH_MSM7X27_THUNDERC)
-
+/* LGE_CHANGE_S. Change code to apply new LUT for display quality.
+ * 2010-08-13. minjong.gong@lge.com */
 extern void mdp_load_thunder_lut(int lut_type);
 #endif
 

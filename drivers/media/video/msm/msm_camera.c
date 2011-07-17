@@ -56,9 +56,11 @@ static dev_t msm_devno;
 static LIST_HEAD(msm_sensors);
 struct  msm_control_device *g_v4l2_control_device;
 int g_v4l2_opencnt;
+/* LGE_CHANGE_S [youngki.an@lge.com] 2010-05-18 */
 #if 1//def LG_CAMERA_HIDDEN_MENU
 bool sensorAlwaysOnTest = false;
 #endif
+/* LGE_CHANGE_E [youngki.an@lge.com] 2010-05-18 */
 
 #define __CONTAINS(r, v, l, field) ({				\
 	typeof(r) __r = r;					\
@@ -1877,6 +1879,7 @@ static long msm_ioctl_config(struct file *filep, unsigned int cmd,
 					sdata->flash_data, led_state);
 		break;
 	}
+/* LGE_CHANGE_S [youngki.an@lge.com] 2010-05-18 */
 #if 1//def LG_CAMERA_HIDDEN_MENU
 	case MSM_CAM_IOCTL_SENSOR_ALWAYS_ON_TEST:
 		{
@@ -1899,6 +1902,7 @@ static long msm_ioctl_config(struct file *filep, unsigned int cmd,
 		}
 		break;
 #endif
+/* LGE_CHANGE_E [youngki.an@lge.com] 2010-05-18 */
 
 	case MSM_CAM_IOCTL_ERROR_CONFIG:
 	   	rc = msm_error_config(pmsm->sync, argp);
@@ -1993,9 +1997,12 @@ static int __msm_release(struct msm_sync *sync)
 	struct hlist_node *n;
 
 	mutex_lock(&sync->lock);
-	
+	//LGE_CHANGE[byungsik.choi@lge.com]2010-08-09 fix potential memory release problem
 	#if defined (CONFIG_MACH_LGE)
-	
+	/* [junyeong.han@lge.com] 2010-08-09
+ 	* When opencnt is 0, just return 0.
+ 	* below code has potential risk(run release twise),
+ 	* when opencnt value is 0 */
     	   if (!sync->opencnt) {
                mutex_unlock(&sync->lock);
                return 0;

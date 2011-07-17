@@ -218,7 +218,8 @@ typedef struct
   unsigned short bmp_height;
   mtc_bits_pixel_type bits_pixel;
   mtc_mask_type mask;
- 
+  /* LGE_CHANGE [dojip.kim@lge.com] 2010-06-04, dynamic alloc */
+  //unsigned char bmp_data[MTC_SCRN_BUF_SIZE_MAX];
   unsigned char bmp_data[0];
 } PACKED mtc_capture_rsp_type;
 

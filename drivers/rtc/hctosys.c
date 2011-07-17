@@ -22,7 +22,7 @@
  * the best guess is to add 0.5s.
  */
 
-/* 
+/* LGE_CHANGE [dojip.kim@lge.com] 2010-06-04, [LS670]
  * use alarm intf to fix the wrong elapsedtime
  */
 #ifdef CONFIG_LGE_RTC_INTF_ALARM_SYNC
@@ -52,7 +52,7 @@ int rtc_hctosys(void)
 
 			rtc_tm_to_time(&tm, &tv.tv_sec);
 
-			/* 
+			/* LGE_CHANGE [dojip.kim@lge.com] 2010-06-04, [LS670]
 			 * use alarm intf to fix the wrong elapsedtime
 			 */
 #ifdef CONFIG_LGE_RTC_INTF_ALARM_SYNC
@@ -67,7 +67,7 @@ int rtc_hctosys(void)
 			do_settimeofday(&tv);
 #endif
 
-			
+			// LGE_CHANGE [dojip.kim@lge.com] 2010-08-04, too noisy
 			/*
 			dev_info(rtc->dev.parent,
 				"setting system clock to "

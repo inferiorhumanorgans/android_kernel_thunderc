@@ -34,6 +34,7 @@ struct gpio_kp {
 	unsigned long keys_pressed[0];
 };
 
+/* LGE_CHANGE [james.jang@lge.com] 2010-06-12 */
 #if defined(CONFIG_LGE_DIAGTEST)
 /* for SLATE */
 extern void mtc_send_key_log_packet(unsigned long keycode, unsigned long state);
@@ -134,6 +135,7 @@ static void report_key(struct gpio_kp *kp, int key_index, int out, int in)
 					mi->input_gpios[in], pressed);
 			input_report_key(kp->input_devs->dev[dev], keycode, pressed);
 
+/* LGE_CHANGE [james.jang@lge.com] 2010-06-12 */
 #if defined(CONFIG_LGE_DIAGTEST)
 			mtc_send_key_log_packet((unsigned long)keycode, (unsigned long)!pressed);
 			ats_eta_mtc_key_logging((int)keycode, (char)pressed);

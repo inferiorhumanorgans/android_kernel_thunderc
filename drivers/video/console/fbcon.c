@@ -278,11 +278,11 @@ static int fbcon_get_rotate(struct fb_info *info)
 	return (ops) ? ops->rotate : 0;
 }
 
-
+/* LGE_CHANGE_S, [munyoung@lge.com] booting logo */
 #ifdef CONFIG_FB_MSM_LOGO
 extern int msm_fb_get_console_inactive(void);
 #endif
-
+/* LGE_CHANGE_S, [munyoung@lge.com] booting logo */
 
 static inline int fbcon_is_inactive(struct vc_data *vc, struct fb_info *info)
 {
@@ -290,7 +290,7 @@ static inline int fbcon_is_inactive(struct vc_data *vc, struct fb_info *info)
 
 	return (info->state != FBINFO_STATE_RUNNING ||
 		vc->vc_mode != KD_TEXT || ops->graphics
- 		
+ 		/* LGE_CHANGE, [munyoung@lge] booting logo */
 		#ifdef CONFIG_FB_MSM_LOGO
 		|| msm_fb_get_console_inactive()
 		#endif

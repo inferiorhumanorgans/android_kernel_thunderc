@@ -644,7 +644,10 @@ static void msm_batt_update_psy_status(void)
 		    charger_status == CHARGER_STATUS_WEAK) {
 			if (msm_batt_info.current_chg_source) {
 #ifdef CONFIG_LGE_FUEL_GAUGE
-		
+		/* LGE_CHANGE
+		 * add for Full charging
+		 * 2010-05-04 baborobo@lge.com
+		 */
 			  if(battery_level == BATTERY_LEVEL_FULL)	{
 					DBG_LIMIT("BATT: FULL.\n");
 					msm_batt_info.batt_status =
@@ -668,7 +671,10 @@ static void msm_batt_update_psy_status(void)
 					supp = &msm_psy_usb;
 			}
 #ifdef CONFIG_LGE_FUEL_GAUGE
-		
+		/* LGE_CHANGE
+		 * add for unpluged status of battery
+		 * 2010-04-28 baborobo@lge.com
+		 */
 			if (battery_status == BATTERY_STATUS_INVALID	&&
 				battery_level == BATTERY_LEVEL_INVALID) {	
 				DBG_LIMIT("BATT: No Battery.\n");
@@ -684,7 +690,10 @@ static void msm_batt_update_psy_status(void)
 		}
 	} else {
 #ifdef CONFIG_LGE_FUEL_GAUGE
-		
+		/* LGE_CHANGE
+		 * add for unpluged status of battery
+		 * 2010-04-07 baborobo@lge.com
+		 */
 		if (battery_status == BATTERY_STATUS_INVALID	&&
 			battery_level == BATTERY_LEVEL_INVALID) {	
 			DBG_LIMIT("BATT: No Battery\n");
@@ -696,7 +705,10 @@ static void msm_batt_update_psy_status(void)
 		if (charger_type != CHARGER_TYPE_INVALID &&
 		    charger_status == CHARGER_STATUS_GOOD) {
 #ifdef CONFIG_LGE_FUEL_GAUGE
-		
+		/* LGE_CHANGE
+		 * add for Full charging
+		 * 2010-05-04 baborobo@lge.com
+		 */
 		  if(battery_level == BATTERY_LEVEL_FULL)	{
 				DBG_LIMIT("BATT: FULL\n");
 				msm_batt_info.batt_status =
@@ -997,7 +1009,10 @@ void msm_batt_late_resume(struct early_suspend *h)
 	}
 
 #ifdef CONFIG_LGE_FUEL_GAUGE
-		
+		/* LGE_CHANGE
+		 * add for Battery Status Update when out of sleep
+		 * 2010-04-21 baborobo@lge.com
+		 */
 	msm_batt_update_psy_status();
 #endif
 

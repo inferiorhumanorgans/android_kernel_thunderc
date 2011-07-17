@@ -70,9 +70,10 @@ uint sd_f2_blocksize = 512;		/* Default blocksize */
 uint sd_f2_blocksize = 64;		/* Default blocksize */
 #endif	/* CONFIG_LGE_BCM432X_PATCH */
 
-
+/* BEGIN: 0005337 mingi.sung@lge.com 2010-03-23 */
+/* MOD 0005337: [WLAN] Use static SKB when initializing */
 #define USE_STATIC_SKB	/* Use DHD_USE_STATIC_BUF at SKB */
-
+/* END: 0005337 mingi.sung@lge.com 2010-03-23 */
 
 uint sd_divisor = 2;			/* Default 48MHz/2 = 24MHz */
 
@@ -679,9 +680,11 @@ sdioh_cis_read(sdioh_info_t *sd, uint func, uint8 *cisd, uint32 length)
 extern SDIOH_API_RC
 sdioh_request_byte(sdioh_info_t *sd, uint rw, uint func, uint regaddr, uint8 *byte)
 {
-	
+/* BEGIN: 0005533 mingi.sung@lge.com 2010-03-27 */
+/* MOD 0005533: [WLAN] Fixing WBT issues on Wi-Fi driver */
+/* WBT Fix TD# 248349 */	
 	int err_ret = 0;
-
+/* END: 0005533 mingi.sung@lge.com 2010-03-27 */
 
 	sd_info(("%s: rw=%d, func=%d, addr=0x%05x\n", __FUNCTION__, rw, func, regaddr));
 

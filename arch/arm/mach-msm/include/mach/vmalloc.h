@@ -21,7 +21,8 @@
 #define VMALLOC_END	  (PAGE_OFFSET + 0x60000000)
 #else
 #if defined (CONFIG_LGE_4G_DDR)
-
+/* 2010-06-29 [junyeong.han@lge.com] Support 512MB SDRAM */
+/* To support 512MB SDRAM in VMSPLIT_3G */
 #define VMALLOC_END	  (PAGE_OFFSET + 0x38000000)
 #else	/* origin */
 #define VMALLOC_END	  (PAGE_OFFSET + 0x20000000)

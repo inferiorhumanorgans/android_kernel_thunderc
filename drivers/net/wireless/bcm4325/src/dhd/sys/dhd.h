@@ -295,12 +295,13 @@ extern void dhd_os_sdunlock_txq(dhd_pub_t * pub);
 extern void dhd_os_sdlock_rxq(dhd_pub_t * pub);
 extern void dhd_os_sdunlock_rxq(dhd_pub_t * pub);
 extern void dhd_os_sdlock_sndup_rxq(dhd_pub_t * pub);
-
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-12-08, support start/stop */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 extern void dhd_customer_gpio_wlan_ctrl(int onoff, int irq_detect_ctrl);
 #else /* CONFIG_LGE_BCM432X_PATCH */
 extern void dhd_customer_gpio_wlan_ctrl(int onoff);
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-12-08, support start/stop */
 extern void dhd_os_sdunlock_sndup_rxq(dhd_pub_t * pub);
 #if defined(OOB_INTR_ONLY)
 extern int dhd_customer_oob_irq_map(void);
@@ -393,19 +394,21 @@ extern uint dhd_pktgen_len;
 #endif
 
 
-
+/* optionally set by a module_param_string() */
+/* LGE_CHANGE_S [jisung.yang@lge.com] 2010-04-24, gcc compile of this version limits array size. */
 #if 0
 #define MOD_PARAM_PATHLEN	2048
 #else
 #define MOD_PARAM_PATHLEN	512
 #endif
-
+/* LGE_CHANGE_E [jisung.yang@lge.com] 2010-04-24, gcc compile of this version limits array size. */
 extern char fw_path[MOD_PARAM_PATHLEN];
 extern char nv_path[MOD_PARAM_PATHLEN];
-
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-04-03, configs */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 extern char config_path[MOD_PARAM_PATHLEN];
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-04-03, configs */
 
 /* For supporting multiple interfaces */
 #define DHD_MAX_IFS	16

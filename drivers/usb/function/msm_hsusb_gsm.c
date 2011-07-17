@@ -51,12 +51,20 @@
 #include <mach/board_lge.h>
 #endif /* CONFIG_MACH_LGE */
 
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2009-04-08, Defines for LGE */
 /* For HSUSB debugging */
 #define LGE_HSUSB_DEBUG_PRINT
 /* #undef HSUSB_DEBUG_PRINT */
 
 #if defined(CONFIG_USB_SUPPORT_LGDRIVER)
-
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-04-08, Macro for debugging */
+/* Debug mask value
+ * usage : echo [mask_value] > /sys/module/msm_hsusb/parameters/debug_mask
+ * All 		: 127
+ * No msg 	: 0
+ * PM		: 4
+ * Init		: 8
+ */
 enum {
 	HSUSB_DEBUG_NORMAL   = 1U << 0,  /* Normal debug */
 	HSUSB_DEBUG_ISR_WQ   = 1U << 1,  /* Isr, wq 		*/
@@ -88,7 +96,7 @@ module_param_named(debug_mask, lge_hsusb_debug_mask, int,
 
 #if defined(CONFIG_USB_SUPPORT_LGE_FACTORY_USB_GSM) && \
 	defined(CONFIG_LGE_DETECT_PIF_PATCH)
-
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-04-08, For manufacturing mode */
 #define LG_PIF_DETECT 2
 #endif
 
@@ -115,6 +123,7 @@ module_param_named(debug_mask, lge_hsusb_debug_mask, int,
 
 
 #if defined(CONFIG_USB_SUPPORT_LGDRIVER_GSM)
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-04-08, Default PID settings */
 
 #define LG_DEFAULT_PID		0x618F 		/* ADB off */
 #define LG_ADB_ON_PID		0x618E		/* ADB on  */
@@ -288,6 +297,7 @@ struct usb_info {
 	int vbus_sn_notif;
 	struct switch_dev sdev;
 #if defined(CONFIG_USB_SUPPORT_LGE_FACTORY_USB_GSM)
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-04-08, For manufactoring mode */
 	int pif_detect;
 #endif
 };
@@ -343,6 +353,7 @@ static ssize_t print_switch_state(struct switch_dev *sdev, char *buf)
 	struct usb_info *ui = the_usb_info;
 
 #if defined(CONFIG_USB_SUPPORT_LGDRIVER_GSM)
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-04-08, Add switch drver ops */
 	if (ui->usb_state == USB_STATE_POWERED)
 		return sprintf(buf, "%s\n", "powered");
 #endif
@@ -1539,11 +1550,13 @@ static void handle_endpoint(struct usb_info *ui, unsigned bit)
 		req->busy = 0;
 		req->live = 0;
 
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-04-07,  */
 /* WBT Fix TD# 5131 */
 		if (req->dead){
 			do_free_req(ui, req);
 			continue;
 		}
+/* LGE_CHANGE_E [hyunhui.park@lge.com] 2010-04-07 */
 		if (req->req.complete) {
 			spin_unlock_irqrestore(&ui->lock, flags);
 			req->req.complete(ept, &req->req);
@@ -2432,6 +2445,7 @@ void usb_function_enable(const char *function, int enable)
 	}
 #if defined(CONFIG_USB_SUPPORT_LGE_FACTORY_USB_GSM) && \
 	defined(CONFIG_LGE_DETECT_PIF_PATCH)
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2009-04-08, Disable ADB function */
 	if (ui->pif_detect == LG_PIF_DETECT) {
 		if (!strcmp(function, "adb")) {
 			pr_info("HSUSB(%s): In manufacturing mode, can't use ADB interface\n", __func__);
@@ -2655,6 +2669,7 @@ static void usb_do_work(struct work_struct *w)
 						&ui->chg_legacy_det,
 						USB_CHG_DET_DELAY);
 #if defined(CONFIG_USB_SUPPORT_LGDRIVER_GSM)
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-04-08, Change USB state(for TA wakeup) */
 				switch_set_state(&ui->sdev, 2);
 #endif
 				pr_info("hsusb: OFFLINE -> ONLINE\n");
@@ -3082,6 +3097,7 @@ static void usb_configure_device_descriptor(struct usb_info *ui)
 {
 
 #if defined(CONFIG_USB_SUPPORT_LGE_SERIAL_FROM_ARM9_IMEI)
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-04-08, Get IMEI using RPC */
 	unsigned char nv_imei_ptr[19];
 	int ret = -1;
 #endif
@@ -3091,11 +3107,13 @@ static void usb_configure_device_descriptor(struct usb_info *ui)
 	desc_device.bcdDevice = ui->pdata->version;
 
 #if defined(CONFIG_USB_SUPPORT_LGDRIVER_GSM)
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-04-01, Settle PID setting */
 	if (desc_device.idProduct == LG_DEFAULT_PID)
 		desc_device.idProduct = LG_ADB_ON_PID;
 #endif
 
 #if defined(CONFIG_USB_SUPPORT_LGE_SERIAL_FROM_ARM9_IMEI)
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-04-08, Get IMEI using RPC */
 	ret = msm_nv_imei_get(nv_imei_ptr);
 	if (ret < 0) {
 		nv_imei_ptr[0] = '\0';
@@ -3304,7 +3322,9 @@ static ssize_t  show_##function(struct device *dev,			\
 									\
 static DEVICE_ATTR(function, S_IRUGO, show_##function, NULL);
 
-
+/* LGE_CHANGES_S [fred.cho@lge.com] 2010-02-18 */
+/* Host Request func driver in this order.  */
+/* It should be matched with function Map in Board.c */
 #if defined (CONFIG_USB_SUPPORT_LGDRIVER)
 msm_hsusb_func_attr(modem, 0);
 msm_hsusb_func_attr(diag, 1);
@@ -3340,6 +3360,7 @@ static struct attribute *msm_hsusb_func_attrs[] = {
 	NULL,
 };
 #endif
+/* LGE_CHANGES_E [fred.cho@lge.com] 2010-02-18 */
 
 static struct attribute_group msm_hsusb_func_attr_grp = {
 	.name  = "functions",
@@ -3400,6 +3421,7 @@ static int __init usb_probe(struct platform_device *pdev)
 
 #if defined(CONFIG_USB_SUPPORT_LGE_FACTORY_USB_GSM) && \
 	defined(CONFIG_LGE_DETECT_PIF_PATCH)
+/* LGE_CHANGE_S [hyunhui.park@lge.com] 2010-04-08, For manufacturing mode */
 	ui->pif_detect = -1;
 
 	/* Using common lge api in arch/arm/mach-msm/lge/lge_proc_comm.c */

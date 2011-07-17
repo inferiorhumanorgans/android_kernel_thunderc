@@ -53,9 +53,10 @@ typedef struct bcm_static_buf {
 
 static bcm_static_buf_t *bcm_static_buf = 0;
 
-
+/* BEGIN: 0005337 mingi.sung@lge.com 2010-03-23 */
+/* MOD 0005337: [WLAN] Use static SKB when initializing */
 #define USE_STATIC_SKB	/* Use DHD_USE_STATIC_BUF at SKB */
-
+/* END: 0005337 mingi.sung@lge.com 2010-03-23 */
 
 #ifdef USE_STATIC_SKB
 #define MAX_STATIC_PKT_NUM 8
@@ -156,12 +157,14 @@ osl_attach(void *pdev, uint bustype, bool pkttag)
 {
 	osl_t *osh;
 
-
+/* BEGIN: 0005533 mingi.sung@lge.com 2010-03-27 */
+/* MOD 0005533: [WLAN] Fixing WBT issues on Wi-Fi driver */
+/* WBT Fix TD# 248394, 248395 */
 	if(!(osh = kmalloc(sizeof(osl_t), GFP_ATOMIC))){
 	ASSERT(osh);
 		return NULL;
 	}
-
+/* END: 0005533 mingi.sung@lge.com 2010-03-27 */
 
 	bzero(osh, sizeof(osl_t));
 
@@ -195,7 +198,9 @@ osl_attach(void *pdev, uint bustype, bool pkttag)
 
 #ifdef DHD_USE_STATIC_BUF
 
-
+/* BEGIN: 0005533 mingi.sung@lge.com 2010-03-27 */
+/* MOD 0005533: [WLAN] Fixing WBT issues on Wi-Fi driver */
+/* WBT Fix TD# 248396, 248397 */
 	if (!bcm_static_buf) {
 		if (!(bcm_static_buf = (bcm_static_buf_t *)dhd_os_prealloc(3, STATIC_BUF_SIZE+
 			STATIC_BUF_TOTAL_LEN))) {
@@ -207,7 +212,7 @@ osl_attach(void *pdev, uint bustype, bool pkttag)
 			bcm_static_buf->buf_ptr = (unsigned char *)bcm_static_buf + STATIC_BUF_SIZE;
 		}
 	}
-
+/* END: 0005533 mingi.sung@lge.com 2010-03-27 */
 	
 #ifdef USE_STATIC_SKB
 	if (!bcm_static_skb)
@@ -543,12 +548,13 @@ osl_mfree(osl_t *osh, void *addr, uint size)
 		ASSERT(osh->magic == OS_HANDLE_MAGIC);
 		osh->malloced -= size;
 	}
-
+/* BEGIN: 0005566 mingi.sung@lge.com 2010-03-27 */
+/* MOD 0005566: [WLAN] Initializing after kfree in linux_osl.c */
 	if(addr != NULL){
 	kfree(addr);
 		addr = NULL;
 	}
-
+/* END: 0005566 mingi.sung@lge.com 2010-03-27 */
 }
 
 uint

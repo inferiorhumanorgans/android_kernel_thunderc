@@ -2,8 +2,8 @@
  * drivers/input/sensor/gp2ap002.c - Proximity Sensor driver
  *
  * Copyright (C) 2009 - 2010 LGE, Inc.
- * Author: Lee, Kenobi 
- *         Cho, EunYoung 
+ * Author: Lee, Kenobi [sungyoung.lee@lge.com]
+ *         Cho, EunYoung [ey.cho@lge.com]
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -378,6 +378,7 @@ gp2ap_report_event(int state)
 		PROXD("exit\n");
 }
 
+// LGE_CHANGE [dojip.kim@lge.com] 2010-09-07, rework the work_func
 static void gp2ap_work_func(struct work_struct *work)
 {
 	struct proximity_gp2ap_device *dev = 

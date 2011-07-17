@@ -48,14 +48,15 @@ struct rpcsvr_platform_device
 	uint32_t vers;
 };
 
-
+/* LGE_CHANGES_S [hoonylove004@lge.com] 2009-12-29, [VS740] AT CMD */
+/* Factory AT CMD feature added based on EVE */
 #ifdef CONFIG_MACH_LGE
 typedef uint8_t   AT_STR_t;
-#define ABSOLUTE_STRING_LENGTH  500 //40 
+#define ABSOLUTE_STRING_LENGTH  500 //40 [seypark@lge.com]
 #define MAX_STRING_RET (ABSOLUTE_STRING_LENGTH/sizeof(AT_STR_t))
 
 typedef uint8_t AT_SEND_BUFFER_t;
-#define MAX_SEND_LOOP_NUM  8 // 4 => 8 
+#define MAX_SEND_LOOP_NUM  8 // 4 => 8 kageki@lge.com
 #define ABSOLUTE_SEND_SIZE  256
 #define MAX_SEND_SIZE_BUFFER (ABSOLUTE_SEND_SIZE/sizeof(AT_SEND_BUFFER_t))
 #define LIMIT_MAX_SEND_SIZE_BUFFER (MAX_SEND_SIZE_BUFFER*MAX_SEND_LOOP_NUM)
@@ -67,7 +68,7 @@ struct retvaluestruct
 	AT_STR_t   ret_string[MAX_STRING_RET];
 };
 #endif
-
+/* LGE_CHANGES_E [hoonylove004@lge.com] 2009-12-29, [VS740] */
 
 #define RPC_DATA_IN	0
 /*
@@ -112,12 +113,14 @@ typedef struct
 #define RPC_ACCEPTSTAT_SYSTEM_ERR 5
 #define RPC_ACCEPTSTAT_PROG_LOCKED 6
 
-
+/* LGE_CHANGES_S [hoonylove004@lge.com] 2009-12-29, [VS740] AT CMD */
+/* Factory AT CMD feature added based on EVE */
 #ifdef CONFIG_MACH_LGE
 #define RPC_RETURN_RESULT_ERROR    7
 #define RPC_RETURN_RESULT_OK     8
 #define RPC_RETURN_RESULT_MIDDLE_OK     9
 #endif /*LG_FW_ATS_ETA_MTC*/
+/* LGE_CHANGES_E [hoonylove004@lge.com] 2009-12-29, [VS740] */
 
 
 	/*
@@ -128,7 +131,8 @@ typedef struct
 	 */
 } rpc_accepted_reply_hdr;
 
-
+/* LGE_CHANGES_S [hoonylove004@lge.com] 2009-12-29, [VS740] AT CMD */
+/* Factory AT CMD feature added based on EVE */
 #ifdef CONFIG_MACH_LGE
 typedef struct
 {
@@ -157,7 +161,7 @@ struct retvaluestruct retvalues;
 
 } rpc_accepted_AT_reply_hdr;
 #endif
-
+/* LGE_CHANGES_E [hoonylove004@lge.com] 2009-12-29, [VS740] */
 
 struct rpc_reply_hdr
 {
@@ -172,7 +176,8 @@ struct rpc_reply_hdr
 	} data;
 };
 
-
+/* LGE_CHANGES_S [hoonylove004@lge.com] 2009-12-29, [VS740] AT CMD */
+/* Factory AT CMD feature added based on EVE */
 #ifdef CONFIG_MACH_LGE
 struct rpc_reply_AT_hdr
 {
@@ -184,7 +189,7 @@ struct retvaluestruct retvalues;
 
 };
 #endif
-
+/* LGE_CHANGES_E [hoonylove004@lge.com] 2009-12-29, [VS740] */
 
 struct rpc_board_dev {
 	uint32_t prog;
@@ -290,10 +295,12 @@ struct msm_rpc_server
 					 struct rpc_request_hdr *req,
 					 struct msm_rpc_xdr *xdr);
 
-	
+	/* LGE_CHANGES_S [hoonylove004@lge.com] 2009-12-29, [VS740] AT CMD */
+	/* Factory AT CMD feature added based on EVE */
 #ifdef CONFIG_MACH_LGE
 	struct retvaluestruct  retvalue;
 #endif
+/* LGE_CHANGES_E [hoonylove004@lge.com] 2009-12-29, [VS740] */
 
 };
 

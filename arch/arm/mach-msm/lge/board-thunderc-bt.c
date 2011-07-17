@@ -118,7 +118,9 @@ static struct platform_device msm_bt_power_device = {
 	},		
 };
 
-
+/* LGE_CHANGE [dojip.kim@lge.com] 2010-06-09, [LS670]
+ * FIXME: temporarily call the power off for the current consumption
+ */
 static void __init bt_power_init(void)
 {
 	int pin, rc;

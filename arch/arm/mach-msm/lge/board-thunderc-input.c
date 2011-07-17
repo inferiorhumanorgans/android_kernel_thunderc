@@ -23,6 +23,7 @@
 #include <mach/board.h>
 #include <mach/board_lge.h>
 #include <mach/rpc_server_handset.h>
+// LGE_CHANGE [dojip.kim@lge.com] 2010-07-18, check the pcb revision
 #include <mach/board_lge.h>
 
 #include "board-thunderc.h"
@@ -43,7 +44,12 @@ static struct platform_device hs_device = {
 	},
 };
 
-
+/* None qwerty keypad device
+ * For Thunder CDMA Keypad  [ youngchul.park@lge.com ]
+ * gpio key pad device - from keypad-surf-ffa */
+/* LGE_CHANGE [LS670:FW:james.jang@lge.com] 2010-05-05, add keys. 
+ * CAM_SHOT, CAM_AF, VOICE 
+ */
 #if defined(CONFIG_MACH_MSM7X27_THUNDERC_SPRINT)
 static unsigned int keypad_row_gpios[] = {
 	32, 33, 34
@@ -58,7 +64,12 @@ static unsigned int keypad_col_gpios[] = {38, 37,36};
 
 #define KEYMAP_INDEX(row, col) ((row)*ARRAY_SIZE(keypad_col_gpios) + (col))
 
-
+/* LGE_CHANGE [LS670:FW:james.jang@lge.com] 2010-05-05, add keys. 
+ * CAM_SHOT, CAM_AF, VOICE 
+ */
+/* LGE_CHANGE [dojip.kim@lge.com] 2010--05-15, modified the keymap
+ * BACK <-> HOME
+ */
 #if defined(CONFIG_MACH_MSM7X27_THUNDERC_SPRINT)
 static const unsigned short keypad_keymap_thunder[9] = {
 	[KEYMAP_INDEX(0, 0)] = KEY_HOME,
@@ -72,7 +83,18 @@ static const unsigned short keypad_keymap_thunder[9] = {
 	[KEYMAP_INDEX(2, 2)] = KEY_CHAT,
 };
 #else
-
+/* change key map for H/W Rev.B -> Rev.C  2010-06-13 younchan,kim
+	[Rev.B key map]
+static const unsigned short keypad_keymap_thunder[6] = {
+	[KEYMAP_INDEX(0, 0)] = KEY_BACK,
+	[KEYMAP_INDEX(0, 1)] = KEY_MENU,
+	[KEYMAP_INDEX(0, 2)] = KEY_VOLUMEUP,
+	[KEYMAP_INDEX(1, 0)] = KEY_SEARCH,
+	[KEYMAP_INDEX(1, 1)] = KEY_HOME,
+	[KEYMAP_INDEX(1, 2)] = KEY_VOLUMEDOWN,
+};
+*/
+/* add Rev.C key map 2010-05-13 younchan.kim */
 static const unsigned short keypad_keymap_thunder[6] = {
 	[KEYMAP_INDEX(0, 0)] = KEY_MENU,
 	[KEYMAP_INDEX(0, 1)] = KEY_HOME,
@@ -160,6 +182,7 @@ static struct platform_device ts_i2c_device = {
 	.dev.platform_data = &ts_i2c_pdata,
 };
 
+// LGE_CHANGE [dojip.kim@lge.com] 2010-07-26, HACK: early wakeup for performance
 #ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
 int ts_set_vreg(unsigned char onoff)
 #else
@@ -168,12 +191,12 @@ static int ts_set_vreg(unsigned char onoff)
 {
 	struct vreg *vreg_touch;
 	int rc;
-	
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-07-26, onoff stat
 	static int old_onoff = 0;
 
 	printk("[Touch] %s() onoff:%d\n",__FUNCTION__, onoff);
 
-	
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-07-26, onoff stat
 	if (old_onoff == onoff)
 		return 0;
 
@@ -191,14 +214,17 @@ static int ts_set_vreg(unsigned char onoff)
 			return -1;
 		}
 		vreg_enable(vreg_touch);
+		// LGE_CHANGE [dojip.kim@lge.com] 2010-07-26, onoff stat
 		old_onoff = onoff;
 	} else {
 		vreg_disable(vreg_touch);
+		// LGE_CHANGE [dojip.kim@lge.com] 2010-07-26, onoff stat
 		old_onoff = onoff;
 	}
 
 	return 0;
 }
+// LGE_CHANGE [dojip.kim@lge.com] 2010-07-26, HACK: early wakeup for performance
 #ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
 EXPORT_SYMBOL(ts_set_vreg);
 #endif
@@ -320,7 +346,8 @@ static void __init thunderc_init_i2c_acceleration(int bus_num)
 
 	init_gpio_i2c_pin(&accel_i2c_pdata, accel_i2c_pin[0], &accel_i2c_bdinfo[0]);
 
-	
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-07-18, check the pcb revision
+	//i2c_register_board_info(bus_num, &accel_i2c_bdinfo[0], 2);
 	if (lge_bd_rev >= 9) /* KR_3DH >= Rev. 1.1 */
 		i2c_register_board_info(bus_num, &accel_i2c_bdinfo[0], 1);
 	else
@@ -330,7 +357,9 @@ static void __init thunderc_init_i2c_acceleration(int bus_num)
 
 /* proximity & ecompass */
 
-
+/* LGE_CHANGE [dojip.kim@lge.com] 2010-07-21, ecom power control
+ *  also should be do prox power control
+ */
 #define ECOM_POWER_OFF		0
 #define ECOM_POWER_ON		1
 
@@ -349,7 +378,12 @@ static int ecom_power_set(unsigned char onoff)
 		if (ecom_is_power_on == ECOM_POWER_OFF) {
 			vreg_set_level(gp3_vreg, 3000);
 			vreg_enable(gp3_vreg);
-			
+			/* proximity power on , 
+			 * when we turn off I2C line be set to low caues sensor H/W characteristic 
+			 */
+			/* LGE_CHANGE [dojip.kim@lge.com] 2010-08-22, [LS670]
+			 * change the voltage: 3.0V -> 2.9V
+			 */
 #ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
 			vreg_set_level(gp6_vreg, 2900);
 #else
@@ -381,6 +415,7 @@ static struct ecom_platform_data ecom_pdata = {
 	.power          	= ecom_power_set,
 };
 
+// LGE_CHANGE [dojip.kim@lge.com] 2010-07-21, proxi power control (from MS690)
 #define PROX_POWER_OFF		0
 #define PROX_POWER_ON		1
 
@@ -395,7 +430,12 @@ static int prox_power_set(unsigned char onoff)
 			onoff, prox_is_power_on);
 
 	if (onoff) {
-		
+		/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-24, [LS670]
+		 * change the voltage: 2.8V -> 3.0V
+		 */
+		/* LGE_CHANGE [dojip.kim@lge.com] 2010-08-22, [LS670]
+		 * change the voltage: 3.0V -> 2.9V
+		 */
 		if (prox_is_power_on == PROX_POWER_OFF) {
 #ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
 			vreg_set_level(gp6_vreg, 2900);

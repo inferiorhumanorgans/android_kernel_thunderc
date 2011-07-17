@@ -242,6 +242,7 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 	}
 #endif
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-09-05, avoid the rooting via hotplug
 #ifdef CONFIG_LGE_BLOCK_HOTPLUG
 	// nothing
 #else

@@ -77,15 +77,18 @@
 #define is_phy_external() (PHY_TYPE(ui->phy_info) == USB_PHY_EXTERNAL)
 
 #if defined(CONFIG_USB_SUPPORT_LGDRIVER)
+// LGE_CHANGE [dojip.kim@lge.com] 2010-07-05, Massstorage only
 static int pid = 0x618E;   /* Diag + Modem + NMEA + Mass storage + ADB*/ 
+// LGE_CHANGE [dojip.kim@lge.com] 2010-08-16, LS670 UMS PID: 0x61CC
 static int ums_pid = 0x61CC;   /* Mass storage */ 
 #else	/* origin */
 static int pid = 0x9018;
 #endif
 
+/* LGE_CHANGE_S [dojip.kim@lge.com] 2010-05-21 */
 static int usb_chg_type = 0;
 static int usb_maxpower = 0;
-
+/* LGE_CHANGE_E [dojip.kim@lge.com] 2010-05-21 */
 #if defined (CONFIG_USB_SUPPORT_LGE_FACTORY_USB)
 static int ADB_state = 0; 
 #endif
@@ -142,7 +145,8 @@ static void usb_chg_stop(struct work_struct *w);
 
 #if defined (CONFIG_USB_SUPPORT_LGE_FACTORY_USB) || \
 	defined(CONFIG_USB_SUPPORT_LGE_SERIAL_FROM_ARM9_MEID)
-
+/* LGE_CHANGES_S [khlee@lge.com] 2010-01-04 */
+/* to supports FS USB in the Factory ( LT cable will be connected) */
 extern int msm_chg_LG_cable_type(void);
 extern void msm_get_MEID_type(char *);
 #endif
@@ -165,7 +169,8 @@ extern void msm_get_MEID_type(char *);
 
 #if defined(CONFIG_USB_SUPPORT_LGE_FACTORY_USB) || \
 	defined(CONFIG_USB_SUPPORT_LGE_SERIAL_FROM_ARM9_MEID)
-
+/* LGE_CHANGES_S [khlee@lge.com] 2010-01-04, [VS740] usb switch */
+/* to supports FS USB in the Factory ( LT cable will be connected) */
 #define LG_FACTORY_CABLE_TYPE 		3
 #define LG_FACTORY_CABLE_130K_TYPE 	10
 #define LT_ADB_CABLE 			0xff
@@ -286,7 +291,7 @@ static int ulpi_write(struct usb_info *ui, unsigned val, unsigned reg);
 static void ep0_setup_ack(struct usb_info *ui);
 #endif
 
-
+// LGE_CHANGE [dojip.kim@lge.com] 2010-09-30, fix the charger rpc error
 static DEFINE_MUTEX(chg_usb_lock);
 
 struct usb_device_descriptor desc_device = {
@@ -331,7 +336,7 @@ static ssize_t print_switch_state(struct switch_dev *sdev, char *buf)
 	return sprintf(buf, "%s\n", (ui->online ? "online" : "offline"));
 }
 
-
+// LGE_CHANGE [dojip.kim@lge.com] 2010-09-02, Wall chg current 1800 -> 2000
 #define USB_WALLCHARGER_CHG_CURRENT 2000
 static int usb_get_max_power(struct usb_info *ui)
 {
@@ -349,7 +354,7 @@ static int usb_get_max_power(struct usb_info *ui)
 	if (temp == USB_CHG_TYPE__INVALID)
 		return -ENODEV;
 
-	
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-09-02, for Sprint
 	if (temp == USB_CHG_TYPE__WALLCHARGER)
 #if defined(CONFIG_MACH_MSM7X27_THUNDERC_SPRINT)
 		return LS670_TA_CHG_CURRENT;
@@ -358,7 +363,10 @@ static int usb_get_max_power(struct usb_info *ui)
 #endif
 
 	if (suspended || !configured)
-
+// LGE_CHANGE [dojip.kim@lge.com] 2010-07-17, merged from VS740
+// LGE_CHANGE wppnghee.park : to charge phone 
+// when usb cable is connected but not configured.
+// charging current will be changed to 400mA at ARM9 side.
 #if defined(CONFIG_MACH_MSM7X27_THUNDERC_SPRINT)
 		return 10;
 #else
@@ -377,6 +385,7 @@ static void usb_chg_legacy_detect(struct work_struct *w)
 	int ret = 0;
 
 #if defined (CONFIG_USB_SUPPORT_LGE_FACTORY_USB)
+/* LGE_CHANGES_S [khlee@lge.com] 2010-01-04, [VS740] usb charging */
 	int cable_type;
 
 	cable_type = msm_chg_LG_cable_type();
@@ -395,6 +404,7 @@ static void usb_chg_legacy_detect(struct work_struct *w)
 	}
 
 #if defined (CONFIG_USB_SUPPORT_LGE_FACTORY_USB)
+/* LGE_CHANGES_S [khlee@lge.com] 2010-01-04, [VS740] usb charging */
 	if( cable_type == LG_FACTORY_CABLE_TYPE ||
 	    cable_type == LG_FACTORY_CABLE_130K_TYPE) {
 		ui->chg_type = temp = USB_CHG_TYPE__WALLCHARGER;
@@ -404,8 +414,10 @@ static void usb_chg_legacy_detect(struct work_struct *w)
 
 	ui->chg_type = temp = USB_CHG_TYPE__SDP;
 chg_legacy_det_out:
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-21, debugging */
 	pr_info("%s: CHARGER TYPE %d\n", __func__, ui->chg_type);
 
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-21, debugfs */
 	usb_chg_type = ui->chg_type;
 
 	spin_unlock_irqrestore(&ui->lock, flags);
@@ -413,16 +425,21 @@ chg_legacy_det_out:
 	if (ret)
 		return;
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-09-30, fix the rpc error
 	mutex_lock(&chg_usb_lock);
 	msm_chg_usb_charger_connected(temp);
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-09-30, fix the rpc error
 	mutex_unlock(&chg_usb_lock);
 
 	maxpower = usb_get_max_power(ui);
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-21, debugfs */
 	usb_maxpower = maxpower;
 
 	if (maxpower > 0) {
+		// LGE_CHANGE [dojip.kim@lge.com] 2010-09-30, fix the rpc error
 		mutex_lock(&chg_usb_lock);
 		msm_chg_usb_i_is_available(maxpower);
+		// LGE_CHANGE [dojip.kim@lge.com] 2010-09-30, fix the rpc error
 		mutex_unlock(&chg_usb_lock);
 	}
 
@@ -2011,7 +2028,8 @@ static int usb_hw_reset(struct usb_info *ui)
 	writel(ui->dma, USB_ENDPOINTLISTADDR);
 
 #if defined (CONFIG_USB_SUPPORT_LGE_FACTORY_USB)
-
+/* LGE_CHANGES_S [khlee@lge.com] 2010-01-04, [VS740] usb switch */
+/* to supports FS USB in the Factory ( LT cable will be connected) */
 	if( msm_chg_LG_cable_type() == LG_FACTORY_CABLE_TYPE) {
 		unsigned tmp = 0; 
 
@@ -2028,6 +2046,7 @@ static int usb_hw_reset(struct usb_info *ui)
 }
 
 #if defined (CONFIG_USB_SUPPORT_LGE_FACTORY_USB)
+/* LGE_CHANGE_S [kyuhyung.lee@lge.com] - 2010.02.04 */  
 static void lgfw_change_PID(struct usb_info *ui, int pid)
 {
 	int i;
@@ -2077,7 +2096,9 @@ static void usb_reset(struct usb_info *ui)
 #endif
 
 #if defined(CONFIG_USB_SUPPORT_LGE_FACTORY_USB)
-	
+	/* LG_FW khlee 2010.01.21 - If you are booting up cable is not connected,
+	 * Composite switching do not be operated, So we have to chaged it here */
+	//tempPID = ui->composition->product_id;
 	if( nCableType == LG_FACTORY_CABLE_TYPE ||
 	    nCableType == LG_FACTORY_CABLE_130K_TYPE) // LT 
 		tempPID = LG_FACTORY_USB_PID;
@@ -2471,7 +2492,8 @@ void usb_function_enable(const char *function, int enable)
 
 
 #if defined(CONFIG_USB_SUPPORT_LGE_FACTORY_USB)
-	
+	/* LGE_CHANGE_S [kyukyung.lee@lge.com] 2010.04.03*/   
+	/* we'd like to change the ADB setting value without composite switching*/
 	ADB_state = enable;
 #endif
 	pr_info("%s: name = %s, enable = %d\n", __func__, function, enable);
@@ -2505,7 +2527,10 @@ void usb_function_enable(const char *function, int enable)
 		return;
 	}
 #if defined(CONFIG_USB_SUPPORT_LGE_FACTORY_USB)
-	
+	/* LGE_CHANGE_S [kyuhyung.lee@lge.com] 10.02.04 */
+	/* LG_FW khlee 2010.01.21 - In the LG driver state,   
+	 * we do not want to be change the state by ADB menu.  
+	 * PID will not be changed when LT cable is connected.*/
 	if (pid == 0x6001) {
 		pid = 0x6000;
 		// LG_FW khlee : during the cablibration, 
@@ -2550,9 +2575,11 @@ static int usb_vbus_is_on(struct usb_info *ui)
 {
 	unsigned tmp;
 
-	
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-07-21, usb improve (from MS690)
 #if defined(CONFIG_USB_SUPPORT_LGE_FACTORY_USB)
-	
+	/* LGE_CHANGES_S [jaeho.cho@lge.com] 2010-06-15, [VS760] 
+	 * Vbus drop during RF cal and USB multi connection  
+	 */
 	int cable_type;
 #if defined(CONFIG_USB_SUPPORT_LG_SMEM_CABLE_TYPE)
 	cable_type = lgwfw_smem_cable_type();
@@ -2677,11 +2704,13 @@ static void usb_do_work(struct work_struct *w)
 					 */
 					msm_hsusb_suspend_locks_acquire(ui, 1);
 
-					
+					// LGE_CHANGE [dojip.kim@lge.com] 2010-09-30, 
+					// fix the rpc error
 					mutex_lock(&chg_usb_lock);
 					msm_chg_usb_i_is_not_available();
 					msm_chg_usb_charger_disconnected();
-					
+					// LGE_CHANGE [dojip.kim@lge.com] 2010-09-30, 
+					// fix the rpc error
 					mutex_unlock(&chg_usb_lock);
 
 				}
@@ -2697,7 +2726,7 @@ static void usb_do_work(struct work_struct *w)
 					msm_pm_app_enable_usb_ldo(0);
 				ui->state = USB_STATE_OFFLINE;
 #if defined(CONFIG_USB_SUPPORT_LGDRIVER)
-				
+				/* LGE_CHANGES_S [khlee@lge.com] 2009-09-25 [VS740] to fix the DUN bug */
 				switch_set_state(&ui->sdev, ui->online);
 				enable_irq(ui->irq);
 #else	/* origin */
@@ -2718,10 +2747,12 @@ static void usb_do_work(struct work_struct *w)
 				int maxpower = usb_get_max_power(ui);
 
 				if (maxpower > 0) {
-					
+					// LGE_CHANGE [dojip.kim@lge.com] 2010-09-30, 
+					// fix the rpc error
 					mutex_lock(&chg_usb_lock);
 					msm_chg_usb_i_is_available(maxpower);
-					
+					// LGE_CHANGE [dojip.kim@lge.com] 2010-09-30, 
+					// fix the rpc error
 					mutex_unlock(&chg_usb_lock);
 				}
 
@@ -2929,10 +2960,10 @@ static void usb_chg_stop(struct work_struct *w)
 	spin_unlock_irqrestore(&ui->lock, flags);
 
 	if (temp == USB_CHG_TYPE__SDP) {
-		
+		// LGE_CHANGE [dojip.kim@lge.com] 2010-09-30, fix the rpc error
 		mutex_lock(&chg_usb_lock);
 		msm_chg_usb_i_is_not_available();
-		
+		// LGE_CHANGE [dojip.kim@lge.com] 2010-09-30, fix the rpc error
 		mutex_unlock(&chg_usb_lock);
 	}
 }
@@ -3153,8 +3184,10 @@ static struct dentry *debugfs_dent;
 static struct dentry *debugfs_status;
 static struct dentry *debugfs_reset;
 static struct dentry *debugfs_cycle;
+/* LGE_CHANGE_S [dojip.kim@lge.com] 2010-05-21 */
 static struct dentry *debugfs_chg_type;
 static struct dentry *debugfs_maxpower;
+/* LGE_CHANGE_E [dojip.kim@lge.com] 2010-05-21 */
 static void usb_debugfs_init(struct usb_info *ui)
 {
 	debugfs_dent = debugfs_create_dir("usb", 0);
@@ -3167,10 +3200,12 @@ static void usb_debugfs_init(struct usb_info *ui)
 				debugfs_dent, ui, &debug_reset_ops);
 	debugfs_cycle = debugfs_create_file("cycle", 0222,
 				debugfs_dent, ui, &debug_cycle_ops);
+	/* LGE_CHANGE_S [dojip.kim@lge.com] 2010-05-21 */
 	debugfs_chg_type = debugfs_create_u32("chg_type", 0444,
 				debugfs_dent, &usb_chg_type);
 	debugfs_chg_type = debugfs_create_u32("maxpower", 0444,
 				debugfs_dent, &usb_maxpower);
+	/* LGE_CHANGE_E [dojip.kim@lge.com] 2010-05-21 */
 }
 
 static void usb_debugfs_uninit(void)
@@ -3179,8 +3214,10 @@ static void usb_debugfs_uninit(void)
 	debugfs_remove(debugfs_reset);
 	debugfs_remove(debugfs_cycle);
 	debugfs_remove(debugfs_dent);
+	/* LGE_CHANGE_S [dojip.kim@lge.com] 2010-05-21 */
 	debugfs_remove(debugfs_chg_type);
 	debugfs_remove(debugfs_maxpower);
+	/* LGE_CHANGE_E [dojip.kim@lge.com] 2010-05-21 */
 }
 
 #else
@@ -3191,7 +3228,9 @@ static void usb_debugfs_uninit(void) {}
 static void usb_configure_device_descriptor(struct usb_info *ui)
 {
 #if defined(CONFIG_USB_SUPPORT_LGE_SERIAL_FROM_ARM9_MEID)
-	
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-06-11, [LS670] 
+	 * ARM9 uses string copy function
+	 */
 	char meid[15];
 	/* MEID is constitued of 14 characters */
 	char df_serialno[15] ;
@@ -3203,11 +3242,14 @@ static void usb_configure_device_descriptor(struct usb_info *ui)
 
 #if defined(CONFIG_USB_SUPPORT_LGE_SERIAL_FROM_ARM9_MEID)
 	memset(df_serialno,0,15);
-	
+	/* LGE_CHANGE_S [dojip.kim@lge.com] 2010-06-11, [LS670] 
+	 * ARM9 uses string copy function
+	 */
 	memset(meid, 0, 15);
 	//msm_get_MEID_type(df_serialno);
 	msm_get_MEID_type(meid);
 	strncpy(df_serialno, meid, 15);
+	/* LGE_CHANGE_E [dojip.kim@lge.com] 2010-06-11 */
 
 	ui->pdata->serial_number = df_serialno;
 
@@ -3215,7 +3257,9 @@ static void usb_configure_device_descriptor(struct usb_info *ui)
 	if (!strcmp(df_serialno,"00000000000000"))
 		ui->pdata->serial_number = NULL;
 
-	
+	/* In CTS test in korea, they will not use MEID but need to use serial
+	 * khlee@lge.com 2010-02-23, [VS740] usb switch 
+	 */
 	if (msm_chg_LG_cable_type() == LT_ADB_CABLE) {
 		sprintf(df_serialno,"%s","LGE_ANDROID_DE");
 		ui->pdata->serial_number = df_serialno;
@@ -3223,6 +3267,7 @@ static void usb_configure_device_descriptor(struct usb_info *ui)
 #endif
 
 #if(CONFIG_USB_SUPPORT_LGE_FACTORY_USB)
+	/* LGE_CHANGE_S [kyuhyung.lee] 2010.02.04 */
 	if (ui->composition->product_id == LG_FACTORY_USB_PID) {
 		desc_device.idProduct = ui->composition->product_id;
 		ui->pdata->serial_number = NULL;
@@ -3303,7 +3348,7 @@ static ssize_t msm_hsusb_show_compswitch(struct device *dev,
 	if (ui->composition)
 		i = scnprintf(buf, PAGE_SIZE,
 #if defined(CONFIG_USB_SUPPORT_LGDRIVER)
-		
+		/* LGE_CHANGES_S [khlee@lge.com] 2009-09-25 [VS740]  to fix the DUN bug */
 				"%x\n",
 #else	/* origin */
 				"composition product id = %x\n",
@@ -3415,7 +3460,9 @@ static ssize_t  show_##function(struct device *dev,			\
 									\
 static DEVICE_ATTR(function, S_IRUGO, show_##function, NULL);
 
-
+/* LGE_CHANGES_S [fred.cho@lge.com] 2010-02-18 */
+/* Host Request func driver in this order.  */
+/* It should be matched with function Map in Board.c */
 #if defined (CONFIG_USB_SUPPORT_LGDRIVER)
 msm_hsusb_func_attr(modem, 0);
 msm_hsusb_func_attr(diag, 1);
@@ -3453,7 +3500,7 @@ static struct attribute *msm_hsusb_func_attrs[] = {
 	NULL,
 };
 #endif
-
+/* LGE_CHANGES_E [fred.cho@lge.com] 2010-02-18 */
 
 static struct attribute_group msm_hsusb_func_attr_grp = {
 	.name  = "functions",
@@ -3516,7 +3563,7 @@ static int __init usb_probe(struct platform_device *pdev)
 	ui->pdata = pdev->dev.platform_data;
 
 #if defined(CONFIG_USB_SUPPORT_LGE_FACTORY_USB)
-	
+	/* LGE_CHANGE_S [kyuhyung.lee@lge.com] 2010.02.04 */
 	nCableType = msm_chg_LG_cable_type();
 	if( nCableType == LG_FACTORY_CABLE_TYPE ||
 	    nCableType == LG_FACTORY_CABLE_130K_TYPE)  //detect LT cable
@@ -3691,7 +3738,7 @@ static int __init usb_probe(struct platform_device *pdev)
 	ui->functions_map = ui->pdata->function_map;
 	ui->selfpowered = 0;
 	ui->remote_wakeup = 0;
-	
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-09-02, for Sprint
 #if defined(CONFIG_MACH_MSM7X27_THUNDERC_SPRINT)
 	ui->maxpower = LS670_USB_CHG_CURRENT / 2;
 #else /* qualcomm or google */

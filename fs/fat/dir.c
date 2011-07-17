@@ -97,7 +97,8 @@ next:
 
 	*bh = sb_bread(sb, phys);
 	if (*bh == NULL) {
-		
+		// LGE_CHANGE [dojip.kim@lge.com] 2010-08-29, 
+		// suppressed the message
 #if defined(CONFIG_MACH_LGE)
 		// nothing
 #else

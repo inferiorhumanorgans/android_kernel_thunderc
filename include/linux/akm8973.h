@@ -2,7 +2,7 @@
  * Definitions for akm8973 compass chip.
  * this file must same with akm8973.h in AKMD daemon
  */
-#ifndef AKM8973_H		
+#ifndef AKM8973_H		/* LGE_CHANGE [hyesung.shin@lge.com] on 2010-1-23, for <Sensor driver structure> */
 #define AKM8973_H
 
 #include <linux/ioctl.h>

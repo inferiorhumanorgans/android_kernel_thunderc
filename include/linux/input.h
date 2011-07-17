@@ -377,6 +377,7 @@ struct input_absinfo {
 
 #define KEY_WIMAX		246
 
+/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-20, add KEY_FOCUS */
 #define KEY_FOCUS		247
 
 /* Range 248 - 255 is reserved for special needs of AT keyboard driver */

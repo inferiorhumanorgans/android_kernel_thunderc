@@ -828,6 +828,7 @@ void mdp_load_thunder_lut(int lut_type)
 #define   IRQ_EN_1__MDP_IRQ___M    0x00000800
 
 
+/* LGE_CHANGE [james.jang@lge.com] 2010-12-27, prove LCD */
 #if defined(CONFIG_FB_MSM_MDDI_NOVATEK_HITACHI_HVGA)
 void lge_probe_lcd(void)
 {
@@ -844,6 +845,7 @@ void mdp_hw_init(void)
 {
 	int i;
 
+/* LGE_CHANGE [james.jang@lge.com] 2010-08-28, probe LCD */
 #if defined(CONFIG_FB_MSM_MDDI_NOVATEK_HITACHI_HVGA)
   lge_probe_lcd();
 #endif	

@@ -130,6 +130,7 @@ struct kr3dm_data {
 	u8 resume_state[5];
 };
 
+// LGE_CHANGE [dojip.kim@lge.com] 2010-08-19, x, y, z for sysfs
 static unsigned char kr3dm_xyz[3] = {0,};
 
 /*
@@ -355,6 +356,7 @@ static int kr3dm_get_acceleration_data(struct kr3dm_data *kr, int *xyz)
 	err = kr3dm_i2c_read(kr,&acc_data[2], 1);
 	xyz[2] = (int)((signed char)acc_data[2]);
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-19, x, y, z for sysfs
 	kr3dm_xyz[0] = (unsigned char)(acc_data[0]);
 	kr3dm_xyz[1] = (unsigned char)(acc_data[1]);
 	kr3dm_xyz[2] = (unsigned char)(acc_data[2]);
@@ -493,7 +495,7 @@ static int kr3dm_misc_ioctl(struct inode *inode, struct file *file,
 
 		break;
 
-	case AKMD2_TO_ACCEL_IOCTL_READ_XYZ:	
+	case AKMD2_TO_ACCEL_IOCTL_READ_XYZ:	/* LGE_CHANGE [hyesung.shin@lge.com] on 2010-1-23, for <Sensor driver structure> */
 		err=kr3dm_get_acceleration_data(kr, buf);
 		if (err < 0)
 				return err;
@@ -648,6 +650,7 @@ static void kr3dm_input_cleanup(struct kr3dm_data *kr)
 	input_free_device(kr->input_dev);
 }
 
+// LGE_CHANGE_S [dojip.kim@lge.com] 2010-08-19, sysfs
 static ssize_t kr3dm_x_show(struct device *dev, struct device_attribute *attr,
 		char *buf)
 {
@@ -680,6 +683,7 @@ static struct attribute *dev_attrs[] = {
 static struct attribute_group dev_attr_grp = {
 	.attrs = dev_attrs,
 };
+// LGE_CHANGE_E [dojip.kim@lge.com] 2010-08-19, sysfs
 
 static int kr3dm_probe(struct i2c_client *client,
 			   const struct i2c_device_id *id)
@@ -795,6 +799,7 @@ static int kr3dm_probe(struct i2c_client *client,
 
 	mutex_unlock(&kr->lock);
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-19, sysfs
 	sysfs_create_group(&client->dev.kobj, &dev_attr_grp);
 
 	dev_info(&client->dev, "%s kr3dm: Accelerometer chip found\n", client->name);
@@ -822,6 +827,7 @@ static int __devexit kr3dm_remove(struct i2c_client *client)
 	/* TODO: revisit ordering here once _probe order is finalized */
 	struct kr3dm_data *kr = i2c_get_clientdata(client);
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-19, sysfs
 	sysfs_remove_group(&client->dev.kobj, &dev_attr_grp);
 
 	misc_deregister(&kr3dm_misc_device);

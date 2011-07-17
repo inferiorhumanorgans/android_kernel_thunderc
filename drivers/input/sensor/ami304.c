@@ -163,6 +163,7 @@ static int AMI304_I2c_Write(u8 reg_adr, u8 *buf, u8 buf_len)
 	int res = 0;
 	u8 databuf[64];
 	
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-10-05, check the buf_len
 	if ( (buf_len+2) > 64)
 		return -EINVAL;
 
@@ -498,7 +499,7 @@ static int AMI304_Report_Value(int iEnable)
 		report_enable = 1;
 	}
 
-	
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-10-28, not supported
 #if 0
 	if(controlbuf[AMI304_CB_ACTIVESENSORS] & AMIT_BIT_GYROSCOPE) {
 		input_report_abs(data->input_dev, ABS_HAT1X, ami304mid_data.gyro.x);/* x-axis of gyro sensor */
@@ -1623,7 +1624,12 @@ static int __init ami304_init(void)
 	rwlock_init(&ami304mid_data.datalock);
 	rwlock_init(&ami304_data.lock);
 	memset(&ami304mid_data.controldata[0], 0, sizeof(int)*10);
-	
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-27, [LS670]
+	 * 200ms is too slow to calibrate, so set 100ms
+	 */
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-08-11, [LS670]
+	 * 20 ms by sprint request
+	 */
 	ami304mid_data.controldata[AMI304_CB_LOOPDELAY] = 20;  // Loop Delay
 	ami304mid_data.controldata[AMI304_CB_RUN] = 1;         // Run	
 	ami304mid_data.controldata[AMI304_CB_ACCCALI] = 0;     // Start-AccCali

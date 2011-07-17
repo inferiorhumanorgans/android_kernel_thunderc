@@ -36,7 +36,8 @@ static struct snd_endpoint snd_endpoints_list[] = {
 	SND(SPEAKER_IN_CALL,28),
 	SND(CURRENT,30)
 #else
-
+/* LGE_CHANGE_S, [junyoub.an] , 2010-02-12, Define sound device*/
+/* LGE_CHANGE_S [soocheol.heo@lge.com] 2010-08-22 for voice recognition*/
 	SND(HANDSET, 5),
 	SND(HEADSET_LOOPBACK, 1),
 	SND(HEADSET, 2),
@@ -57,7 +58,8 @@ static struct snd_endpoint snd_endpoints_list[] = {
 	SND(HEADSET_VR, 20),
 	SND(BT_VR, 22),	
 	SND(CURRENT, 29),
-
+/* LGE_CHANGE_E [soocheol.heo@lge.com] 2010-08-22*/
+/* LGE_CHANGE_E, [junyoub.an] , 2010-02-12, Define sound device*/
 
 #endif
 };
@@ -75,7 +77,8 @@ struct platform_device msm_device_snd = {
 		.platform_data = &msm_device_snd_endpoints
 	},
 };
-
+/* LGE_CHANGE: [sungyoung.lee@lge.com] 2010-02-25, request by QCT */
+/* It is related that CASE 284824 which vdec_open failed */
 #if 1
 #define DEC0_FORMAT ((1<<MSM_ADSP_CODEC_AAC)|(1<<MSM_ADSP_CODEC_WMA)| \
 	(1<<MSM_ADSP_CODEC_WMAPRO)|(1<<MSM_ADSP_CODEC_AMRWB)| \

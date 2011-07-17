@@ -23,6 +23,7 @@
 #include <mach/board_lge.h>
 
 #include "board-thunderc.h"
+//LGE_CHANGE[byungsik.choi@lge.com]2010-08-14 to set up avdd voltage to 2.9V at Rev. 1.2
 #include <mach/board_lge.h>
 
 int mclk_rate = 24000000;
@@ -47,9 +48,11 @@ static uint32_t camera_off_gpio_table[] = {
 	GPIO_CFG(9,  0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), /* DAT5 */
 	GPIO_CFG(10, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), /* DAT6 */
 	GPIO_CFG(11, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), /* DAT7 */
+	//LGE_CHANGE[byungsik.choi@lge.com]2010-07-16 change pclk current
 	GPIO_CFG(12, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_4MA), /* PCLK */
 	GPIO_CFG(13, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), /* HSYNC_IN */
 	GPIO_CFG(14, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), /* VSYNC_IN */
+	//LGE_CHANGE[byungsik.choi@lge.com]2010-07-16 change mclk current
 	GPIO_CFG(GPIO_CAM_MCLK, 0, GPIO_OUTPUT, GPIO_PULL_DOWN, GPIO_4MA), /* MCLK */
 };
 
@@ -63,9 +66,11 @@ static uint32_t camera_on_gpio_table[] = {
 	GPIO_CFG(9,  1, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), /* DAT5 */
 	GPIO_CFG(10, 1, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), /* DAT6 */
 	GPIO_CFG(11, 1, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), /* DAT7 */
+	//LGE_CHANGE[byungsik.choi@lge.com]2010-07-16 change pclk current
 	GPIO_CFG(12, 1, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_4MA), /* PCLK */
 	GPIO_CFG(13, 1, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), /* HSYNC_IN */
 	GPIO_CFG(14, 1, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), /* VSYNC_IN */
+	//LGE_CHANGE[byungsik.choi@lge.com]2010-07-16 change mclk current
 	GPIO_CFG(GPIO_CAM_MCLK, 1, GPIO_OUTPUT, GPIO_PULL_DOWN, GPIO_4MA), /* MCLK */
 };
 
@@ -129,7 +134,7 @@ int camera_power_on (void)
 		printk(KERN_ERR "%s: ldo %d control error\n", __func__, LDO_CAM_IOVDD_NO);
 		return rc;
 	}
-	
+	//LGE_CHANGE[byungsik.choi@lge.com]2010-08-14 to set up avdd voltage to 2.9V at Rev. 1.2
 	if(lge_bd_rev >= 10){ /* >= Rev 1.2 */
 		rc = aat28xx_ldo_set_level(dev, LDO_CAM_AVDD_NO, 2900);
 	}
@@ -273,6 +278,7 @@ static struct platform_device *thunderc_camera_devices[] __initdata = {
 void __init lge_add_camera_devices(void)
 {
 	camera_power_status = CAMERA_POWER_ON;
+	//LGE_CHANGE[byungsik.choi@lge.com]2010-08-19 Add camera off mode to reduce power consumption
 	config_camera_off_gpios();
 
 	platform_add_devices(thunderc_camera_devices, ARRAY_SIZE(thunderc_camera_devices));

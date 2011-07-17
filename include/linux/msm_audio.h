@@ -328,6 +328,7 @@ struct msm_audio_eq_stream_config {
 
 #if defined (CONFIG_MACH_MSM7X27_ALOHAV)
 //#if defined(CONFIG_LGE_AUDIO_HIDDEN_MENU_TEST_PATCH)
+/* LGE_CHANGES_S [kiwone@lge.com] 2010-01-08, [VS740] for testmode and so on */
 struct msm_snd_set_loopback_mode_param {
 	int32_t mode;
 	int get_param;
@@ -660,11 +661,15 @@ struct msm_snd_set_hook_mode_param {
 #define SND_SET_FM_RADIO_VOLUME _IOWR(SND_IOCTL_MAGIC, 17, int *)
 #define SND_SET_VOICE_CLARITY _IOWR(SND_IOCTL_MAGIC, 18, struct msm_snd_set_voice_clarity_param *)
 #define SND_SET_POWER_OFF _IOWR(SND_IOCTL_MAGIC, 19, int *)
+/* LGE_CHANGE_E, [junyoub.an] , 2010-02-19, For audio cal tool.*/
 
+/* LGE_CHANGE_S, [junyoub.an] , 2010-02-28, for hook key*/
 #define SND_SET_HOOK_MODE _IOWR(SND_IOCTL_MAGIC, 20, struct msm_snd_set_hook_mode_param *)
+/* LGE_CHANGE_E, [junyoub.an] , 2010-02-28, for hook key*/
 #endif
 
 #if defined (CONFIG_LGE_AUDIO_HIDDEN_MENU_TEST_PATCH)
+/* LGE_CHANGES_S [kiwone@lge.com] 2010-01-10, [VS740]  for testmode call acoustic rec/play */
 struct msm_snd_set_call_acoustic_path_onoff_param {
 	int32_t on_off;
 	int get_param;

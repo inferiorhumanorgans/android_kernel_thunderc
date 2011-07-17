@@ -901,7 +901,7 @@ static const struct memdev {
 	 [7] = { "full", 0666, &full_fops, NULL },
 	 [8] = { "random", 0666, &random_fops, NULL },
 	 [9] = { "urandom", 0666, &urandom_fops, NULL },
-	
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-07-15, permission modified
 	//[11] = { "kmsg", 0, &kmsg_fops, NULL },
 	[11] = { "kmsg", 0666, &kmsg_fops, NULL },
 #ifdef CONFIG_CRASH_DUMP

@@ -1379,6 +1379,7 @@ void wireless_send_event(struct net_device *	dev,
 	 * and no data is included in the event, this codifies that
 	 * practice.
 	 */
+/* LGE_CHANGES_S [taekeun1.kim@lge.com] 2010-06-06, for wifi */
 #if !defined (CONFIG_MACH_LGE)
 	if (WARN_ON(cmd == SIOCGIWSCAN && extra))
 		extra = NULL;

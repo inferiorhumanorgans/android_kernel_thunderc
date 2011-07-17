@@ -222,7 +222,9 @@ static void print_active_locks(int type)
 				pr_info("wake lock %s, expired\n", lock->name);
 		} else {
 			pr_info("active wake lock %s\n", lock->name);
-			
+			// LGE_CHANGE [dojip.kim@lge.com] 2010-09-14,
+			// fix the parentheses around operand
+			//if (!debug_mask & DEBUG_EXPIRE)
 			if (!(debug_mask & DEBUG_EXPIRE))
 				print_expired = false;
 		}

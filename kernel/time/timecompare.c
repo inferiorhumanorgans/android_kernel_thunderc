@@ -88,7 +88,14 @@ int timecompare_offset(struct timecompare *sync,
 			 * average target time corresponds to measured
 			 * source time
 			 */
-			
+			// LGE_CHANGE [dojip.kim@lge.com] 2010-07-22,
+			// linux-2.6.git: f065f41f48569122b5bcddbd1ba2354f7cc29fdc
+			// fix half-Y2K38 problem in timecompare_update while calculating offset
+			/*
+			sample.offset =
+				ktime_to_ns(ktime_add(end, start)) / 2 -
+				ts;
+			*/
 			sample.offset =
 				(ktime_to_ns(end) + ktime_to_ns(start)) / 2 -
 				ts;
