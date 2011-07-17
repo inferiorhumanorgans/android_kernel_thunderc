@@ -108,10 +108,10 @@
 #define ATCMD_WLANWL	78
 
 #define ATCMD_ATD	  79
-#define ATCMD_MTC	  80 
+#define ATCMD_MTC	  80 //LGE_CHANGE_S [seypark@lge.com] for AT+MTC
 
 //songth - more drm command 
-#define ATCMD_DRMINDEX		81 
+#define ATCMD_DRMINDEX		81 //LGE_CHANGE_S [kageki@lge.com] 
 
 //LGE_UPDATE_S 2009.07.07 [seypark@lge.com]
 #define ATCMD_FLIGHT		82
@@ -120,7 +120,7 @@
 
 // yorong drm command
 #define ATCMD_DRMIMEI		84
-#define ATCMD_POWERDOWN		85  
+#define ATCMD_POWERDOWN		85  // LGE_CHANGE [jinwoonam@lge.com] Powerdown system when no battery
 
 //////////////////////////////////////////////////////////////////
 // at_cmd value end

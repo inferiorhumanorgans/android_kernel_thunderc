@@ -382,5 +382,5 @@ module_init(lge_panic_handler_init);
 module_exit(lge_panic_handler_exit);
 
 MODULE_DESCRIPTION("LGE panic handler driver");
-MODULE_AUTHOR("SungEun Kim");
+MODULE_AUTHOR("SungEun Kim <cleaneye.kim@lge.com>");
 MODULE_LICENSE("GPL");

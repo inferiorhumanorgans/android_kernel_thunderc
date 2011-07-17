@@ -323,7 +323,7 @@ socinfo_show_platform_version(struct sys_device *dev,
 		socinfo_get_platform_version());
 }
 
-
+/* LGE_CHANGE [dojip@lge.com] 2010-05-29, pcb version from LS680 */
 #ifdef CONFIG_LGE_PCB_VERSION
 static char hw_pcb_version[10] = "Unknown";
 
@@ -343,7 +343,7 @@ static struct sysdev_attribute pcb_ver_file[] = {
 };
 #endif /* CONFIG_LGE_PCB_VERSION */
 
-
+/* LGE_CHANGE_S [dojip.kim@lge.com] 2010-09-12, prl version */
 extern void remote_get_prl_version(int *info);
 static ssize_t
 lg_show_prl_version(struct sys_device *dev,
@@ -358,7 +358,9 @@ lg_show_prl_version(struct sys_device *dev,
 static struct sysdev_attribute prl_ver_file[] = {
 	_SYSDEV_ATTR(prl_version, 0444, lg_show_prl_version, NULL),
 };
+/* LGE_CHANGE_E [dojip.kim@lge.com] 2010-09-12 */
 
+/* LGE_CHANGE_S [dojip.kim@lge.com] 2010-09-28, ftm boot */
 extern void remote_get_ftm_boot(int *info);
 static ssize_t
 lg_show_ftm_boot(struct sys_device *dev,
@@ -373,7 +375,7 @@ lg_show_ftm_boot(struct sys_device *dev,
 static struct sysdev_attribute ftm_boot_file[] = {
 	_SYSDEV_ATTR(ftm_boot, 0444, lg_show_ftm_boot, NULL),
 };
-
+/* LGE_CHANGE_E [dojip.kim@lge.com] 2010-09-28 */
 
 static struct sysdev_attribute socinfo_v1_files[] = {
 	_SYSDEV_ATTR(id, 0444, socinfo_show_id, NULL),
@@ -436,13 +438,15 @@ static void __init socinfo_init_sysdev(void)
 		return;
 	}
 
-	
+	/* LGE_CHANGE_S [dojip.kim@lge.com] 2010-09-12, prl version */
 	socinfo_create_files(&soc_sys_device, prl_ver_file,
 				ARRAY_SIZE(prl_ver_file));
-	
+	/* LGE_CHANGE_E [dojip.kim@lge.com] 2010-09-12 */
+
+	/* LGE_CHANGE_S [dojip.kim@lge.com] 2010-09-28, ftm boot */
 	socinfo_create_files(&soc_sys_device, ftm_boot_file,
 				ARRAY_SIZE(ftm_boot_file));
-	
+	/* LGE_CHANGE_E [dojip.kim@lge.com] 2010-09-28 */
 
 #ifdef CONFIG_LGE_PCB_VERSION  /* LG_FW_PCB_VERSION */
 	socinfo_create_files(&soc_sys_device, pcb_ver_file,

@@ -19,6 +19,7 @@
  *  along with this program; if not, you can find it at http://www.fsf.org
  */
 
+/* LGE_CHANGE [sm.shim@lge.com] 2010-07-26, File add "lg_diag-event_log.c" Testmode cmd 22 Key test merge from VS660 */
 
 #include <linux/platform_device.h>
 #include <linux/input.h>
@@ -31,6 +32,7 @@ extern uint8_t lgf_factor_key_test_rsp(char);
 
 int diag_log_status = 0;
 
+// LGE_CHANGE [dojip.kim@lge.com] 2010-08-31, add KEY_CHAT for Sprint
 /* key list */
 int diag_key_list[]= {
 	/* thunder keypad key */
@@ -53,6 +55,7 @@ static int diag_event_log_connect(struct input_handler *handler,struct input_dev
 	struct input_handle *handle;
 	printk(" connect () %s \n\n",dev->name);
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-31, why need?
 	/*
 	for (i = 0 ; i < ARRAY_SIZE(diag_key_list); i++){
 		if (!test_bit(diag_key_list[i], dev->keybit))

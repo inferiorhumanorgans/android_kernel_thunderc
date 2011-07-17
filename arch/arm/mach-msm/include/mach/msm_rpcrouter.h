@@ -119,6 +119,7 @@ typedef struct
 #define RPC_RETURN_RESULT_MIDDLE_OK     9
 #endif /*LG_FW_ATS_ETA_MTC*/
 
+
 	/*
 	 * Following data is dependant on accept_stat
 	 * If ACCEPTSTAT == PROG_MISMATCH then there is a

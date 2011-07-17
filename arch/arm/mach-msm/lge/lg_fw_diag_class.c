@@ -12,7 +12,8 @@
  *
  */
 /*
- * 
+ * LGE_CHANGE_S [kiwone.seo@lge.com] 2010-02-03, LG_FW_AUDIO_TESTMODE
+ *
  * kiwone creates this file for audio test mode, 
  * and the use of another function to send framework.
  */
@@ -58,8 +59,9 @@ void update_diagcmd_state(struct diagcmd_dev *sdev, char *cmd, int state)
 	int env_offset = 0;
 	int length;
 
-
+/* LGE_CHANGE_S [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
 	/* 
+	 * 2010-08-12, jinkyu.choi@lge.com, Do not check the state
 	 * Now, each command has own state number which is the sub command number of testmode tools.
 	 * The sub commands can be same though the major commands are different.
 	 * It is result in not sending the commnad to Android Diag application
@@ -95,6 +97,7 @@ void update_diagcmd_state(struct diagcmd_dev *sdev, char *cmd, int state)
 			kobject_uevent(&sdev->dev->kobj, KOBJ_CHANGE);
 		}
 	//}
+/* LGE_CHANGE_E [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
 }
 EXPORT_SYMBOL_GPL(update_diagcmd_state);
 

@@ -1254,7 +1254,7 @@ static int32_t isx005_set_brightness(int8_t brightness)
 static int isx005_init_sensor(const struct msm_camera_sensor_info *data)
 {
 	int rc;
-	int nNum = 0;	
+	int nNum = 0;
 	struct task_struct *p;
 
 	rc = data->pdata->camera_power_on();

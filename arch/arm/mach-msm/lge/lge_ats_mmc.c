@@ -22,11 +22,13 @@ int external_memory_test(void)
 	char *src = NULL, *dest = NULL;
 	off_t fd_offset;
 	int fd = -1;
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-19, kernel data segment
 	mm_segment_t old_fs;
 	int ret;
 
 	old_fs = get_fs();
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-19, kernel data segment
 	set_fs(KERNEL_DS);
 	fd = sys_open((const char __user *) "/sdcard/SDTest.txt", O_CREAT | O_RDWR, 0);
 	set_fs(old_fs);
@@ -42,6 +44,7 @@ int external_memory_test(void)
 	}
 	sprintf(src,"TEST");
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-19, kernel data segment
 	old_fs = get_fs();
 	set_fs(KERNEL_DS);
 	ret = sys_write(fd, (const char __user *) src, 5);
@@ -58,6 +61,7 @@ int external_memory_test(void)
 		goto file_fail;
 	}
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-19, kernel data segment
 	old_fs = get_fs();
 	set_fs(KERNEL_DS);
 	ret = sys_read(fd, (char __user *) dest, 5);

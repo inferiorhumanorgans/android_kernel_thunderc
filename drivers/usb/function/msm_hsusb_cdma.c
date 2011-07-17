@@ -3166,11 +3166,11 @@ static void usb_debugfs_init(struct usb_info *ui)
 	debugfs_reset = debugfs_create_file("reset", 0222,
 				debugfs_dent, ui, &debug_reset_ops);
 	debugfs_cycle = debugfs_create_file("cycle", 0222,
-				debugfs_dent, ui, &debug_cycle_ops);	
+				debugfs_dent, ui, &debug_cycle_ops);
 	debugfs_chg_type = debugfs_create_u32("chg_type", 0444,
 				debugfs_dent, &usb_chg_type);
 	debugfs_chg_type = debugfs_create_u32("maxpower", 0444,
-				debugfs_dent, &usb_maxpower);	
+				debugfs_dent, &usb_maxpower);
 }
 
 static void usb_debugfs_uninit(void)
@@ -3178,9 +3178,9 @@ static void usb_debugfs_uninit(void)
 	debugfs_remove(debugfs_status);
 	debugfs_remove(debugfs_reset);
 	debugfs_remove(debugfs_cycle);
-	debugfs_remove(debugfs_dent);	
+	debugfs_remove(debugfs_dent);
 	debugfs_remove(debugfs_chg_type);
-	debugfs_remove(debugfs_maxpower);	
+	debugfs_remove(debugfs_maxpower);
 }
 
 #else
@@ -3208,7 +3208,7 @@ static void usb_configure_device_descriptor(struct usb_info *ui)
 	//msm_get_MEID_type(df_serialno);
 	msm_get_MEID_type(meid);
 	strncpy(df_serialno, meid, 15);
-	
+
 	ui->pdata->serial_number = df_serialno;
 
 	/* If it is null MEID, do not copy */
@@ -3222,7 +3222,7 @@ static void usb_configure_device_descriptor(struct usb_info *ui)
 	}
 #endif
 
-#if(CONFIG_USB_SUPPORT_LGE_FACTORY_USB)	
+#if(CONFIG_USB_SUPPORT_LGE_FACTORY_USB)
 	if (ui->composition->product_id == LG_FACTORY_USB_PID) {
 		desc_device.idProduct = ui->composition->product_id;
 		ui->pdata->serial_number = NULL;

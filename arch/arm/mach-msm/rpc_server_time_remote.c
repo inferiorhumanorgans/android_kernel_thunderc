@@ -108,7 +108,13 @@ static int handle_rpc_call(struct msm_rpc_server *server,
 		args = (struct rpc_time_tod_set_apps_bases_args *)(req + 1);
 		args->tick = be32_to_cpu(args->tick);
 		args->stamp = be64_to_cpu(args->stamp);
-		
+		// LGE_CHANGE [dojip.kim@lge.com] 2010-08-04, too noisy
+		/*
+		printk(KERN_INFO "RPC_TIME_TOD_SET_APPS_BASES:\n"
+		       "\ttick = %d\n"
+		       "\tstamp = %lld\n",
+		       args->tick, args->stamp);
+		*/
 		rtc_hctosys();
 		return 0;
 	}

@@ -19,7 +19,7 @@
  * along with this program; if not, you can find it at http://www.fsf.org
  */
 
-
+/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-13, V 4.0 */
 
 #include "msm_fb.h"
 #include "mddihost.h"
@@ -27,7 +27,12 @@
 #include <asm/gpio.h>
 #include <mach/vreg.h>
 
-
+/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-11, from mddi_hitachi_hvga.c */
+/* LGE_CHANGE
+ * Define new structure named 'msm_panel_hitachi_pdata' 
+ * to use LCD initialization Flag (.initialized).
+ * 2010-04-21, minjong.gong@lge.com
+ */
 #include <mach/board_lge.h>
 
 
@@ -42,7 +47,11 @@
 #define GAMMA_2_DOT_2
 
 
-
+/* LGE_CHANGE [dojip.kim@lge.com] 2010-04-26, 
+ * tentative command for 4/20,21 shipping sample 
+ */
+/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-13, not any more needed */
+//#define USE_TENTATIVE_COMMAND	1
 
 #define LCD_CONTROL_BLOCK_BASE	0x110000
 #define INTFLG		LCD_CONTROL_BLOCK_BASE|(0x18)
@@ -68,7 +77,12 @@ static uint16 mddi_novatek_vsync_attempts;
 extern int g_mddi_lcd_probe;
 #endif
 
-
+/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-11, from mddi_hitachi_hvga.c */
+/* LGE_CHANGE
+ * Define new structure named 'msm_panel_hitachi_pdata' 
+ * to use LCD initialization Flag (.initialized).
+ * 2010-04-21, minjong.gong@lge.com
+ */
 //static struct msm_panel_common_pdata *mddi_novatek_pdata;
 static struct msm_panel_novatek_pdata *mddi_novatek_pdata;
 
@@ -882,12 +896,12 @@ static struct display_table mddi_novatek_initialize[] = {
 	//{0x1100, 1, {0x0000}}, // sleep out
 	//{REGFLAG_DELAY, 100, {}},
 #endif
-	
+	/* LGE_CHANGE [james.jang@lge.com] 2010-06-18, off LEDPWM(7Fh -> 00h) */
 	//{0x5100, 1, {0x007F}}, // Output LEDPWM=50% Duty
 	{0x5100, 1, {0x0000}}, // Output LEDPWM=0% Duty
 	{0x5300, 1, {0x002C}}, // Output LEDPWM=50% Duty
 
-	
+	/* LGE_CHANGE_S [dojip.kim@lge.com] 2010-09-11, set the address */
 	// set horizontal address 
 	{0x2a00, 1, {0x0000}}, // XSA
 	{0x2a01, 1, {0x0000}}, // XSA
@@ -898,7 +912,7 @@ static struct display_table mddi_novatek_initialize[] = {
 	{0x2b01, 1, {0x0000}}, // YSA
 	{0x2b02, 1, {0x0000}}, // YEA
 	{0x2b03, 1, {0x01df}}, // YEA, 480-1
-	
+	/* LGE_CHANGE_E [dojip.kim@lge.com] 2010-09-11 */
 
 	{0x3600, 1, {0x0008}}, // Set RGB
 	{0x3A00, 1, {0x0055}}, // Set RGB565
@@ -941,7 +955,7 @@ static void mddi_novatek_vsync_set_handler(msm_fb_vsync_handler_type handler,
 	boolean error = FALSE;
 	unsigned long flags;
 
-	
+	/* LGE_CHANGE [neo.kang@lge.com] 2009-11-26, change debugging api */
 	printk("%s : handler = %x\n", 
 			__func__, (unsigned int)handler);
 
@@ -975,6 +989,7 @@ static void mddi_novatek_lcd_vsync_detected(boolean detected)
 	mddi_vsync_detect_enabled = TRUE;;
 }
 
+// LGE_CHANGE [dojip.kim@lge.com] 2010-07-26, HACK: early wakeup touch for performance
 #ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
 extern int ts_set_vreg(unsigned char onoff);
 #endif
@@ -983,16 +998,24 @@ static int mddi_novatek_lcd_on(struct platform_device *pdev)
 {
 	EPRINTK("%s: started.\n", __func__);
 
+	/* LGE_CHANGE_S, [munyoung@lge.com] workaround blink issue when first call of lcd_on */
 	if(is_lcd_on == -1) {
 		is_lcd_on = TRUE;
 		return 0;
 	}
-	
+	/* LGE_CHANGE_E */
+
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-11, from mddi_hitachi_hvga.c */
+	/* LGE_CHANGE
+	 * Define new structure named 'msm_panel_hitachi_pdata' 
+	 * to use LCD initialization Flag (.initialized).
+	 * 2010-04-21, minjong.gong@lge.com
+	 */
 	if (system_state == SYSTEM_BOOTING && mddi_novatek_pdata->initialized) {
 		is_lcd_on = TRUE;
 	}
 
-	
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-07-26, HACK: early wakeup touch for performance
 #ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
 	ts_set_vreg(1);
 #endif
@@ -1101,6 +1124,7 @@ static int mddi_novatek_lcd_init(void)
 	/* TODO: Check client id */
 #endif
 
+/* LGE_CHANGE [james.jang@lge.com] 2010-08-28, probe LCD */
 #if defined(CONFIG_FB_MSM_MDDI_NOVATEK_HITACHI_HVGA)
 	gpio_tlmm_config(GPIO_CFG(101, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA), 
 			  GPIO_ENABLE);
@@ -1137,6 +1161,7 @@ static int mddi_novatek_lcd_init(void)
 		pinfo->bl_max = 4;
 		pinfo->bl_min = 1;
 
+    /* LGE_CHANGE [james.jang@lge.com] 2010-06-07, set the MDDI host clock rate */
 		pinfo->clk_rate = 122880000;
 		pinfo->clk_min =   120000000;
 		pinfo->clk_max =   130000000;
@@ -1161,7 +1186,12 @@ extern unsigned fb_height;
 
 static void mddi_novatek_lcd_panel_poweron(void)
 {
-	
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-11, from mddi_hitachi_hvga.c */
+	/* LGE_CHANGE
+	 * Define new structure named 'msm_panel_hitachi_pdata' 
+	 * to use LCD initialization Flag (.initialized).
+	 * 2010-04-21, minjong.gong@lge.com
+	 */
 	//struct msm_panel_common_pdata *pdata = mddi_novatek_pdata;
 	struct msm_panel_novatek_pdata *pdata = mddi_novatek_pdata;
 
@@ -1174,14 +1204,18 @@ static void mddi_novatek_lcd_panel_poweron(void)
 		gpio_set_value(pdata->gpio, 1);
 		mdelay(10);
 		gpio_set_value(pdata->gpio, 0);
-		
+		/* LGE_CHANGE [james.jang@lge.com] 2010-09-11, up 50% for stability */
 		mdelay(15); /* wait for more than 10ms */
 		gpio_set_value(pdata->gpio, 1);
 		mdelay(30); /* wait for more than 20ms */
 	}
 }
 
-
+/* LGE_CHANGE
+  * Add new function to reduce current comsumption in sleep mode.
+  * In sleep mode disable LCD by assertion low on reset pin.
+  * 2010-06-07, minjong.gong@lge.com
+  */
 static void mddi_novatek_lcd_panel_poweroff(void)
 {
 	struct msm_panel_novatek_pdata *pdata = mddi_novatek_pdata;

@@ -28,9 +28,11 @@
 
 static struct input_dev *ats_input_dev;
 
+/* add ETA  key event logging for vs660 [younchan.kim 2010-05-31]*/
 static struct input_handler input_handler;
 static struct work_struct event_log_work;
 struct ats_mtc_key_log_type ats_mtc_key_log1;
+/* LGE_CHANGE [james.jang@lge.com] 2010-08-03, exception code for panic */
 static int ats_log_status = 0;
 
 extern unsigned int ats_mtc_log_mask;
@@ -221,6 +223,7 @@ int event_log_end(void)
 }
 EXPORT_SYMBOL(event_log_end);
 
+/* [END] add ETA  key event logging for vs660 [younchan.kim 2010-05-31]*/
 
 
 static int  __init ats_event_log_probe(struct platform_device *pdev)

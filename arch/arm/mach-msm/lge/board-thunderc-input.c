@@ -190,10 +190,10 @@ static int ts_set_vreg(unsigned char onoff)
 			printk("[Touch] vreg_set_level failed\n");
 			return -1;
 		}
-		vreg_enable(vreg_touch);		
+		vreg_enable(vreg_touch);
 		old_onoff = onoff;
 	} else {
-		vreg_disable(vreg_touch);		
+		vreg_disable(vreg_touch);
 		old_onoff = onoff;
 	}
 

@@ -2,7 +2,7 @@
  *
  * Copyright (C) 2008 Google, Inc.
  * Copyright (C) 2009 LGE.
- * Author: SungEun Kim 
+ * Author: SungEun Kim <cleaneye.kim@lge.com>
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -42,11 +42,13 @@
 #include "../devices.h"
 #include "../pm.h"
 
+/* LGE_CHANGE [james.jang@lge.com] 2010-07-06 */
 #include <mach/lg_pcb_version.h>
 
 /* setting board revision information */
 int lge_bd_rev;
 
+/* LGE_CHANGE_S [james.jang@lge.com] 2010-07-06, only LS670 */
 #if 0
 static char *rev_str[LGE_REV_TOT_NUM] =
 { "evb", "rev_a", "rev_b", "rev_c", "rev_d", "rev_e", "rev_10"};
@@ -143,6 +145,7 @@ static int __init board_revno_setup(char *rev_info)
   return 1;
 }
 #endif
+/* LGE_CHANGE_E [james.jang@lge.com] 2010-07-06 */
 
 __setup("lge.rev=", board_revno_setup);
 
@@ -168,7 +171,12 @@ static int __init lge_uart_mode(char *uart_mode)
 
 __setup("uart_console=", lge_uart_mode);
 #if defined(CONFIG_MACH_MSM7X27_THUNDERC)
-
+/* LGE_CHANGE
+ * To support VS660 Smart factory reset
+ * We dont check flag in kernel if system booting is recovery mode
+ * 2010-06-08, taehung.kim@lge.com
+ */
+/* LGE_CHANGE_S [sm.shim@lge.com] 2010-08-22, merge First Boot Complete Test from VS660 */
 /*
 static int recovery_mode;
 int lge_get_recovery_state(void)
@@ -187,6 +195,7 @@ static int __init lge_recovery_state(char* s)
 }
 __setup("recovery=",lge_recovery_state);
 */
+/* LGE_CHANGE_E [sm.shim@lge.com] 2010-08-22, merge First Boot Complete Test from VS660 */
 #endif
 
 #ifdef CONFIG_ANDROID_RAM_CONSOLE
@@ -436,9 +445,11 @@ static void __init fb_size_setup(char **p)
 }
 __early_param("pmem_fb_size=", fb_size_setup);
 
+// LGE_CHANGE_S [dojip.kim@lge.com] 2010-08-06, lge_mtd_direct_access
 #ifdef CONFIG_MACH_MSM7X27_THUNDERC
 extern void *lge_mtd_direct_access_addr;
 #endif
+// LGE_CHANGE_E [dojip.kim@lge.com] 2010-08-06
 
 void __init msm_msm7x2x_allocate_memory_regions(void)
 {
@@ -493,10 +504,12 @@ void __init msm_msm7x2x_allocate_memory_regions(void)
 			size, addr, __pa(addr));
 #endif
 
+	// LGE_CHANGE_S [dojip.kim@lge.com] 2010-08-06, lge_mtd_direct_access
 #ifdef CONFIG_MACH_MSM7X27_THUNDERC
 	// PAGE_NUM_PER_BLK*PAGE_SIZE_BYTE
 	lge_mtd_direct_access_addr = alloc_bootmem(64*2048);
 #endif
+	// LGE_CHANGE_E [dojip.kim@lge.com] 2010-08-06
 }
 
 void __init msm_add_pmem_devices(void)

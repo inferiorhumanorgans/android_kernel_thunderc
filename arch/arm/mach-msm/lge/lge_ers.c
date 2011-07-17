@@ -2,7 +2,7 @@
  * arch/arm/mach-msm/lge/ers-lge.c
  *
  * Copyright (C) 2009 LGE, Inc
- * Author: Jun-Yeong Han <
+ * Author: Jun-Yeong Han <j.y.han@lge.com>
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -304,5 +304,5 @@ static void __exit ers_exit(void)
 module_exit(ers_exit);
 
 MODULE_DESCRIPTION("Exception Reporting System Driver");
-MODULE_AUTHOR("Jun-Yeong Han");
+MODULE_AUTHOR("Jun-Yeong Han <junyeong.han@lge.com>");
 MODULE_LICENSE("GPL");

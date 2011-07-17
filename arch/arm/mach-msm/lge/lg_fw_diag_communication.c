@@ -12,6 +12,7 @@
  *
  */
 /*
+ * LGE_CHANGE_S [kiwone.seo@lge.com] 2010-02-03, LG_FW_AUDIO_TESTMODE
  *
  * kiwone creates this file for audio test mode, 
  * and the use of another function to send framework.
@@ -106,7 +107,7 @@ static void __exit diagcmd_exit(void)
 module_init(diagcmd_init);
 module_exit(diagcmd_exit);
 
-MODULE_AUTHOR("kiwone.seo");
+MODULE_AUTHOR("kiwone.seo@lge.com");
 MODULE_DESCRIPTION("lg_fw_diagcmd driver");
 MODULE_LICENSE("GPL");
 

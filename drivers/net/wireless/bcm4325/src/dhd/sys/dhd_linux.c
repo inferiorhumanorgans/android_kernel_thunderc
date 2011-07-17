@@ -1959,11 +1959,11 @@ dhd_net_attach(dhd_pub_t *dhdp, int ifidx)
 	printf("%s: Broadcom Dongle Host Driver mac=%.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n", net->name,
 		dhd->pub.mac.octet[0], dhd->pub.mac.octet[1], dhd->pub.mac.octet[2],
 		dhd->pub.mac.octet[3], dhd->pub.mac.octet[4], dhd->pub.mac.octet[5]);
-
+/* LGE_CHANGE_S, [jisung.yang@lge.com], 2010-06-04, <Prevent scan after turning on Wifi> */
 #if 0
 	wl_iw_iscan_set_scan_broadcast_prep(net, 1);
 #endif
-
+/* LGE_CHANGE_E, [jisung.yang@lge.com], 2010-06-04, <Prevent scan after turning on Wifi> */
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)) && 1
 	g_dhd_registration_status = TRUE;
@@ -2076,7 +2076,7 @@ dhd_module_cleanup(void)
 	DHD_TRACE(("%s: Enter\n", __FUNCTION__));
 
 	dhd_bus_unregister();
-
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-03-05, for gpio set in dhd_linux */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 #if defined(CONFIG_BCM4325_GPIO_WL_REGON)
 	/* Call customer gpio to turn off power with WL_REG_ON signal */
@@ -2087,6 +2087,7 @@ dhd_module_cleanup(void)
 	/* Call customer gpio to turn off power with WL_REG_ON signal */
 	dhd_customer_gpio_wlan_ctrl(WLAN_POWER_OFF);
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-03-05, for gpio set in dhd_linux */
 }
 static int __init
 dhd_module_init(void)
@@ -2109,11 +2110,12 @@ dhd_module_init(void)
 		return -EINVAL;
 	} while (0);
 
-
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-03-05, for gpio set in dhd_linux */
 #if !defined(CONFIG_LGE_BCM432X_PATCH)
 	/* Call customer gpio to turn on power with WL_REG_ON signal */
 	dhd_customer_gpio_wlan_ctrl(WLAN_POWER_ON);
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-03-05, for gpio set in dhd_linux */
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)) && 1
 	g_dhd_registration_status = FALSE;

@@ -423,7 +423,6 @@ static int msm_batt_power_get_property(struct power_supply *psy,
 			else
 				val->intval = 0;
 		}
-		
 		break;
 	case POWER_SUPPLY_PROP_TECHNOLOGY:
 		val->intval = msm_batt_info.batt_technology;

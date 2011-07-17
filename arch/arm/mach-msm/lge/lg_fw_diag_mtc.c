@@ -197,7 +197,9 @@ void mtc_send_key_log_packet(unsigned long keycode, unsigned long state)
 	ext_msg_type msg;
 	dword sendKeyValue = 0;
 
-	
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-06-04 [LS670]
+	 * don't send a raw diag packet in running MTC
+	 */
 	if (mtc_running)
 		return;
 
@@ -264,6 +266,7 @@ PACK(void *) LGF_MTCProcess(PACK(void *)req_pkt_ptr,/* pointer to request packet
 	} else
 		send_to_arm9((void *)req_ptr, (void *)rsp_ptr);
 
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-06-04 [LS670] */
 	mtc_running = 0;
 
 	return (rsp_ptr);
@@ -284,6 +287,7 @@ DIAG_MTC_F_rsp_type *mtc_info_req_proc(DIAG_MTC_F_req_type * pReq)
 	pRsp = (DIAG_MTC_F_rsp_type *) diagpkt_alloc(DIAG_MTC_F, rsp_len);
 	if (pRsp == NULL) {
 		printk(KERN_ERR "[MTC] diagpkt_alloc failed\n");
+		/* LGE_CHANGE [dojip.kim@lge.com] 2010-06-04, null check */
 		return pRsp;
 	}
 
@@ -391,7 +395,9 @@ DIAG_MTC_F_rsp_type *mtc_capture_screen(DIAG_MTC_F_req_type * pReq)
 
 	printk(KERN_INFO "[MTC]mtc_capture_screen\n");
 
-	
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-06-04, 
+	 * allocation the memory for bmp_data
+	 */
 	rsp_len = sizeof(mtc_capture_rsp_type) + MTC_SCRN_BUF_SIZE_MAX;
 	printk(KERN_INFO "[MTC] mtc_capture_screen rsp_len :(%d)\n", rsp_len);
 
@@ -401,7 +407,7 @@ DIAG_MTC_F_rsp_type *mtc_capture_screen(DIAG_MTC_F_req_type * pReq)
 			(DIAG_MTC_F_rsp_type *) diagpkt_alloc(DIAG_MTC_F, rsp_len);
 		if (pCaputureRsp == NULL) {
 			printk(KERN_ERR "[MTC] diagpkt_alloc failed\n");
-			
+			/* LGE_CHANGE [dojip.kim@lge.com] 2010-06-04, null check */
 			return pCaputureRsp;
 		}
 	}
@@ -459,7 +465,9 @@ extern unsigned int ats_mtc_log_mask;
 void ats_eta_mtc_key_logging(int scancode, unsigned char keystate)
 {
 
-	
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-06-04 [LS670]
+	 * don't send a raw diag packet in running MTC
+	 */
 	if (mtc_running)
 		return;
 
@@ -524,6 +532,9 @@ EXPORT_SYMBOL(ats_eta_mtc_key_logging);
 void ats_eta_mtc_touch_logging (int pendown, int x, int y)
 {
 
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-06-04 [LS670]
+	 * don't send a raw diag packet in running MTC
+	 */
 	if (mtc_running)
 		return;
 	

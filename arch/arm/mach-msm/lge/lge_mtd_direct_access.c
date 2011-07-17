@@ -20,24 +20,31 @@
 #include <linux/err.h>
 #include <linux/mtd/mtd.h>
 #include <linux/sched.h>
+// LGE_CHANGE [dojip.kim@lge.com] 2010-08-23, do something after cold boot
 #include "lg_fw_diag_communication.h"
 
 #if defined(CONFIG_MACH_MSM7X27_THUNDERC)
+/* LGE_CHANGE [james.jang@lge.com] 2010-07-20, for FOTA_STO */
 //#define MISC_PART_NUM 6
 #define MISC_PART_NUM 7
 #define MISC_PART_SIZE 4
+/* LGE_CHANGE [james.jang@lge.com] 2010-07-20, for FOTA_STO */
 //#define PERSIST_PART_NUM 7
 #define PERSIST_PART_NUM 8
 #define PERSIST_PART_SIZE 12
+// LGE_CHANGE_S [dojip.kim@lge.com] 2010-08-06, size is hard coded
 //#define PAGE_NUM_PER_BLK 64
 //#define PAGE_SIZE_BYTE 2048
+// LGE_CHANGE_E [dojip.kim@lge.com] 2010-08-06
 #else
 #define MISC_PART_NUM	4
 #endif
 
 static struct mtd_info *mtd;
 
-
+// LGE_CHANGE [dojip.kim@lge.com] 2010-08-06, allocated memory via bootmem in devices.lge.c
+// kthread_lg_diag: page allocation failure. order:5, mode:0xd0, 
+// lge_init_mtd_access: error: cannot allocate memory
 void *lge_mtd_direct_access_addr;
 static unsigned char *global_buf;
 //static unsigned char global_buf[PAGE_NUM_PER_BLK*PAGE_SIZE_BYTE];
@@ -60,12 +67,15 @@ int init_mtd_access(int partition, int block);
 static int dev;
 static int target_block;
 static int dummy_arg = 0;
+/* LGE_CHANGE [sm.shim@lge.com] 2010-08-22, merge First Boot Complete Test from VS660 */
 int boot_info = 0;
 
 module_param(dev, int, S_IRUGO);
 module_param(target_block, int, S_IRUGO);
+/* LGE_CHANGE [sm.shim@lge.com] 2010-08-22, merge First Boot Complete Test from VS660 */
 module_param(boot_info, int, 0664);
 
+/* LGE_CHANGE_S [sm.shim@lge.com] 2010-08-22, merge First Boot Complete Test from VS660 */
 static int test_init(void)
 {
 	int partition = PERSIST_PART_NUM;
@@ -75,6 +85,7 @@ static int test_init(void)
 }
 
 static int test_erase_block(void)
+/* LGE_CHANGE_E [sm.shim@lge.com] 2010-08-22, merge First Boot Complete Test from VS660 */
 {
 	int i;
 	int err;
@@ -99,12 +110,15 @@ static int test_erase_block(void)
 
 	return 0;
 }
+/* LGE_CHANGE [sm.shim@lge.com] 2010-08-22, merge First Boot Complete Test from VS660 */
 static int test_write_block(const char *val, struct kernel_param *kp)
 {
 	int i;
 	int err;
+/* LGE_CHANGE_S [sm.shim@lge.com] 2010-08-22, merge First Boot Complete Test from VS660 */
 	unsigned char *test_string;
 	unsigned long flag=0;
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-23, do something after cold boot
 	struct diagcmd_dev *diagpdev;
 
 	flag = simple_strtoul(val,NULL,10);
@@ -112,6 +126,7 @@ static int test_write_block(const char *val, struct kernel_param *kp)
 		test_string="FACT_RESET_5";
 	else if(6 == flag)
 		test_string="FACT_RESET_6";
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-09-04, for RTN and Factory reset
 	else if (3 == flag)
 		test_string="FACT_RESET_3";
 	else
@@ -120,6 +135,7 @@ static int test_write_block(const char *val, struct kernel_param *kp)
 	test_init();
 	test_erase_block();
 	printk(KERN_INFO"%s: writing block: flag = %lu\n", __func__, flag);
+/* LGE_CHANGE_E [sm.shim@lge.com] 2010-08-22, merge First Boot Complete Test from VS660 */
 
 	for (i = 0; i < ebcnt; i++) {
 		if (bbt[i])
@@ -136,6 +152,7 @@ static int test_write_block(const char *val, struct kernel_param *kp)
 
 	printk(KERN_INFO"%s: write %u block\n", __func__, i);
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-23, do something after cold boot
 	if (flag == 5) {
 		diagpdev = diagcmd_get_dev();	
 		if (diagpdev != NULL) {
@@ -147,6 +164,7 @@ static int test_write_block(const char *val, struct kernel_param *kp)
 }
 module_param_call(write_block, test_write_block, param_get_bool, &dummy_arg, S_IWUSR | S_IRUGO);
 
+/* LGE_CHANGE_S [sm.shim@lge.com] 2010-08-22, merge First Boot Complete Test from VS660 */
 #define FACTORY_RESET_STR_SIZE 11
 #define FACTORY_RESET_STR "FACT_RESET_"
 static int test_read_block(char *buf, struct kernel_param *kp)
@@ -188,6 +206,7 @@ error:
 	
 }
 module_param_call(read_block, param_get_bool, test_read_block, &dummy_arg, (S_IWUSR | S_IRUGO));
+/* LGE_CHANGE_E [sm.shim@lge.com] 2010-08-22, merge First Boot Complete Test from VS660 */
 
 int lge_erase_block(int ebnum)
 {
@@ -331,6 +350,7 @@ int init_mtd_access(int partition, int block)
 		goto out;
 	}
 	#endif
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-06
 	global_buf = (unsigned char *)lge_mtd_direct_access_addr;
 
 	err = scan_for_bad_eraseblocks();
@@ -388,5 +408,5 @@ module_init(lge_mtd_direct_access_init);
 module_exit(lge_mtd_direct_access_exit);
 
 MODULE_DESCRIPTION("LGE mtd direct access apis");
-MODULE_AUTHOR("SungEun Kim ");
+MODULE_AUTHOR("SungEun Kim <cleaneye.kim@lge.com>");
 MODULE_LICENSE("GPL");

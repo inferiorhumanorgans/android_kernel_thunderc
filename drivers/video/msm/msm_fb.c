@@ -110,7 +110,7 @@ static void msmfb_early_suspend_early(struct early_suspend *h);
 static void msmfb_late_resume_late(struct early_suspend *h);
 #endif
 
-
+/* LGE_CHANGE_S, [munyoung@lge.com] booting logo */
 #ifdef CONFIG_FB_MSM_LOGO
 
 static int is_console_inactive = 0;
@@ -127,7 +127,7 @@ int msm_fb_get_console_inactive(void)
 }
 EXPORT_SYMBOL(msm_fb_get_console_inactive);
 #endif
-
+/* LGE_CHANGE_E, [munyoung@lge.com] booting logo */
 
 #ifdef MSM_FB_ENABLE_DBGFS
 
@@ -979,7 +979,7 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 	mfd->panel_power_on = FALSE;
 
 #ifdef CONFIG_FB_MSM_LOGO
-	
+	/* LGE_CHANGE,[munyoung@lge.com] booting logo */
 	msm_fb_set_console_inactive(1);
 #endif
 
@@ -1184,12 +1184,12 @@ static int msm_fb_open(struct fb_info *info, int user)
 		}
 	}
 
-
+/* LGE_CHANGE_S, [munyoung@lge.com] booting logo */
 #ifdef CONFIG_FB_MSM_LOGO
 	if(mfd->ref_cnt > 1 && msm_fb_get_console_inactive())
 		msm_fb_set_console_inactive(0);
 #endif
-
+/* LGE_CHANGE_E, [munyoung@lge.com] booting logo */
 
 	mfd->ref_cnt++;
 	return 0;

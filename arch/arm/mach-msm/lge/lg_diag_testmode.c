@@ -32,14 +32,18 @@ extern PACK(void *) diagpkt_alloc(diagpkt_cmd_code_type code,
 extern PACK(void *) diagpkt_free(PACK(void *)pkt);
 extern void send_to_arm9(void *pReq, void *pRsp);
 extern testmode_user_table_entry_type testmode_mstr_tbl[TESTMODE_MSTR_TBL_SIZE];
+/* LGE_CHANGE_S [sm.shim@lge.com] 2010-07-26, Testmode cmd 22 Key test merge from VS660 */
 extern int diag_event_log_start(void);
 extern int diag_event_log_end(void);
-
+/* LGE_CHANGE_E [sm.shim@lge.com] 2010-07-26, Testmode cmd 22 Key test merge from VS660 */
+/* LGE_CHANGE_S [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
 extern void set_operation_mode(boolean isOnline);
 extern struct input_dev* get_ats_input_dev(void);
-
+/* LGE_CHANGE_E [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
+// LGE_CHANGE [dojip.kim@lge.com] 2010-09-28, ftm boot 
 extern void remote_set_ftm_boot(int info);
 
+/* LGE_CHANGE [sm.shim@lge.com] 2010-08-22, merge First Boot Complete Test from VS660 */
 extern int boot_info;
 
 #define KEY_TRANS_MAP_SIZE 70
@@ -104,6 +108,7 @@ PACK(void *) LGF_TestMode(PACK(void *)req_pkt_ptr, /* pointer to request packet 
 
 	rsp_ptr = (DIAG_TEST_MODE_F_rsp_type *) diagpkt_alloc(DIAG_TEST_MODE_F, 
 			rsp_len);
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-10-10, null check
 	if (NULL == rsp_ptr) {
 		printk(KERN_ERR "LGF_TestMode: failed the memory allocation\n");
 		return NULL;
@@ -180,7 +185,9 @@ void *LGF_TestModeBlueTooth(test_mode_req_type * pReq,
 	return pRsp;
 }
 
-
+/* LGE_CHANGE_S [sm.shim@lge.com] 2010-07-27, 
+ * Testmode cmd 83 Bluetooth RW merge from VS660 
+ */
 byte *pReq_valid_address(byte *pstr)
 {
 	int pcnt=0;
@@ -218,7 +225,7 @@ void* LGF_TestModeBlueTooth_RW(
 	if (diagpdev != NULL) {
 		//250-83-0 bluetooth write
 		if(strlen(p_Req_addr) > 0) {
-			
+			/* LGE_CHANGE [sm.shim@lge.com] 2010-08-03, merge from VS660 */
 			//update_diagcmd_state(diagpdev, "BT_TEST_MODE_RW", 0);
 			update_diagcmd_state(diagpdev, "BT_TEST_MODE_RW", (int)p_Req_addr);
 			memset((void*)g_bd_addr, 0x00, BT_RW_CNT);
@@ -244,7 +251,9 @@ void* LGF_TestModeBlueTooth_RW(
 	}
 	return pRsp;
 }
-
+/* LGE_CHANGE_E [sm.shim@lge.com] 2010-07-27, 
+ * Testmode cmd 83 Bluetooth RW merge from VS660 
+ */
 
 void *LGF_TestPhotoSensor(test_mode_req_type * pReq,
 			  DIAG_TEST_MODE_F_rsp_type * pRsp)
@@ -373,14 +382,18 @@ void *LGT_TestModeKeyTest(test_mode_req_type * pReq,
 		if_condition_is_on_key_buffering = TRUE;
 		memset((void *)key_buf, 0x00, MAX_KEY_BUFF_SIZE);
 		count_key_buf = 0;
-		
+		/* LGE_CHANGE [sm.shim@lge.com] 2010-07-26, 
+		 * Testmode cmd 22 Key test merge from VS660 
+		 */
 		diag_event_log_start();
 	} 
 	else {
 		if_condition_is_on_key_buffering = FALSE;
 		memcpy((void *)((DIAG_TEST_MODE_KEY_F_rsp_type *) pRsp)->
 		       key_pressed_buf, (void *)key_buf, MAX_KEY_BUFF_SIZE);
-		
+		/* LGE_CHANGE [sm.shim@lge.com] 2010-07-26, 
+		 * Testmode cmd 22 Key test merge from VS660 
+		 */
 		diag_event_log_end();
 	}
 	return pRsp;
@@ -395,7 +408,8 @@ void *LGF_TestCam(test_mode_req_type * pReq, DIAG_TEST_MODE_F_rsp_type * pRsp)
 	case CAM_TEST_CAMERA_SELECT:
 	case CAM_TEST_FLASH_ON:
 	case CAM_TEST_FLASH_OFF:
-	
+	/* LGE_CHANGE [sm.shim@lge.com] 2010-08-17, modify cam_save_ moving_file command */
+	//case CAM_TEST_CAMCORDER_SAVE_MOVING_FILE:
 	case CAM_TEST_CAMCORDER_FLASH_ON:
 	case CAM_TEST_CAMCORDER_FLASH_OFF:
 	case CAM_TEST_STROBE_LIGHT_ON:
@@ -431,6 +445,7 @@ unsigned int LGF_KeycodeTrans(word input)
 	return ret;
 }
 
+/* LGE_CHANGE_S [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
 void LGF_SendKey(word keycode)
 {
 	struct input_dev* idev = NULL;
@@ -455,10 +470,12 @@ void* LGF_PowerSaveMode(test_mode_req_type* pReq, DIAG_TEST_MODE_F_rsp_type* pRs
 		LGF_SendKey(KEY_END);
 		break;
 	case AIR_PLAIN_MODE_ON:
+		// LGE_CHANGE [dojip.kim@lge.com] 2010-09-28, ftm boot 
 		remote_set_ftm_boot(0); // clear flag
 		if_condition_is_on_air_plain_mode = 1;
 		set_operation_mode(FALSE);
 		break;
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-09-28, ftm boot 
 	case FTM_BOOT_ON: /* kernel mode */
 		remote_set_ftm_boot(1); // set flag
 		break;
@@ -468,6 +485,7 @@ void* LGF_PowerSaveMode(test_mode_req_type* pReq, DIAG_TEST_MODE_F_rsp_type* pRs
 	}
 	return pRsp;
 }
+/* LGE_CHANGE_E [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
 
 char external_memory_copy_test(void)
 {
@@ -479,6 +497,7 @@ char external_memory_copy_test(void)
 	int ret;
 	mm_segment_t old_fs;
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-07-26, kernel data segment
 	old_fs = get_fs();
 	set_fs(KERNEL_DS);
 	fd = sys_open((const char __user *)"/sdcard/SDTest.txt", O_CREAT | O_RDWR, 0);
@@ -493,6 +512,7 @@ char external_memory_copy_test(void)
 		goto file_fail;
 	}
 	sprintf(src, "TEST");
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-07-26, kernel data segment
 	old_fs = get_fs();
 	set_fs(KERNEL_DS); 
 	ret =  sys_write(fd, (const char __user *)src, 5);
@@ -509,6 +529,7 @@ char external_memory_copy_test(void)
 		goto file_fail;
 	}
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-07-26, kernel data segment
 	old_fs = get_fs();
 	set_fs(KERNEL_DS); 
 	ret = sys_read(fd, (char __user *)dest, 5);
@@ -555,12 +576,17 @@ void *LGF_ExternalSocketMemory(test_mode_req_type * pReq,
 		printk(KERN_ERR "blocks %d  \n", sf.f_blocks);
 		printk(KERN_ERR "block size %d \n", sf.f_bsize);
 
-		
+		/* LGE_CHANGE [sm.shim@lge.com] 2010-08-31, 
+		 * SD card total size bug fix (MB) 
+		 */
 		pRsp->test_mode_rsp.socket_memory_size = 
 			(((sf.f_blocks / 1024) * sf.f_bsize) / 1024);
 		break;
+	/* LGE_CHANGE_S [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
 	case EXTERNAL_SOCKET_ERASE:
-		
+		/* LGE_CHANGE [sm.shim@lge.com] 2010-09-04, 
+		 * bug fix: No SD card return OK 
+		 */
 		if (external_memory_copy_test())
 		{
 			pRsp->ret_stat_code = TEST_FAIL_S;
@@ -568,7 +594,8 @@ void *LGF_ExternalSocketMemory(test_mode_req_type * pReq,
 		}
 		if (diagpdev != NULL) {
 			update_diagcmd_state(diagpdev, "MMCFORMAT", 1);
-			
+			// LGE_CHANGE [dojip.kim@lge.com] 2010-09-26,
+			// delay time : 5 sec -> 10 sec (from VS660)
 			ssleep(10);
 			pRsp->ret_stat_code = TEST_OK_S;
 		} 
@@ -584,12 +611,16 @@ void *LGF_ExternalSocketMemory(test_mode_req_type * pReq,
 			pRsp->ret_stat_code = TEST_FAIL_S;
 			break;
 		}
-		
+		/* LGE_CHANGE [sm.shim@lge.com] 2010-08-31, 
+		 * SD card free size bug fix (Byte) 
+		 */
 		pRsp->test_mode_rsp.socket_memory_usedsize = 
 			((long long)(sf.f_blocks - 
 			 (long long)sf.f_bfree) * sf.f_bsize);
 		break;
-	
+	/* LGE_CHANGE_E [sm.shim@lge.com] 2010-08-13, 
+	 * Testmode merge from VS660 
+	 */
 	default:
 		pRsp->ret_stat_code = TEST_NOT_SUPPORTED_S;
 		break;
@@ -598,15 +629,19 @@ void *LGF_ExternalSocketMemory(test_mode_req_type * pReq,
 	return pRsp;
 }
 
+/* LGE_CHANGE_S [sm.shim@lge.com] 2010-08-22, merge First Boot Complete Test from VS660 */
 void * LGF_TestModeFboot ( test_mode_req_type* pReq ,DIAG_TEST_MODE_F_rsp_type	*pRsp)
 {
 	printk(KERN_ERR "khlee debug %d \n", pReq->fboot);
+	/* LGE_CHANGE [sm.shim@lge.com] 2010-09-03, Boot Complete Test fix */
 	pRsp->ret_stat_code = TEST_FAIL_S;
 	switch( pReq->fboot){
 	case FIRST_BOOTING_COMPLETE_CHECK:
 		pRsp->test_mode_rsp.boot_complete = boot_info;
 		printk("LOG Very Very emergency!!!!%d \n",boot_info);
-		
+		/* LGE_CHANGE [sm.shim@lge.com] 2010-09-03, 
+		 * Boot Complete Test fix 
+		 */
 		if (boot_info == 1) {
 			pRsp->ret_stat_code = TEST_OK_S;
 		} 
@@ -617,6 +652,7 @@ void * LGF_TestModeFboot ( test_mode_req_type* pReq ,DIAG_TEST_MODE_F_rsp_type	*
 	}
 	return pRsp;
 }
+/* LGE_CHANGE_E [sm.shim@lge.com] 2010-08-22, merge First Boot Complete Test from VS660 */
 
 void *LGF_MemoryVolumeCheck(test_mode_req_type * pReq,
 			    DIAG_TEST_MODE_F_rsp_type * pRsp)
@@ -694,6 +730,7 @@ void *LGF_TestModeFactoryReset(test_mode_req_type * pReq,
 	unsigned char pbuf[BUF_PAGE_SIZE];
 	int mtd_op_result = 0;
 	unsigned char startStatus;
+	/* LGE_CHANGE [james.jang@lge.com] 2010-08-30 */
 	static unsigned char firstStartStatus = 0;;
 
 	pRsp->ret_stat_code = TEST_OK_S;
@@ -732,6 +769,7 @@ void *LGF_TestModeFactoryReset(test_mode_req_type * pReq,
 				       "[Testmode]factory reset backup status = %d \n",
 				       startStatus);
 
+				/* LGE_CHANGE [james.jang@lge.com] 2010-08-30 */
 				if (firstStartStatus == 0)
 					firstStartStatus = startStatus;
 			}
@@ -766,7 +804,12 @@ void *LGF_TestModeFactoryReset(test_mode_req_type * pReq,
 				      sizeof(word)), pRsp);
 		printk(KERN_INFO "[Testmode]send_to_arm9 end\n");
 
-		
+		/* LG_FW khlee 2010.03.04 -If we start at 5, 
+		 * we have to go to APP reset state(3) directly 
+		 */
+		/* LGE_CHANGE [james.jang@lge.com] 2010-08-30 */
+		//if (startStatus == FACTORY_RESET_COLD_BOOT_END)
+		/* LGE_CHANGE [sm.shim@lge.com] 2010-09-03, add Factory reset flag 6 */
 		if (firstStartStatus == FACTORY_RESET_COLD_BOOT_END || 
 			firstStartStatus == FACTORY_RESET_USER_START) 
 			test_mode_factory_reset_status = FACTORY_RESET_COLD_BOOT_START;
@@ -1024,7 +1067,8 @@ void *LGF_TestScriptItemSet(test_mode_req_type * pReq,
 		} 
 		else
 #endif /*CONFIG_LGE_MTD_DIRECT_ACCESS */
-		
+		// LG_FW khlee 2010.03.16 - 
+		// They want to ACL on state in test script state.
 		update_diagcmd_state(diagpdev, "ALC", 1);
 	}
 
@@ -1035,6 +1079,7 @@ void *LGF_TestScriptItemSet(test_mode_req_type * pReq,
 	return pRsp;
 }
 
+/* LGE_CHANGE_S [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
 void* LGF_TestModeDBIntegrityCheck(test_mode_req_type* pReq,
 		DIAG_TEST_MODE_F_rsp_type *pRsp)
 {
@@ -1053,7 +1098,14 @@ void* LGF_TestModeDBIntegrityCheck(test_mode_req_type* pReq,
 
 	return pRsp;
 }
+/* LGE_CHANGE_E [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
 
+/*  USAGE
+ *    1. If you want to handle at ARM9 side, 
+ *    you have to insert fun_ptr as NULL and mark ARM9_PROCESSOR
+ *    2. If you want to handle at ARM11 side , 
+ *    you have to insert fun_ptr as you want and mark AMR11_PROCESSOR.
+ */
 
 testmode_user_table_entry_type testmode_mstr_tbl[TESTMODE_MSTR_TBL_SIZE] = {
 	/*    sub_command    fun_ptr   which procesor         */
@@ -1094,11 +1146,13 @@ testmode_user_table_entry_type testmode_mstr_tbl[TESTMODE_MSTR_TBL_SIZE] = {
 	/* 41 ~ 45 */
 	{TEST_MODE_MEMORY_CAPA_TEST, LGF_MemoryVolumeCheck, ARM11_PROCESSOR}
 	,
+	/* LGE_CHANGE [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
 	//{TEST_MODE_SLEEP_MODE_TEST, linux_app_handler, ARM11_PROCESSOR}
 	{TEST_MODE_SLEEP_MODE_TEST, LGF_PowerSaveMode, ARM11_PROCESSOR}
 	,
 	{TEST_MODE_SPEAKER_PHONE_TEST, LGF_TestModeSpeakerPhone, ARM11_PROCESSOR}
 	,
+	/* LGE_CHANGE [sm.shim@lge.com] 2010-08-09, Photo Sensor disable */
 	/*
 	{TEST_MODE_PHOTO_SENSER_TEST, linux_app_handler, ARM11_PROCESSOR}
 	,
@@ -1117,7 +1171,9 @@ testmode_user_table_entry_type testmode_mstr_tbl[TESTMODE_MSTR_TBL_SIZE] = {
 	/* 51 ~ */
 	{TEST_MODE_VOLUME_TEST, LGT_TestModeVolumeLevel, ARM11_PROCESSOR}
 	,
-	
+	/* LGE_CHANGE [sm.shim@lge.com] 2010-08-22, 
+	 * merge First Boot Complete Test from VS660 
+	 */
 	{ TEST_MODE_FIRST_BOOT_COMPLETE_TEST, LGF_TestModeFboot, ARM11_PROCESSOR}
 	,
 	/*70~    */
@@ -1144,16 +1200,18 @@ testmode_user_table_entry_type testmode_mstr_tbl[TESTMODE_MSTR_TBL_SIZE] = {
 	/*80~   */
 	{TEST_MODE_CAL_CHECK, NULL, ARM9_PROCESSOR}
 	,
-	
+	/* LGE_CHANGE [sm.shim@lge.com] 2010-07-27, 
+	 * Testmode cmd 83 Bluetooth RW merge from VS660 
+	 */
 	{TEST_MODE_BLUETOOTH_TEST_RW, LGF_TestModeBlueTooth_RW, ARM11_PROCESSOR}
 	,
 	{TEST_MODE_SKIP_WELCOM_TEST, NULL, ARM9_PROCESSOR}
 	,
-	
+	/* LGE_CHANGE_S [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
 	{ TEST_MODE_MAC_READ_WRITE, linux_app_handler, ARM11_PROCESSOR }
 	,
 	/*90~	*/
 	{ TEST_MODE_DB_INTEGRITY_CHECK,	LGF_TestModeDBIntegrityCheck, ARM11_PROCESSOR}
 	,
-	
+	/* LGE_CHANGE_E [sm.shim@lge.com] 2010-08-13, Testmode merge from VS660 */
 };

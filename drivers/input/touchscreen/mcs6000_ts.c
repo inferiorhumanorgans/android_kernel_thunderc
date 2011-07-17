@@ -340,13 +340,13 @@ static void mcs6000_work(struct work_struct *work)
 			}
 			else if(input_type == SINGLE_POINT_TOUCH) {
 				mcs6000_multi_ts_event_touch(x1, y1, -1, -1, PRESSED, dev);
-				s_input_type = SINGLE_POINT_TOUCH;			
+				s_input_type = SINGLE_POINT_TOUCH;				
 				pre_x1 = x1;
 				pre_y1 = y1;
 			}
 #else
 			if(input_type == SINGLE_POINT_TOUCH) {
-				mcs6000_single_ts_event_touch(x1, y1, PRESSED, dev);				
+				mcs6000_single_ts_event_touch(x1, y1, PRESSED, dev);
 				pre_x1 = x1;
 				pre_y1 = y1;
 			}

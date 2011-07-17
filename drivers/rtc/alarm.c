@@ -145,7 +145,7 @@ static void alarm_enqueue_locked(struct alarm *alarm)
 	do_div(stime, NSEC_PER_SEC);
 	pr_alarm(ADD, "added alarm, wakeup at %lld (after %lld sec): (now %lld)\n",
 		ktime_to_ns(alarm->expires), stime, ktime_to_ns(now));
-	
+
 	{
 		char comm[sizeof(current->comm)];
 		pr_alarm(FLOW, "called alarm by pid %d (%s)\n",

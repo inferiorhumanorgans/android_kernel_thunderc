@@ -56,6 +56,7 @@ unsigned lge_get_lpm_info(void)
 EXPORT_SYMBOL(lge_get_lpm_info);
 #endif
 
+// LGE_CHANGE [dojip.kim@lge.com] 2010-08-04, power on status 
 #if defined(CONFIG_LGE_GET_POWER_ON_STATUS)
 /*
  * return value:
@@ -85,6 +86,7 @@ unsigned lge_get_power_on_status(void)
 EXPORT_SYMBOL(lge_get_power_on_status);
 #endif
 
+// LGE_CHANGE [dojip.kim@lge.com] 2010-08-24, notify the power status
 int lge_set_sleep_status(int status)
 {
 	int cmd_state = 1;

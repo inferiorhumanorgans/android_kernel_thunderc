@@ -206,7 +206,7 @@ static struct platform_device *devices[] __initdata = {
 	&msm_device_snd,
 	&msm_device_adspdec,
 	&lg_fw_diagcmd_device,
-	&lg_diag_cmd_device,	
+	&lg_diag_cmd_device,
 	&testmode_device,
 };
 

@@ -225,9 +225,15 @@ static void handle_modem_crash(void)
 	pr_err("ARM9 has CRASHED\n");
 	smd_diag();
 #ifdef CONFIG_LGE_HANDLE_MODEM_CRASH
-	
+	/* flush console before reboot
+	 * from google's mahimahi kernel
+	 * 2010-05-04, cleaneye.kim@lge.com
+	 */
 	msm_pm_flush_console();
 	
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-13, comment out
+	// To solve Phone Freezing problem during Power On/Off Test by QM or DQ
+	//atomic_notifier_call_chain(&panic_notifier_list, 0, 0x87654321);
 
 	smsm_reset_modem(SMSM_SYSTEM_REBOOT);
 #endif
@@ -1445,7 +1451,9 @@ uint32_t smsm_get_state(uint32_t smsm_entry)
 
 
 #ifdef CONFIG_MACH_LGE
-
+/* Make a api to not report a changed SMSM state to other processor
+ * blue.park@lge.com 2010-04-14
+ */
 int smsm_change_state_nonotify(uint32_t smsm_entry,
 		      uint32_t clear_mask, uint32_t set_mask)
 {

@@ -53,9 +53,15 @@
 #include "pm.h"
 #include "spm.h"
 
-
+/* LGE_CHANGE
+ * factory reset check after booting
+ * 2010-05-30, taehung.kim@lge.com
+ */
 #if defined(CONFIG_MACH_MSM7X27_THUNDERC)
-
+/* LGE_CHANGE_S [sm.shim@lge.com] 2010-08-22, merge First Boot Complete Test from VS660 */
+//extern int factory_reset_check(void);
+//extern int lge_get_recovery_state(void);
+/* LGE_CHANGE_E [sm.shim@lge.com] 2010-08-22, merge First Boot Complete Test from VS660 */
 #endif
 /******************************************************************************
  * Debug Definitions
@@ -1681,7 +1687,11 @@ static struct platform_suspend_ops msm_pm_ops = {
 static uint32_t restart_reason = 0x776655AA;
 
 #ifdef CONFIG_MACH_LGE
-
+/* LGE_CHANGE
+ * flush console before reboot
+ * from google's mahimahi kernel
+ * 2010-05-04, cleaneye.kim@lge.com
+ */
 
 static bool console_flushed;
 
@@ -1709,19 +1719,21 @@ void msm_pm_flush_console(void)
 }
 #endif
 
-
+// LGE_CHANGE [dojip.kim@lge.com] 2010-08-04, clean the ram console when normal shutdown
 #if defined(CONFIG_LGE_RAM_CONSOLE_CLEAN)
 extern void ram_console_clean_buffer(void);
 #endif
 
 static void msm_pm_power_off(void)
 {
-	
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-04, clean the ram console when normal shutdown
 #if defined(CONFIG_LGE_RAM_CONSOLE_CLEAN)
 	ram_console_clean_buffer();
 #endif
 #ifdef CONFIG_MACH_LGE
-	
+	/* To prevent Phone freezing during power off
+	 * blue.park@lge.com 2010-04-14 <To prevent Phone freezing during power off>
+	 */
 	smsm_change_state_nonotify(SMSM_APPS_STATE,
 				   0, SMSM_SYSTEM_POWER_DOWN);
 #endif
@@ -1734,7 +1746,11 @@ static void msm_pm_power_off(void)
 static void msm_pm_restart(char str, const char *cmd)
 {
 #ifdef CONFIG_MACH_LGE
-	
+	/* LGE_CHANGE
+	 * flush console before reboot
+	 * from google's mahimahi kernel
+	 * 2010-05-04, cleaneye.kim@lge.com
+	 */
 	msm_pm_flush_console();
 #endif
 

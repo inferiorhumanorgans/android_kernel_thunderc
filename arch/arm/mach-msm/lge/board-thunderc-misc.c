@@ -32,10 +32,13 @@
 #include "board-thunderc.h"
 
 #ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
+/* LGE_CHANGE_S [dojip.kim@lge.com] 2010-05-11, button leds */
 static void button_backlight_set(struct led_classdev *led_cdev,
 		enum led_brightness value)
 {
+// LGE_CHANGE [james.jang@lge.com] 2010-08-07, again reduce the current
 /* from 0 to 150 mA in 10 mA increments */
+// LGE_CHANGE [dojip.kim@lge.com] 2010-07-14, reduce the current
 //#define MAX_KEYPAD_BL_LEVEL	16  /* 15: 150 mA */
 //#define MAX_KEYPAD_BL_LEVEL	127 /* 2: 20 mA */
 #define MAX_KEYPAD_BL_LEVEL	255 /* 1: 10 mA */
@@ -92,7 +95,7 @@ static void resume_leds(void)
 
 int keypad_led_set(unsigned char value)
 {
-	
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-10-18, conflict with button_led. */
 	return 0;
 	/*
 	return pmic_set_led_intensity(LED_KEYPAD, value);
@@ -113,7 +116,9 @@ static struct platform_device msm_device_pmic_leds = {
 	.id                     = -1,
 	.dev.platform_data	= &leds_pdata,
 };
+/* LGE_CHANGE_E [dojip.kim@lge.com] 2010-05-11 */
 #else /* THUNDER_VZW */
+/* add led device for VS660 Rev.D by  younchan.kim 2010-05-27  */
 
 static void pmic_mpp_isink_set(struct led_classdev *led_cdev,
 		enum led_brightness value)
@@ -247,6 +252,7 @@ static struct platform_device msm_device_pmic_leds = {
 
 static struct msm_psy_batt_pdata msm_psy_batt_data = {
 	.voltage_min_design     = 3200,
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-07, [SPRINT] 4200 -> 4250
 #if defined(CONFIG_MACH_MSM7X27_THUNDERC_SPRINT)
 	.voltage_max_design     = 4250,
 #else
@@ -286,7 +292,8 @@ static struct platform_device msm_batt_device = {
 extern int aat2870bl_ldo_set_level(struct device * dev, unsigned num, unsigned vol);
 extern int aat2870bl_ldo_enable(struct device * dev, unsigned num, unsigned enable);
 
-
+// LGE_CHANGE [dojip.kim@lge.com] 2010-07-02, 
+// retry to set the power because sometimes that failed
 int thunderc_vibrator_power_set(int enable)
 {
 	static int is_enabled = 0;
@@ -328,19 +335,23 @@ int thunderc_vibrator_pwm_set(int enable, int amp)
 	int gain = ((PWM_MAX_HALF_DUTY*amp) >> 7)+ GPMN_D_DEFAULT;
 
 	if (enable) {
+		// LGE_CHANGE [dojip.kim@lge.com] 2010-07-21, pwm sleep (from MS690)
 		REG_WRITEL((GPMN_M_DEFAULT & GPMN_M_MASK), GP_MN_CLK_MDIV_REG);
 		REG_WRITEL((~( GPMN_N_DEFAULT - GPMN_M_DEFAULT )&GPMN_N_MASK), GP_MN_CLK_NDIV_REG);
 		REG_WRITEL((gain & GPMN_D_MASK), GP_MN_CLK_DUTY_REG);
 
+		/* LGE_CHANGE [dojip.kim@lge.com] 2010-06-12, GP_MN */
 		gpio_tlmm_config(GPIO_CFG(GPIO_LIN_MOTOR_PWM,1,GPIO_OUTPUT,
 					  GPIO_PULL_DOWN,GPIO_2MA),GPIO_ENABLE);
 		REG_WRITEL((gain & GPMN_D_MASK), GP_MN_CLK_DUTY_REG);
 	} else {
+		// LGE_CHANGE [dojip.kim@lge.com] 2010-07-21, pwm sleep (from MS690)
 		REG_WRITEL(0x00, GP_MN_CLK_MDIV_REG);
 		REG_WRITEL(0x1000, GP_MN_CLK_NDIV_REG);
 		REG_WRITEL(0x1FFF, GP_MN_CLK_DUTY_REG);
 
 		REG_WRITEL(GPMN_D_DEFAULT, GP_MN_CLK_DUTY_REG);
+		/* LGE_CHANGE [dojip.kim@lge.com] 2010-06-12, GPIO */
 		gpio_tlmm_config(GPIO_CFG(GPIO_LIN_MOTOR_PWM,0,GPIO_OUTPUT,
 					  GPIO_PULL_DOWN,GPIO_2MA),GPIO_ENABLE);
 		gpio_direction_output(GPIO_LIN_MOTOR_PWM, 0);
@@ -360,7 +371,8 @@ static struct android_vibrator_platform_data thunderc_vibrator_data = {
 	.power_set = thunderc_vibrator_power_set,
 	.pwm_set = thunderc_vibrator_pwm_set,
 	.ic_enable_set = thunderc_vibrator_ic_enable_set,
-	
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-30, 100->115 (by HW request)
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-09-03, 110
 	.amp_value = 110,
 };
 
@@ -448,10 +460,14 @@ static int thunderc_gpio_earsense_work_func(void)
 			gpio_value?"injected":"ejected");
 	if (gpio_value == EAR_EJECT) {
 		state = EAR_STATE_EJECT;
-		
+		/* LGE_CHANGE_S, [junyoub.an] , 2010-05-28, comment out to control at ARM9 part*/
+		//thunderc_hs_mic_bias_power(0);
+		/* LGE_CHANGE_E, [junyoub.an] , 2010-05-28, comment out to control at ARM9 part*/
 	} else {
 		state = EAR_STATE_INJECT;
-		
+		/* LGE_CHANGE_S, [junyoub.an] , 2010-05-28, comment out to control at ARM9 part*/
+		//thunderc_hs_mic_bias_power(1);
+		/* LGE_CHANGE_E, [junyoub.an] , 2010-05-28, comment out to control at ARM9 part*/
 	}
 
 	return state;
@@ -500,7 +516,10 @@ static struct platform_device thunderc_earsense_device = {
 };
 
 static struct platform_device *thunderc_misc_devices[] __initdata = {
-	
+	/* LGE_CHANGE
+	 * ADD VS740 BATT DRIVER IN THUNDERC
+	 * 2010-05-13, taehung.kim@lge.com
+	 */
 	&msm_batt_device, 
 	&msm_device_pmic_leds,
 	&android_vibrator_device,

@@ -244,7 +244,7 @@ static struct msm_rpc_client *rpc_client;
 static struct msm_handset *hs;
 static void (*deskdock_detect_callback)(int);
 
-
+/* LGE_CHANGE [james.jang@lge.com] 2010-06-12 */
 #if defined(CONFIG_LGE_DIAGTEST)
 /* for SLATE */
 extern void mtc_send_key_log_packet(unsigned long keycode, unsigned long state);
@@ -252,7 +252,7 @@ extern void mtc_send_key_log_packet(unsigned long keycode, unsigned long state);
 /* fot MTC */
 extern void ats_eta_mtc_key_logging(int scancode, unsigned char keystate);
 
-
+/* LGE_CHANGES_S [woonghee@lge.com] 2010-01-23, [VS740] for key test */
 extern uint8_t if_condition_is_on_key_buffering;
 extern uint8_t lgf_factor_key_test_rsp(char);
 #endif
@@ -318,7 +318,9 @@ static void report_hs_key(uint32_t key_code, uint32_t key_parm)
 		break;
 	case KEY_MEDIA:
 		if (gpio_get_value(GPIO_EAR_SENSE_BIAS) == 1) {
-			
+			/* LGE_CHANGE
+			 * 2010-03-09, junyoub.an@lge.com To protect from wrong hook key operation
+			 */ 
 			input_report_key(hs->ipdev, key, (key_code != HS_REL_K));
 		}
 		break;
@@ -334,7 +336,10 @@ static void report_hs_key(uint32_t key_code, uint32_t key_parm)
 	case KEY_VOLUMEDOWN:
 		input_report_key(hs->ipdev, key, (key_code != HS_REL_K));
 #if defined(CONFIG_LGE_DIAGTEST)
-		
+		/* LGE_CHANGES
+		 * [woonghee@lge.com] 2010-01-23, 
+		 * [VS740] for key test
+		 */
 		if(if_condition_is_on_key_buffering == HS_TRUE && key_code == 0/*press*/)
 			lgf_factor_key_test_rsp((uint8_t)key);
 #endif
@@ -346,7 +351,9 @@ static void report_hs_key(uint32_t key_code, uint32_t key_parm)
 		report_headset_switch(hs->ipdev, key, (key_code != HS_REL_K));
 #endif
 #if defined(CONFIG_LGE_DIAGTEST)
-		
+		/* LGE_CHANGES
+		 * [woonghee@lge.com] 2010-01-23
+		 * [VS740] for key test */
 		if(if_condition_is_on_key_buffering == HS_TRUE && key_code == 0/*press*/)
 			lgf_factor_key_test_rsp((uint8_t)key);
 #endif
