@@ -37,10 +37,12 @@
 
 #include <wlioctl.h>
 #include <wl_iw.h>
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-05-14, support start/stop */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 #include <asm/gpio.h>
 #include <linux/interrupt.h>
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-05-14, support start/stop */
 
 #ifndef BCMDONGLEHOST
 #include <wlc_pub.h>
@@ -97,6 +99,7 @@ int  host_oob_irq = 0;
 }
 #endif /* defined(OOB_INTR_ONLY) */
 
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-12-08, support start/stop */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 /* Customer function to control hw specific wlan gpios */
 void
@@ -106,6 +109,7 @@ dhd_customer_gpio_wlan_ctrl(int onoff, int irq_detect_ctrl)
 void
 dhd_customer_gpio_wlan_ctrl(int onoff)
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-12-08, support start/stop */
 {
 	switch (onoff) {
 		case WLAN_RESET_OFF:
@@ -115,6 +119,7 @@ dhd_customer_gpio_wlan_ctrl(int onoff)
 			bcm_wlan_power_off(2);
 #endif /* CUSTOMER_HW */
 			WL_ERROR(("=========== WLAN placed in RESET ========\n"));
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-12-08, support start/stop */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 			if (gpio_get_value(CONFIG_BCM4325_GPIO_WL_RESET)) {
 				if(irq_detect_ctrl)
@@ -122,6 +127,7 @@ dhd_customer_gpio_wlan_ctrl(int onoff)
 				gpio_set_value(CONFIG_BCM4325_GPIO_WL_RESET, 0);
 			}
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-12-08, support start/stop */
 		break;
 
 		case WLAN_RESET_ON:
@@ -131,6 +137,7 @@ dhd_customer_gpio_wlan_ctrl(int onoff)
 			bcm_wlan_power_on(2);
 #endif /* CUSTOMER_HW */
 			WL_ERROR(("=========== WLAN going back to live  ========\n"));
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-12-08, support start/stop */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 			if (!gpio_get_value(CONFIG_BCM4325_GPIO_WL_RESET)) { 
 				gpio_set_value(CONFIG_BCM4325_GPIO_WL_RESET, 1);
@@ -138,6 +145,7 @@ dhd_customer_gpio_wlan_ctrl(int onoff)
 					enable_irq(gpio_to_irq(CONFIG_BCM4325_GPIO_WL_RESET));
 			}
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+		/* LGE_CHANGE_E [yoohoo@lge.com] 2009-12-08, support start/stop */
 		break;
 
 		case WLAN_POWER_OFF:
@@ -146,13 +154,16 @@ dhd_customer_gpio_wlan_ctrl(int onoff)
 #ifdef CUSTOMER_HW
 			bcm_wlan_power_off(1);
 #endif /* CUSTOMER_HW */
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-05-14, support start/stop */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 #ifdef CONFIG_BCM4325_GPIO_WL_REGON
 			if (!gpio_get_value(CONFIG_BCM4325_GPIO_BT_RESET)) {
 				gpio_set_value(CONFIG_BCM4325_GPIO_WL_REGON, 0);
 			}
 #endif /* CONFIG_BCM4325_GPIO_WL_REGON */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-07-02, add BCM4325_GPIO_WL_REGON on /off when "DRIVER START/STOP */
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-05-14, support start/stop */
 		break;
 
 		case WLAN_POWER_ON:
@@ -161,17 +172,21 @@ dhd_customer_gpio_wlan_ctrl(int onoff)
 #ifdef CUSTOMER_HW
 			bcm_wlan_power_on(1);
 #endif /* CUSTOMER_HW */
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-05-14, support start/stop */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-07-02, add BCM4325_GPIO_WL_REGON on /off when "DRIVER START/STOP */
 #ifdef CONFIG_BCM4325_GPIO_WL_REGON
 			if (!gpio_get_value(CONFIG_BCM4325_GPIO_WL_REGON)) { 
 				gpio_set_value(CONFIG_BCM4325_GPIO_WL_REGON, 1);
 				mdelay(150);
 			}
 #endif /* CONFIG_BCM4325_GPIO_WL_REGON */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-07-02, add BCM4325_GPIO_WL_REGON on /off when "DRIVER START/STOP */
 #else /* CONFIG_LGE_BCM432X_PATCH */
 			/* Lets customer power to get stable */
 			OSL_DELAY(500);
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-05-14, support start/stop */
 		break;
 	}
 }

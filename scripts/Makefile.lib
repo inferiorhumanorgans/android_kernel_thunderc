@@ -199,11 +199,8 @@ cmd_objcopy = $(OBJCOPY) $(OBJCOPYFLAGS) $(OBJCOPYFLAGS_$(@F)) $< $@
 # ---------------------------------------------------------------------------
 
 quiet_cmd_gzip = GZIP    $@
-# LGE_CHANGE [dojip.kim@lge.com] 2010-05-21, FOTA: use the minigzip
-# because of license
-#cmd_gzip = (cat $(filter-out FORCE,$^) | gzip -f -9 > $@) || \
+cmd_gzip = (cat $(filter-out FORCE,$^) | minigzip -9 > $@) || \
 	(rm -f $@ ; false)
-cmd_gzip = minigzip -9 < $< > $@
 
 # Bzip2
 # ---------------------------------------------------------------------------

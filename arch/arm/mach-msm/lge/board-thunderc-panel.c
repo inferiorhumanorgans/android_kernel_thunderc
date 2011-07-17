@@ -22,6 +22,7 @@
 #include "devices.h"
 #include "board-thunderc.h"
 
+/* LGE_CHANGE [james.jang@lge.com] 2010-07-06, to use lge_bd_rev */
 #include <mach/board_lge.h>
 
 #define MSM_FB_LCDC_VREG_OP(name, op, level)			\
@@ -51,12 +52,14 @@ static int msm_fb_mddi_power_save(int on)
 	mddi_power_save_on = flag_on;
 
 	if (on) {
+		printk("[INFORPC] : %s on\n", __func__);
 		MSM_FB_LCDC_VREG_OP(msm_fb_vreg[0], enable, 1800);
 		MSM_FB_LCDC_VREG_OP(msm_fb_vreg[1], enable, 2800);
 	} 
 	else {
-		MSM_FB_LCDC_VREG_OP(msm_fb_vreg[0], disable, 0);
+		printk("[INFORPC] : %s off\n", __func__);		
 		MSM_FB_LCDC_VREG_OP(msm_fb_vreg[1], disable, 0);
+		MSM_FB_LCDC_VREG_OP(msm_fb_vreg[0], disable, 0);
 	}
 
 	return 0;
@@ -72,22 +75,38 @@ static struct msm_panel_common_pdata mdp_pdata = {
 
 static void __init msm_fb_add_devices(void)
 {
-	if(lge_bd_rev >= 8) /* >= Rev 1.0 */
-		strcpy(msm_fb_vreg[1], "gp1");
+  /* LGE_CHANGE_S [james.jang@lge.com] 2010-07-06 */
+  /* 
+  ------------------------------------
+           |  Rev C     |  Rev 1.0
+  ------------------------------------
+  VREG_GP1 | always off | +2.8V_LCD 
+  ------------------------------------
+  VREG_GP2 | +2.8V_LCD  | +1.8V_HPVDD
+  ------------------------------------
+  */
+  if(lge_bd_rev >= 8) /* >= Rev 1.0 */
+    strcpy(msm_fb_vreg[1], "gp1");
+  /* LGE_CHANGE_E [james.jang@lge.com] 2010-07-06 */
 	
 	msm_fb_register_device("mdp", &mdp_pdata);
 	msm_fb_register_device("pmdh", &mddi_pdata);
 	msm_fb_register_device("lcdc", 0);
 }
 
-#if defined(CONFIG_FB_MSM_MDDI_NOVATEK_HVGA) || \
-	defined(CONFIG_FB_MSM_MDDI_NOVATEK_HITACHI_HVGA)
+/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-11, support the Sharp Panel (Novatek DDI) */
+#if defined(CONFIG_FB_MSM_MDDI_NOVATEK_HVGA)
 static int mddi_novatek_pmic_backlight(int level)
 {
 	/* TODO: Backlight control here */
 	return 0;
 }
 
+/* LGE_CHANGE
+ * Define new structure named 'msm_panel_hitachi_pdata' 
+ * to use LCD initialization Flag (.initialized).
+ * 2010-04-21, minjong.gong@lge.com
+ */
 static struct msm_panel_novatek_pdata mddi_novatek_panel_data = {
 	.gpio = 102,				/* lcd reset_n */
 	.pmic_backlight = mddi_novatek_pmic_backlight,
@@ -101,10 +120,8 @@ static struct platform_device mddi_novatek_panel_device = {
 		.platform_data = &mddi_novatek_panel_data,
 	}
 };
-#endif
 
-#if defined(CONFIG_FB_MSM_MDDI_HITACHI_HVGA) || \
-	defined(CONFIG_FB_MSM_MDDI_NOVATEK_HITACHI_HVGA)
+#else
 static int mddi_hitachi_pmic_backlight(int level)
 {
 	/* TODO: Backlight control here */
@@ -112,6 +129,10 @@ static int mddi_hitachi_pmic_backlight(int level)
 }
 
 #if 1
+		/* LGE_CHANGE
+		  * Define new structure named 'msm_panel_hitachi_pdata' to use LCD initialization Flag (.initialized).
+		  * 2010-04-21, minjong.gong@lge.com
+		  */
 	static struct msm_panel_hitachi_pdata mddi_hitachi_panel_data = {
 		.gpio = 102,				/* lcd reset_n */
 		.pmic_backlight = mddi_hitachi_pmic_backlight,
@@ -183,16 +204,12 @@ void __init thunderc_init_i2c_backlight(int bus_num)
 /* common functions */
 void __init lge_add_lcd_devices(void)
 {
-#if defined(CONFIG_FB_MSM_MDDI_NOVATEK_HITACHI_HVGA)
-  platform_device_register(&mddi_novatek_panel_device);	
-  platform_device_register(&mddi_hitachi_panel_device);	
-#else	
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-11, support the Sharp Panel (Novatek DDI) */
 #if defined(CONFIG_FB_MSM_MDDI_NOVATEK_HVGA)
 	platform_device_register(&mddi_novatek_panel_device);
 #else
 	platform_device_register(&mddi_hitachi_panel_device);
 #endif
-#endif /* CONFIG_FB_MSM_MDDI_NOVATEK_HITACHI_HVGA */
 
 	msm_fb_add_devices();
 

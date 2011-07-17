@@ -56,9 +56,6 @@ static dev_t msm_devno;
 static LIST_HEAD(msm_sensors);
 struct  msm_control_device *g_v4l2_control_device;
 int g_v4l2_opencnt;
-#if 1//def LG_CAMERA_HIDDEN_MENU
-bool sensorAlwaysOnTest = false;
-#endif
 
 #define __CONTAINS(r, v, l, field) ({				\
 	typeof(r) __r = r;					\
@@ -135,9 +132,9 @@ static void msm_enqueue(struct msm_device_queue *queue,
 	if (!list_empty(&__q->list)) {				\
 		__q->len--;					\
 		qcmd = list_first_entry(&__q->list,		\
-				struct msm_queue_cmd, member);	\	
-	if ((qcmd) && (&qcmd->member) && (&qcmd->member.next))	\
-							list_del_init(&qcmd->member);					\
+				struct msm_queue_cmd, member);	\
+		if ((qcmd) && (&qcmd->member) && (&qcmd->member.next))	\
+			list_del_init(&qcmd->member);			\
 	}							\
 	spin_unlock_irqrestore(&__q->lock, flags);	\
 	qcmd;							\
@@ -152,11 +149,11 @@ static void msm_enqueue(struct msm_device_queue *queue,
 	while (!list_empty(&__q->list)) {			\
 		qcmd = list_first_entry(&__q->list,		\
 			struct msm_queue_cmd, member);		\
-		if (qcmd) {                                                             \
-                       if ((&qcmd->member) && (&qcmd->member.next))    \
-                               list_del_init(&qcmd->member);                           \
-                       free_qcmd(qcmd);                                                                \
-               }                       \
+		if (qcmd) {								\
+			if ((&qcmd->member) && (&qcmd->member.next))	\
+				list_del_init(&qcmd->member);				\
+			free_qcmd(qcmd);								\
+		}													\
 	};							\
 	spin_unlock_irqrestore(&__q->lock, flags);		\
 } while (0)
@@ -442,12 +439,6 @@ static int __msm_get_frame(struct msm_sync *sync,
 	if (!qcmd) {
 		pr_err("%s: no preview frame.\n", __func__);
 		return -EAGAIN;
-	}
-	if ((!qcmd->command) && (qcmd->error_code & MSM_CAMERA_ERR_MASK)) {
-	   	frame->error_code = qcmd->error_code;
-		CDBG("%s: fake frame with camera error code = %d\n", __func__,
-			frame->error_code);
-	       goto err;
 	}
 
 	vdata = (struct msm_vfe_resp *)(qcmd->command);
@@ -1664,23 +1655,6 @@ static int msm_set_crop(struct msm_sync *sync, void __user *arg)
 	return 0;
 }
 
-static int msm_error_config(struct msm_sync *sync, void __user *arg)
-{
-      struct msm_queue_cmd *qcmd =
-	  	kmalloc(sizeof(struct msm_queue_cmd), GFP_KERNEL);
-
-	if (copy_from_user(&(qcmd->error_code), arg, sizeof(uint32_t))) {
-		ERR_COPY_FROM_USER();
-		return -EFAULT;
-	}
-
-	CDBG("%s: Enqueue Fake Frame with error code = %d\n", __func__,
-		qcmd->error_code);
-	msm_enqueue(&sync->frame_q, &qcmd->list_frame);
-
-	return 0;
-}
-
 static int msm_pp_grab(struct msm_sync *sync, void __user *arg)
 {
 	uint32_t enable;
@@ -1860,34 +1834,6 @@ static long msm_ioctl_config(struct file *filep, unsigned int cmd,
 					sdata->flash_data, led_state);
 		break;
 	}
-#if 1//def LG_CAMERA_HIDDEN_MENU
-	case MSM_CAM_IOCTL_SENSOR_ALWAYS_ON_TEST:
-		{
-			uint32_t sensor_mode;
-			CDBG("MSM_CAM_IOCTL_SENSOR_ALWAYSON_TEST");
-			if(copy_from_user(&sensor_mode,argp, sizeof(sensor_mode))) {
-				printk("======= msm_ioctl_config sensor_mode is %d =======", sensor_mode);
-				ERR_COPY_FROM_USER();
-				rc = -EFAULT;
-			} else {
-				CDBG("MSM_CAM_IOCTL_SENSOR_ALWAYSON_TEST:%d", sensor_mode);
-				printk("======= msm_ioctl_config sensor_mode is %d =======", sensor_mode);
-				if(sensor_mode ==1)
-					sensorAlwaysOnTest = true;
-				else
-					sensorAlwaysOnTest = false;
-				rc = 0;
-			}
-			
-		}
-		break;
-#endif
-
-	case MSM_CAM_IOCTL_ERROR_CONFIG:
-	   	rc = msm_error_config(pmsm->sync, argp);
-		break;
-
-
 
 	default:
 		rc = msm_ioctl_common(pmsm, cmd, argp);
@@ -1976,12 +1922,16 @@ static int __msm_release(struct msm_sync *sync)
 	struct hlist_node *n;
 
 	mutex_lock(&sync->lock);
-	#if defined (CONFIG_MACH_LGE)
-    	   if (!sync->opencnt) {
-               mutex_unlock(&sync->lock);
-               return 0;
-      	   }
-	#endif
+#if defined (CONFIG_MACH_LGE)
+/* [junyeong.han@lge.com] 2010-08-09
+ * When opencnt is 0, just return 0.
+ * below code has potential risk(run release twise),
+ * when opencnt value is 0 */
+	if (!sync->opencnt) {
+		mutex_unlock(&sync->lock);
+		return 0;
+	}
+#endif
 	if (sync->opencnt)
 		sync->opencnt--;
 	if (!sync->opencnt) {
@@ -2635,7 +2585,6 @@ int msm_camera_drv_start(struct platform_device *dev,
 	rc = msm_sync_init(sync, dev, sensor_probe);
 	if (rc < 0) {
 		kfree(pmsm);
-
 		return rc;
 	}
 

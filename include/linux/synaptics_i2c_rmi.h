@@ -19,6 +19,14 @@
 
 #define SYNAPTICS_I2C_RMI_NAME "synaptics-rmi-ts"
 
+#undef SYNAPTICS_FW_REFLASH
+#define SYNAPTICS_CHECK_DEVICE_NAME
+
+#undef SYNAPTICS_TOUCH_DEBUG
+#define SYNAPTICS_TOUCH_ERR
+
+#define SYNAPTICS_ESD_RECOVERY
+
 enum {
 	SYNAPTICS_FLIP_X = 1UL << 0,
 	SYNAPTICS_FLIP_Y = 1UL << 1,
@@ -50,6 +58,7 @@ struct synaptics_i2c_rmi_platform_data {
 	int fuzz_p;
 	int fuzz_w;
 	int8_t sensitivity_adjust;
+	int use_irq;
 };
 
 #endif /* _LINUX_SYNAPTICS_I2C_RMI_H */

@@ -24,12 +24,13 @@
 #include <linux/sysdev.h>
 #include "socinfo.h"
 #include "smd_private.h"
+//20100712 myeonggyu.son@lge.com [MS690] hw revision [START]
 #if defined (CONFIG_LGE_PCB_VERSION)  /* LG_FW_PCB_VERSION */
 #include <mach/lg_pcb_version.h>
 #endif
+//20100712 myeonggyu.son@lge.com [MS690] hw revision [END]
 
 #define BUILD_ID_LENGTH 32
-
 enum {
 	HW_PLATFORM_UNKNOWN = 0,
 	HW_PLATFORM_SURF    = 1,
@@ -323,6 +324,8 @@ socinfo_show_platform_version(struct sys_device *dev,
 		socinfo_get_platform_version());
 }
 
+//20100712 myeonggyu.son@lge.com [MS690] hw revision [START]
+/* LGE_CHANGE [dojip@lge.com] 2010-05-29, pcb version from LS680 */
 #ifdef CONFIG_LGE_PCB_VERSION
 static char hw_pcb_version[10] = "Unknown";
 
@@ -341,36 +344,8 @@ static struct sysdev_attribute pcb_ver_file[] = {
 	_SYSDEV_ATTR(hw_version, 0444, lg_show_hw_version, NULL),
 };
 #endif /* CONFIG_LGE_PCB_VERSION */
+//20100712 myeonggyu.son@lge.com [MS690] hw revision [END]
 
-extern void remote_get_prl_version(int *info);
-static ssize_t
-lg_show_prl_version(struct sys_device *dev,
-		struct sysdev_attribute *attr,
-		char *buf)
-{
-	int prl;
-
-	remote_get_prl_version(&prl);
-	return snprintf(buf, PAGE_SIZE, "%d\n", prl);
-}
-static struct sysdev_attribute prl_ver_file[] = {
-	_SYSDEV_ATTR(prl_version, 0444, lg_show_prl_version, NULL),
-};
-
-extern void remote_get_ftm_boot(int *info);
-static ssize_t
-lg_show_ftm_boot(struct sys_device *dev,
-		struct sysdev_attribute *attr,
-		char *buf)
-{
-	int ftm;
-
-	remote_get_ftm_boot(&ftm);
-	return snprintf(buf, PAGE_SIZE, "%d\n", ftm);
-}
-static struct sysdev_attribute ftm_boot_file[] = {
-	_SYSDEV_ATTR(ftm_boot, 0444, lg_show_ftm_boot, NULL),
-};
 
 static struct sysdev_attribute socinfo_v1_files[] = {
 	_SYSDEV_ATTR(id, 0444, socinfo_show_id, NULL),
@@ -432,13 +407,6 @@ static void __init socinfo_init_sysdev(void)
 		       __func__, err);
 		return;
 	}
-
-	socinfo_create_files(&soc_sys_device, prl_ver_file,
-				ARRAY_SIZE(prl_ver_file));
-
-	socinfo_create_files(&soc_sys_device, ftm_boot_file,
-				ARRAY_SIZE(ftm_boot_file));
-
 #ifdef CONFIG_LGE_PCB_VERSION  /* LG_FW_PCB_VERSION */
 	socinfo_create_files(&soc_sys_device, pcb_ver_file,
 				ARRAY_SIZE(pcb_ver_file));

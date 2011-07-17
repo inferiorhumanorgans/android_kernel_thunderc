@@ -32,8 +32,6 @@
 #define AMI304_DEBUG_PRINT	1
 #define AMI304_ERROR_PRINT	1
 
-//#define AMI304_TEST		1
-
 /* AMI304 Debug mask value
  * usage: echo [mask_value] > /sys/module/ami304/parameters/debug_mask
  * All		: 127
@@ -48,6 +46,7 @@ enum {
 	AMI304_DEBUG_DEV_DEBOUNCE	= 1U << 4,
 	AMI304_DEBUG_GEN_INFO		= 1U << 5,
 	AMI304_DEBUG_INTR_INFO		= 1U << 6,
+	AMI304_DEBUG_DELAY_SETTING		= 1U << 7,
 };
 
 static unsigned int ami304_debug_mask = AMI304_DEBUG_USER_ERROR;
@@ -69,7 +68,6 @@ module_param_named(debug_mask, ami304_debug_mask, int,
 #endif
 
 static struct i2c_client *ami304_i2c_client = NULL;
-static int AMI304_Init(int mode);
 
 #if defined(CONFIG_HAS_EARLYSUSPEND)
 #include <linux/earlysuspend.h>
@@ -96,7 +94,7 @@ static unsigned short normal_i2c[] = { AMI304_I2C_ADDRESS, I2C_CLIENT_END };
 /* Insmod parameters */
 I2C_CLIENT_INSMOD_1(ami304);
 
-struct _ami304_data {
+struct _ami302_data {
 	rwlock_t lock;
 	int mode;
 	int rate;
@@ -117,15 +115,11 @@ struct _ami304mid_data {
 	int nay;
 	int naz;
 	int mag_status;
-#if defined(AMI304_MAG_OFFSET_ADJ)
-	u8 coar[3];
-	u8 fine[3];
-#endif
 } ami304mid_data;
 
 struct ami304_i2c_data {
 	struct input_dev *input_dev;
-	struct i2c_client *client;
+	struct i2c_client client;
 };
 
 static atomic_t dev_open_count;
@@ -135,418 +129,6 @@ static atomic_t daemon_open_count;
 static atomic_t o_status;
 static atomic_t m_status;
 static atomic_t a_status;
-
-#if defined(AMI304_MAG_OFFSET_ADJ)
-#define		OFFX_REG		0x6c
-#define		OFFY_REG		0x72
-#define		OFFZ_REG		0x78
-
-#define SEH_SEQ_1_0 0
-#define SEH_SEQ_1_1 1
-#define SEH_SEQ_1_2 2
-#define SEH_SEQ_2_0 3
-#define SEH_SEQ_2_1 4
-#define SEH_SEQ_END 5
-#define SEH_SEQ_ERR 6
-
-#define SEH_OVER_MIN 100
-#define SEH_OVER_MAX 3950
-
-static void AMI304_ChageWindowSeq1_0(u8 axis , u8 seq[][2], s8 *coar, s8 *fine, s16 *mea, u16 *fine_out);
-static void AMI304_ChageWindowSeq1_1(u8 axis , u8 seq[][2], s8 *coar, s8 *fine, s16 *mea, u16 *fine_out);
-static void AMI304_ChageWindowSeq1_2(u8 axis , u8 seq[][2], s8 *coar, s8 *fine, s16 *mea, u16 *fine_out);
-static void AMI304_ChageWindowSeq2_0(u8 axis , u8 seq[][2], s8 *coar, s8 *fine, s16 *mea, u16 *fine_out);
-static void AMI304_ChageWindowSeq2_1(u8 axis , u8 seq[][2], s8 *fine,s16 *mea);
-
-static int AMI304_I2c_Read(u8 regaddr, u8 *buf, u8 buf_len)
-{
-	int res = 0;
-
-	res = i2c_master_send(ami304_i2c_client, &regaddr, 1);
-	if (res<=0) goto exit_AMI304_I2c_Read;
-	res = i2c_master_recv(ami304_i2c_client, buf, buf_len);
-	if (res<=0) goto exit_AMI304_I2c_Read;
-	
-	return res;
-
-exit_AMI304_I2c_Read:
-	return res;
-}
-
-static int AMI304_I2c_Read_W(u8 regaddr, u16 *buf, u8 buf_len)
-{
-	int	res;
-
-	res = AMI304_I2c_Read(regaddr,(u8*)&buf[0],buf_len*2);
-	if (res<=0) goto exit_AMI304_I2c_Read_W;
-	
-	return res;
-
-exit_AMI304_I2c_Read_W:
-	return res;
-}
-
-static int AMI304_I2c_Write(u8 reg_adr, u8 *buf, u8 buf_len)
-{
-	int res = 0;
-	u8 databuf[buf_len+2];
-
-	databuf[0] = reg_adr;
-	memcpy(&databuf[1], buf, buf_len);
-	databuf[buf_len+1] = 0x00;
-	res = i2c_master_send(ami304_i2c_client, databuf, buf_len+1);	
-	if (res<=0) goto exit_AMI304_I2c_Write;	
-	return res;
-
-exit_AMI304_I2c_Write:
-	return res;
-}
-
-static int AMI304_I2c_Write_W(u8 reg_adr, u16 *buf, u8 buf_len)
-{
-	int	res;
-
-	res = AMI304_I2c_Write(reg_adr,(u8 *)&buf[0],2*buf_len);
-	if (res<=0) goto exit_AMI304_I2c_Write_W;
-
-	return res;
-	
-exit_AMI304_I2c_Write_W:
-	return res;	
-}
-
-static int AMI304_GetOffset(u8 *coar, u8 *fine)
-{
-
-	int res = 0;	
-	u16	 wk[3];	
-
-	res = AMI304_I2c_Read_W(OFFX_REG,&wk[0],1);
-	if (res<=0) goto exit_AMI304_GetOffset;
-
-	res = AMI304_I2c_Read_W(OFFY_REG,&wk[1],1);
-	if (res<=0) goto exit_AMI304_GetOffset;
-
-	res = AMI304_I2c_Read_W(OFFZ_REG,&wk[2],1);	
-	if (res<=0) goto exit_AMI304_GetOffset;
-
-	coar[0] = (wk[0] & 0x01c0) >> 6;
-	coar[1] = (wk[1] & 0x01c0) >> 6;
-	coar[2] = (wk[2] & 0x01c0) >> 6;
-
-	fine[0] = (wk[0] & 0x003f);
-	fine[1] = (wk[1] & 0x003f);
-	fine[2] = (wk[2] & 0x003f);
-
-#if defined(AMI304_TEST)
-	printk(KERN_INFO "AMI304:%s Read Magnetic Offset : x=%d y=%d z=%d\n",__FUNCTION__, wk[0], wk[1], wk[2]);
-#endif
-
-exit_AMI304_GetOffset:
-
-	return res;
-}
-
-static int AMI304_SetOffset(u8 *coar,u8 *fine)
-{
-	int	 res =0;
-	u16	 wk[3];
-
-	wk[0] = ( (u16)coar[0]<< 6) | (u16)fine[0];
-	wk[1] = ( (u16)coar[1]<< 6) | (u16)fine[1];
-	wk[2] = ( (u16)coar[2]<< 6) | (u16)fine[2];
-
-	/* x */
-	res = AMI304_I2c_Write_W(OFFX_REG,&wk[0],1);
-	if (res<=0) goto exit_AMI304_SetOffset;
-
-	/* y */
-	res = AMI304_I2c_Write_W(OFFY_REG,&wk[1],1);
-	if (res<=0) goto exit_AMI304_SetOffset;
-
-	/* z */
-	res = AMI304_I2c_Write_W(OFFZ_REG,&wk[2],1);	
-	if (res<=0) goto exit_AMI304_SetOffset;
-
-#if defined(AMI304_TEST)
-	printk(KERN_INFO "AMI304:%s Set Magnetic Offset : x=%d y=%d z=%d\n",__FUNCTION__, wk[0], wk[1], wk[2]);
-#endif
-
-exit_AMI304_SetOffset:
-
-	return res;
-}
-
-static void AMI304_ChageWindowSeq1_0(u8 axis , u8 seq[][2], s8 *coar, s8 *fine, s16 *mea, u16 *fine_out)
-{
-	if (mea[axis] < SEH_OVER_MIN ) {
-		seq[axis][0] = SEH_SEQ_1_1;
-		seq[axis][1] = 0;
-	} else if ((SEH_OVER_MIN < mea[axis]) &&  (mea[axis] < SEH_OVER_MAX)) {
-		AMI304_ChageWindowSeq2_0(axis,seq,coar,fine,mea, fine_out);
-	} else {
-		seq[axis][0] = SEH_SEQ_1_2;
-		seq[axis][1] = 0;
-	}
-}
- 
-static void AMI304_ChageWindowSeq1_1(u8 axis , u8 seq[][2], s8 *coar, s8 *fine, s16 *mea, u16 *fine_out)
-{
-	static u16 mea_old[6];
-
-	if (seq[axis][1] == 0) 
-	{
-		coar[axis] +=1;	
-		seq[axis][1] = 1;
-
-		mea_old[axis] = mea[axis];
-	
-	} else {
-
-		if ((mea_old[axis] < 2048 ) && (mea[axis] > SEH_OVER_MAX))
-		{
-			AMI304_ChageWindowSeq2_1(axis,seq,fine,mea);
-		} else if (mea[axis] < SEH_OVER_MIN )
-		{
-			coar[axis] +=1;
-		} else {
-			AMI304_ChageWindowSeq2_0(axis,seq,coar,fine,mea, fine_out);
-		}
-	}
-	// check coarse 
-	if (( coar[axis] < 0 ) ||  ( 7 < coar[axis]))
-	{
-		seq[axis][0] = SEH_SEQ_ERR;	
-		seq[axis][1] = 1;
-	}
-}
-
-static void AMI304_ChageWindowSeq1_2(u8 axis , u8 seq[][2], s8 *coar, s8 *fine, s16 *mea, u16 *fine_out)
-{
-	if (seq[axis][1] == 0) 
-	{
-		coar[axis] -=1;	
-		seq[axis][1] = 1;
-	
-	} else {
-
-		if (mea[axis] < SEH_OVER_MAX)	
-		{
-			AMI304_ChageWindowSeq2_0(axis,seq,coar,fine,mea, fine_out);
-		} else { // SEH_OVER_MAX < mea[axis] 
-			coar[axis] -=1;
-		}
-
-	}
-	// check coarse 
-	if (( coar[axis] < 0 ) ||  ( 7 < coar[axis]))
-	{
-		seq[axis][0] = SEH_SEQ_ERR;	
-		seq[axis][1] = 1;
-	}
-}
-
-static void AMI304_ChageWindowSeq2_0(u8 axis , u8 seq[][2], s8 *coar, s8 *fine, s16 *mea, u16 *fine_out)
-{
-
-	//float wk;
-	int wk, wk2;
-	s8 wk_fine;
-
-	//wk = (float)(mea[axis] - 2048 ) / fine_out[axis];
-	wk = (mea[axis] - 2048 ) / fine_out[axis];
-	wk2 = (mea[axis] - 2048 ) % fine_out[axis];
-
-	if ( wk > 0 ) {
-		//wk_fine = fine[axis] + (s16)(wk + 0.5);
-		if(wk2*2 >= fine_out[axis])
-			wk_fine = fine[axis] + wk;
-		else
-			wk_fine = fine[axis] + wk+1;
-	} else {
-		//wk_fine = fine[axis] + (s16)(wk - 0.5);
-		if(wk2*(-2) >= fine_out[axis])
-			wk_fine = fine[axis] + wk;
-		else
-			wk_fine = fine[axis] + wk-1;
-	}
-
-	if ( wk_fine < 0 ) {
-		seq[axis][0]  = SEH_SEQ_1_1;
-		seq[axis][1] = 0;
-	} else if ((0<= wk_fine) && ( wk_fine <=63))
-	{
-		fine[axis] = wk_fine;
-		seq[axis][0] = SEH_SEQ_END;
-		seq[axis][1] = 0;
-	} else {
-		seq[axis][0] = SEH_SEQ_1_2;
-		seq[axis][1] = 0;
-	}
-}
-
-static void AMI304_ChageWindowSeq2_1(u8 axis , u8 seq[][2], s8 *fine,s16 *mea)
-{
-
-	if (  SEH_OVER_MAX < mea[axis]  ) {
-		fine[axis] += 5;
-	} else {
-		seq[axis][0] = SEH_SEQ_2_0;
-		seq[axis][1] = 0;
-	}
-
-}
-
-static int AMI304_Mea(s16 *val)
-{
-
-	s16 mi_mes[3];
-	u8 wk_buf[9];
-	int	 res;
-
-	memset(wk_buf,0x00,9);
-
-	wk_buf[0] = 0x40;
-	res = AMI304_I2c_Write(AMI304_REG_CTRL3,wk_buf,1);
-	if (res<=0) goto exit_AMI304_Mea;
-
-	res = AMI304_I2c_Read(AMI304_REG_DATAXH,&wk_buf[0],6);
-	if (res<=0) goto exit_AMI304_Mea;
-
-	mi_mes[0] = (s16)wk_buf[1] << 8 | wk_buf[0];	// x-axis
-	mi_mes[1] = (s16)wk_buf[3] << 8 | wk_buf[2];	// y-axis
-	mi_mes[2] = (s16)wk_buf[5] << 8 | wk_buf[4];	// z-axis
-
-	val[0] = mi_mes[0]+2048;
-	val[1] = mi_mes[1]+2048;
-	val[2] = mi_mes[2]+2048;
-
-	return res;
-	
-exit_AMI304_Mea:
-	return res;
-
-}
-
-static int AMI304_SearchOffset(void)
-{
-	int res;
-	s16 mea[7];
-	int i;
-	u8 run_flg[3] = {1,1,1};
-	u8 seq[3][2] ={{SEH_SEQ_1_0,0},
-		       {SEH_SEQ_1_0,0},
-		       {SEH_SEQ_1_0,0}};
-
-	u8 wk_coar[3];
-	u8 wk_fine[3];
-
-	u16 g_au16fine_output[3];
-	u16 buf[8];
-
-	res = AMI304_I2c_Read_W(0x92,buf,1);
-	if (res<=0) goto exit_AMI304_SearchOffset;
-
-	g_au16fine_output[0] = (buf[0] & 0xff00) >> 8;
-	g_au16fine_output[1] = (buf[0] & 0x00ff);
-	g_au16fine_output[2] = (buf[1] & 0xff00) >> 8;
-
-	res = AMI304_GetOffset(wk_coar,wk_fine);
-	if (res<=0) goto exit_AMI304_SearchOffset;
-
-	buf[0] = 0x0001;
-	res = AMI304_I2c_Write_W(AMI304_REG_CTRL4,buf,1);
-	if (res<=0) goto exit_AMI304_SearchOffset;
-
-	res = AMI304_Mea(mea);
-	if (res<=0) goto exit_AMI304_SearchOffset;
-
-	while (1) {
-		for (i=0;i<3;i++) {
-			
-			// cal coarse, fine
-			if (run_flg[i] == 1 ) {
-
-				switch (seq[i][0]) {
-				case SEH_SEQ_1_0:
-					AMI304_ChageWindowSeq1_0(i,seq,(s8 *)wk_coar,(s8 *)wk_fine,mea, g_au16fine_output);
-					break;
-				case SEH_SEQ_1_1:
-					AMI304_ChageWindowSeq1_1(i,seq,(s8 *)wk_coar,(s8 *)wk_fine,mea, g_au16fine_output);
-					break;
-				case SEH_SEQ_1_2:
-					AMI304_ChageWindowSeq1_2(i,seq,(s8 *)wk_coar,(s8 *)wk_fine,mea, g_au16fine_output);
-					break;
-				case SEH_SEQ_2_0:
-					AMI304_ChageWindowSeq2_0(i,seq,(s8 *)wk_coar,(s8 *)wk_fine,mea, g_au16fine_output);
-					break;
-				case SEH_SEQ_2_1:
-					break;
-				case SEH_SEQ_END:
-					run_flg[i] = 0;
-					break;
-				case SEH_SEQ_ERR:
-					res = SEH_SEQ_ERR;
-					goto exit_AMI304_SearchOffset;
-				}
-			}
-		}
-
-		res = AMI304_SetOffset((u8 *)&wk_coar[0],(u8 *)&wk_fine[0]);
-		if (res<=0) goto exit_AMI304_SearchOffset;
-
-		write_lock(&ami304mid_data.ctrllock);
-		ami304mid_data.coar[0] = wk_coar[0];
-		ami304mid_data.coar[1] = wk_coar[1];
-		ami304mid_data.coar[2] = wk_coar[2];
-		ami304mid_data.fine[0] = wk_fine[0];
-		ami304mid_data.fine[1] = wk_fine[1];
-		ami304mid_data.fine[2] = wk_fine[2];
-		write_unlock(&ami304mid_data.ctrllock);
-
-		res = AMI304_Mea(mea);
-		if (res<=0) goto exit_AMI304_SearchOffset;
-
-		if ((run_flg[0] == 0) && (run_flg[1] == 0) && (run_flg[2] == 0))
-		{
-			break;
-		}
-	}
-
-	buf[0] = 0x0000;
-	res = AMI304_I2c_Write_W(AMI304_REG_CTRL4,buf,1);
-	if (res<=0) goto exit_AMI304_SearchOffset;
-
-#if defined(AMI304_TEST)
-	printk(KERN_INFO "AMI304:%s success\n",__FUNCTION__);
-#endif
-	AMI304_Init(AMI304_FORCE_MODE); // default is Force State
-
-	return 0;
-	
-exit_AMI304_SearchOffset:
-
-	AMI304_SetOffset((u8 *)&wk_coar[0],(u8 *)&wk_fine[0]);
-	write_lock(&ami304mid_data.ctrllock);
-	ami304mid_data.coar[0] = wk_coar[0];
-	ami304mid_data.coar[1] = wk_coar[1];
-	ami304mid_data.coar[2] = wk_coar[2];
-	ami304mid_data.fine[0] = wk_fine[0];
-	ami304mid_data.fine[1] = wk_fine[1];
-	ami304mid_data.fine[2] = wk_fine[2];
-	write_unlock(&ami304mid_data.ctrllock);
-	buf[0] = 0x0000;
-	res = AMI304_I2c_Write_W(AMI304_REG_CTRL4,buf,1);
-
-	AMI304_Init(AMI304_FORCE_MODE); // default is Force State
-	
-	if (res<=0) {
-		printk(KERN_ERR "AMI304_SearchOffset error: res value=%d\n", res);
-	}
-
-	return -3;
-}
-#endif
 
 static int AMI304_Init(int mode)
 {
@@ -601,15 +183,9 @@ static int AMI304_Init(int mode)
 	res = i2c_master_send(ami304_i2c_client, databuf, 2);
 	if (res<=0) goto exit_AMI304_Init;
 
-#if defined(AMI304_MAG_OFFSET_ADJ)
-	//AMI304_SearchOffset(); //just for test.
-#endif
-
 exit_AMI304_Init:
 	if (res<=0) {
-		if (printk_ratelimit()) {
-			AMIE("I2C error: ret value=%d\n", res);
-		}
+		AMIE("I2C error: ret value=%d\n", res);
 		return -3;
 	}
 	return 0;
@@ -695,7 +271,8 @@ static int AMI304_ReadSensorData(char *buf, int bufsize)
 
 exit_AMI304_ReadSensorData:
 	if (res<=0) {
-		AMIE("I2C error: ret value=%d\n", res);
+		if(printk_ratelimit())
+			AMIE("I2C error: ret value=%d\n", res);
 		return -3;
 	}
 	return 0;
@@ -891,6 +468,12 @@ static int ami304_ioctl(struct inode *inode, struct file *file, unsigned int cmd
 	int retval=0;
 	int mode=0;
 
+    //check the authority is root or not
+    if(!capable(CAP_SYS_ADMIN)) {
+        retval = -EPERM;
+        goto err_out;
+	}
+
 	switch (cmd) {
 		case AMI304_IOCTL_INIT:
 			read_lock(&ami304_data.lock);
@@ -1024,11 +607,12 @@ static int ami304daemon_ioctl(struct inode *inode, struct file *file, unsigned i
 #if !defined(CONFIG_HAS_EARLYSUSPEND)
 	int en_dis_Report=1;
 #endif
-#if defined(AMI304_MAG_OFFSET_ADJ)
-	int mag_offset[3];
-	u8 wk_coar[3];
-	u8 wk_fine[3];
-#endif
+
+    //check the authority is root or not
+    if(!capable(CAP_SYS_ADMIN)) {
+        retval = -EPERM;
+        goto err_out;
+    }
 
 	switch (cmd) {
 
@@ -1078,10 +662,10 @@ static int ami304daemon_ioctl(struct inode *inode, struct file *file, unsigned i
 			write_unlock(&ami304mid_data.datalock);
 #if defined(CONFIG_HAS_EARLYSUSPEND)
 			/*
-			 * Disable input report at early suspend state
-			 * On-Demand Governor set max cpu frequency when input event is appeared
-			 */
-			AMI304_Report_Value(atomic_read(&ami304_report_enabled));
+				Disable input report at early suspend state
+				On-Demand Governor set max cpu frequency when input evnet is appeared
+			*/
+			AMI304_Report_Value(	atomic_read(&ami304_report_enabled));
 #else
 			AMI304_Report_Value(en_dis_Report);
 #endif
@@ -1123,70 +707,7 @@ static int ami304daemon_ioctl(struct inode *inode, struct file *file, unsigned i
 			}
 			AMI304_SetMode(mode);
 			break;
-								
-		//Add for input_device sync			
-		case AMI304MID_IOCTL_SET_REPORT:
-#if defined(CONFIG_HAS_EARLYSUSPEND)
-			break;
-#else
-			data = (void __user *) arg;
-			if (data == NULL)
-				break;	
-			if (copy_from_user(&en_dis_Report, data, sizeof(mode))) {
-				retval = -EFAULT;
-				goto err_out;
-			}				
-//			read_lock(&ami304mid_data.datalock);
-			AMI304_Report_Value(en_dis_Report);
-//			read_lock(&ami304mid_data.datalock);
-#endif
-			break;
 
-#if defined(AMI304_MAG_OFFSET_ADJ)
-		case AMI304MID_IOCTL_MAG_OFFSET_ADJ:
-			AMI304_SearchOffset();
-			break;
-
-		case AMI304MID_IOCTL_GET_MAG_OFFSET:
-			read_lock(&ami304mid_data.ctrllock);
-			mag_offset[0] = ( (u16)ami304mid_data.coar[0]<< 6) | (u16)ami304mid_data.fine[0];
-			mag_offset[1] = ( (u16)ami304mid_data.coar[1]<< 6) | (u16)ami304mid_data.fine[1];
-			mag_offset[2] = ( (u16)ami304mid_data.coar[2]<< 6) | (u16)ami304mid_data.fine[2];
-			read_unlock(&ami304mid_data.ctrllock);			
-			data = (void __user *) arg;
-			if (data == NULL)
-				break;	
-			if (copy_to_user(data, mag_offset, sizeof(mag_offset))) {
-				retval = -EFAULT;
-				goto err_out;
-			}					
-			break;
-
-		case AMI304MID_IOCTL_SET_MAG_OFFSET:
-			data = (void __user *) arg;
-			if (data == NULL)
-				break;	
-			if (copy_from_user(mag_offset, data, sizeof(mag_offset))) {
-				retval = -EFAULT;
-				goto err_out;
-			}
-			wk_coar[0] = (mag_offset[0] & 0x000001c0) >> 6;
-			wk_coar[1] = (mag_offset[1] & 0x000001c0) >> 6;
-			wk_coar[2] = (mag_offset[2] & 0x000001c0) >> 6;
-			wk_fine[0] = (mag_offset[0] & 0x0000003f);
-			wk_fine[1] = (mag_offset[1] & 0x0000003f);
-			wk_fine[2] = (mag_offset[2] & 0x0000003f);
-			AMI304_SetOffset((u8 *)&wk_coar,(u8 *)&wk_fine);
-			write_lock(&ami304mid_data.ctrllock);
-			ami304mid_data.coar[0] = wk_coar[0];
-			ami304mid_data.coar[1] = wk_coar[1];
-			ami304mid_data.coar[2] = wk_coar[2];
-			ami304mid_data.fine[0] = wk_fine[0];
-			ami304mid_data.fine[1] = wk_fine[1];
-			ami304mid_data.fine[2] = wk_fine[2];
-			write_unlock(&ami304mid_data.ctrllock);
-			break;
-#endif
 		default:
 			if (AMI304_DEBUG_USER_ERROR & ami304_debug_mask)
 				AMIE("not supported command= 0x%04x\n", cmd);
@@ -1200,18 +721,23 @@ err_out:
 
 static int ami304hal_open(struct inode *inode, struct file *file)
 {
-	//return nonseekable_open(inode, file);
-	atomic_inc(&hal_open_count);
+	int ret;
+	ret = atomic_inc_and_test(&hal_open_count);
+
 	if (AMI304_DEBUG_FUNC_TRACE & ami304_debug_mask)
 		AMID("Open device node:ami304hal %d times.\n", atomic_read(&hal_open_count));
+
 	return 0;
 }
 
 static int ami304hal_release(struct inode *inode, struct file *file)
 {
-	atomic_dec(&hal_open_count);
+	int ret;
+	ret = atomic_dec_and_test(&hal_open_count);
+
 	if (AMI304_DEBUG_FUNC_TRACE & ami304_debug_mask)
 		AMID("Release ami304hal, remainder is %d times.\n", atomic_read(&hal_open_count));
+
 	return 0;
 }
 
@@ -1257,7 +783,6 @@ static int ami304hal_ioctl(struct inode *inode, struct file *file, unsigned int 
 				goto err_out;
 			}
 	        	break;
-
 		case AMI304HAL_IOCTL_SET_ACTIVE:
 			data = (void __user *) arg;
 			if (data == NULL)
@@ -1313,7 +838,10 @@ static int ami304hal_ioctl(struct inode *inode, struct file *file, unsigned int 
 			write_lock(&ami304mid_data.ctrllock);
 			memcpy(&ami304mid_data.controldata[0], controlbuf, sizeof(controlbuf));
 			write_unlock(&ami304mid_data.ctrllock);
-			//AMID("Dleay setting = %dms\n", ami304mid_data.controldata[0] / 1000);
+
+			if (AMI304_DEBUG_DELAY_SETTING & ami304_debug_mask)
+				AMID("Dleay setting = %dms\n", ami304mid_data.controldata[0] / 1000);
+
 			break;
 
 		default:
@@ -1560,14 +1088,14 @@ static int ami304_resume(struct device *device)
 #endif
 
 static const struct i2c_device_id motion_ids[] = {
-	{ "ami304_sensor", 0 },
-	{ },
+		{ "ami304_sensor", 0 },
+		{ },
 };
 
 #if defined(CONFIG_PM)
 static struct dev_pm_ops ami304_pm_ops = {
-	.suspend = ami304_suspend,
-	.resume = ami304_resume,
+       .suspend = ami304_suspend,
+       .resume = ami304_resume,
 };
 #endif
 
@@ -1594,7 +1122,7 @@ static int __init ami304_init(void)
 	rwlock_init(&ami304mid_data.datalock);
 	rwlock_init(&ami304_data.lock);
 	memset(&ami304mid_data.controldata[0], 0, sizeof(int)*10);
-	ami304mid_data.controldata[0] = 20*1000; //Loop Delay
+	ami304mid_data.controldata[0] = 200*1000; //Loop Delay
 	ami304mid_data.controldata[1] = 0; // Run
 	ami304mid_data.controldata[2] = 0; // Disable Start-AccCali
 	ami304mid_data.controldata[3] = 1; // Enable Start-Cali

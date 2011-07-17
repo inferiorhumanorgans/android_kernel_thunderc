@@ -166,6 +166,9 @@ void smsm_reset_modem(unsigned mode);
 void smsm_reset_modem_cont(void);
 void smd_sleep_exit(void);
 #ifdef CONFIG_MACH_LGE
+/* Make a api to not report a changed SMSM state to other processor
+ * blue.park@lge.com 2010-04-14
+ */
 int smsm_change_state_nonotify(uint32_t smsm_entry,
 		      uint32_t clear_mask, uint32_t set_mask);
 #endif
@@ -262,6 +265,8 @@ enum {
 	SMEM_SMD_BRIDGE_ALLOC_TABLE,
 	SMEM_SMDLITE_TABLE,
 	SMEM_SD_IMG_UPGRADE_STATUS,
+	// LGE_CHANGE : hoseok.kim@lge.com : 2010.10.17 After completing webdownload, Do not entering charging mode.
+	SMEM_ID_WEBDL_COMPLETED,
 	SMEM_SEFS_INFO,
 	SMEM_RESET_LOG,
 	SMEM_RESET_LOG_SYMBOLS,

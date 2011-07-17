@@ -27,6 +27,7 @@
 #include <mach/board.h>
 #include <mach/msm_iomap.h>
 #include <asm/io.h>
+#include <mach/rpc_server_handset.h>
 #include <mach/board_lge.h>
 #include "board-thunderg.h"
 
@@ -80,73 +81,99 @@ static struct platform_device msm_batt_device = {
 extern int aat2870bl_ldo_set_level(struct device * dev, unsigned num, unsigned vol);
 extern int aat2870bl_ldo_enable(struct device * dev, unsigned num, unsigned enable);
 
-static void button_bl_leds_set(struct led_classdev *led_cdev,
-	enum led_brightness value)
+static char *dock_state_string[] = {
+	"0",
+	"1",
+	"2",
+};
+
+enum {
+	DOCK_STATE_UNDOCKED = 0,
+	DOCK_STATE_DESK = 1, /* multikit */
+	DOCK_STATE_CAR = 2, /* carkit */
+	DOCK_STATE_UNKNOWN,
+};
+
+enum {
+	KIT_DOCKED = 0,
+	KIT_UNDOCKED = 1,
+};
+
+static void thunderg_desk_dock_detect_callback(int state)
 {
 	int ret;
 
-	ret = pmic_set_led_intensity(LED_KEYPAD, value / TUNED_MAX_BACKLIGHT_LEVEL);
+	if (state)
+		state = DOCK_STATE_DESK;
+
+	ret = lge_gpio_switch_pass_event("dock", state);
 
 	if (ret)
-		dev_err(led_cdev->dev, "can't set keypad backlight\n");
+		printk(KERN_INFO "%s: desk dock event report fail\n", __func__);
 
+	return;
 }
 
-struct led_classdev thunderg_custom_leds[] = {
-	{
-		.name = "button-backlight",
-		.brightness_set = button_bl_leds_set,
-		.brightness = LED_OFF,
+static int thunderg_register_callback(void)
+{
+	rpc_server_hs_register_callback(thunderg_desk_dock_detect_callback);
+
+	return 0;
+}
+
+static int thunderg_gpio_carkit_work_func(void)
+{
+	return DOCK_STATE_UNDOCKED;
+}
+
+static char *thunderg_gpio_carkit_print_state(int state)
+{
+	return dock_state_string[state];
+}
+
+static int thunderg_gpio_carkit_sysfs_store(const char *buf, size_t size)
+{
+	int state;
+
+	if (!strncmp(buf, "undock", size-1))
+		state = DOCK_STATE_UNDOCKED;
+	else if (!strncmp(buf, "desk", size-1))
+		state = DOCK_STATE_DESK;
+	else if (!strncmp(buf, "car", size-1))
+		state = DOCK_STATE_CAR;
+	else
+		return -EINVAL;
+
+	return state;
+}
+
+static unsigned thunderg_carkit_gpios[] = {
+};
+
+static struct lge_gpio_switch_platform_data thunderg_carkit_data = {
+	.name = "dock",
+	.gpios = thunderg_carkit_gpios,
+	.num_gpios = ARRAY_SIZE(thunderg_carkit_gpios),
+	.irqflags = IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
+	.wakeup_flag = 1,
+	.work_func = thunderg_gpio_carkit_work_func,
+	.print_state = thunderg_gpio_carkit_print_state,
+	.sysfs_store = thunderg_gpio_carkit_sysfs_store,
+	.additional_init = thunderg_register_callback,
+};
+
+static struct platform_device thunderg_carkit_device = {
+	.name = "lge-switch-gpio",
+	.id = 0,
+	.dev = {
+		.platform_data = &thunderg_carkit_data,
 	},
 };
 
-static int register_leds(struct platform_device *pdev)
-{
-	int rc;
-	rc = led_classdev_register(&pdev->dev, &thunderg_custom_leds);
-	if (rc) {
-		dev_err(&pdev->dev, "unable to register led class driver\n");
-		return rc;
-	}
-	button_bl_leds_set(&thunderg_custom_leds, LED_OFF);
-	return rc;
-}
-
-static int unregister_leds(struct platform_device *pdev)
-{
-	led_classdev_unregister(&thunderg_custom_leds);
-
-	return 0;
-}
-
-static int suspend_leds(struct platform_device *dev,
-		pm_message_t state)
-{
-	led_classdev_suspend(&thunderg_custom_leds);
-
-	return 0;
-}
-
-static int resume_leds(struct platform_device *dev)
-{
-	led_classdev_resume(&thunderg_custom_leds);
-
-	return 0;
-}
-
-static struct msm_pmic_leds_pdata leds_pdata = {
-	.custom_leds		= thunderg_custom_leds,
-	.register_custom_leds	= register_leds,
-	.unregister_custom_leds	= unregister_leds,
-	.suspend_custom_leds	= suspend_leds,
-	.resume_custom_leds	= resume_leds,
-	.msm_keypad_led_set	= button_bl_leds_set,
-};
-
 static struct platform_device msm_device_pmic_leds = {
-	.name                           = "pmic-leds",
-	.id                                     = -1,
-	.dev.platform_data      = &leds_pdata,
+	.name = "pmic-leds",
+	.id = -1,
+	.dev.platform_data = "button-backlight",
 };
 
 int thunderg_vibrator_power_set(int enable)
@@ -317,6 +344,7 @@ static struct platform_device thunderg_earsense_device = {
 static struct platform_device *thunderg_misc_devices[] __initdata = {
 	&msm_batt_device,
 	&android_vibrator_device,
+	&thunderg_carkit_device,
 	&thunderg_earsense_device,
 };
 

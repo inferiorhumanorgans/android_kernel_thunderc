@@ -37,6 +37,9 @@
 #include <linux/earlysuspend.h>
 #endif
 
+/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-15, THUNDER SPRINT
+ * ALC is not supported
+ */
 #ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
 #define THUNDER_SPRINT_NO_ALC
 #endif
@@ -45,9 +48,34 @@
  * Definition
  ********************************************/
 
+/* LED current (0~31, unit = mA) */
+/* 0.45, 0.90, 1.80, 2.70, 3.60, 4.50, 5.40, 6.30, 7.20, 8.10, */
+/* 9.00, 9.90, 10.8, 11.7, 12.6, 13.5, 14.4, 15.3, 16.2, 17.1, */
+/* 18.0, 18.9, 19.8, 20.7, 21.6, 22.5, 23.4, 24.3, 25.2, 26.1, */
+/* 27.0, 27.9 */
+
+/* LGE_CHANGE
+  * AAT2862 has two parts of LEDs(Main and Sub)
+  * Added some definitions and modified I2C write command to control both Main and Sub LEDs.
+  * Added 'AAT2862BL_REG_BLS', changed members of structure 'aat28xx_reg_addrs'
+  * and modified 'aat28xx_write' to control two registers(AAT2862BL_REG_BLM and AAT2862BL_REG_BLS)
+  * 2010-04-22, minjong.gong@lge.com
+  */
+
+/* LGE_CHANGE
+  * If MEQS bit in AAT2862BL_REG_BLM is set, we don't need to write command to AAT2862BL_REG_BLS.
+  * So modify command array for AAT2862 and related functions. 
+  * And change default brightness and maximum brightness.
+  * 2010-05-18, minjong.gong@lge.com
+  */
+
+//20100712 yongman.kwon@lge.com US670 : Change default current to 16.45mA
+//#define LCD_LED_MAX 21 /* 20.32mA */
 #define LCD_LED_MAX 17 /* 16.45mA */
 #define LCD_LED_MIN 0  /* 0.48mA */
+//20100712 yongman.kwon@lge.com US670 : Change default current
 #define DEFAULT_BRIGHTNESS 13
+
 #define AAT28XX_LDO_NUM 4
 
 #define AAT2862BL_REG_BLM   0x03  /* Register address for Main BL brightness */
@@ -131,6 +159,9 @@ struct aat28xx_driver_data {
 	struct early_suspend early_suspend;
 #endif
 };
+//20100806 hyeongwoo.seo@lge.com MS690: Added [START]
+static void aat28xx_hw_reset(struct aat28xx_driver_data *drvdata);
+//20100806 hyeongwoo.seo@lge.com MS690: Added [END]
 
 /********************************************
  * Global variable
@@ -138,6 +169,7 @@ struct aat28xx_driver_data {
 static unsigned int debug = 0;
 module_param(debug, uint, 0644);
 
+/* LGE_CHANGE [james.jang@lge.com] 2010-06-09, the interpolation of B/L value  */
 static int bl_value[256] =
 {
 	0,
@@ -303,12 +335,26 @@ static int aat28xx_write(struct i2c_client *client, u8 reg, u8 val)
 {
 	int ret;
 	int status = 0;
-
+//20100827 hyeongwoo.seo@lge.com MS690: I2C Err Fixed [START]	
+	struct aat28xx_driver_data *drvdata;
+//20100827 hyeongwoo.seo@lge.com MS690: I2C Err Fixed  [END]
+	
 	if (client == NULL) {	/* No global client pointer? */
 		eprintk("client is null\n");
 		return -1;
 	}
-
+	
+//20100827 hyeongwoo.seo@lge.com MS690: I2C Err Fixed [START]
+	drvdata = i2c_get_clientdata(client);
+	if(!drvdata){
+		eprintk("drvdata is null\n");
+	}
+	if(drvdata && gpio_get_value(drvdata->gpio)==0)
+	{
+		aat28xx_hw_reset(drvdata);
+	}
+//20100827 hyeongwoo.seo@lge.com MS690: I2C Err Fixed  [END]
+	
 	ret = i2c_smbus_write_byte_data(client, reg, val);
 	if (ret != 0) {
 		status = -EIO;
@@ -394,6 +440,8 @@ int aat28xx_ldo_enable(struct device *dev, unsigned num, unsigned enable)
 		if ((adap=dev_get_drvdata(dev)) && (client=i2c_get_adapdata(adap))) {
 			drvdata = i2c_get_clientdata(client);
 			if (enable) {
+				// LGE_CHAGNE [dojip.kim@lge.com] 2010-07-12, 
+				// should update the ref count only if success
 				if (drvdata->ldo_ref[num-1] == 0) {
 					dprintk("ref count = 0, call aat28xx_set_ldos\n");
 					err = aat28xx_set_ldos(client, num, enable);
@@ -405,6 +453,8 @@ int aat28xx_ldo_enable(struct device *dev, unsigned num, unsigned enable)
 				if (--drvdata->ldo_ref[num-1] == 0) {
 					dprintk("ref count = 0, call aat28xx_set_ldos\n");
 					err = aat28xx_set_ldos(client, num, enable);
+					// LGE_CHAGNE [dojip.kim@lge.com] 2010-07-12, 
+					// should restore the ref count if failure
 					if (err)
 						drvdata->ldo_ref[num-1]++;
 				}
@@ -489,6 +539,13 @@ static void aat28xx_go_opmode(struct aat28xx_driver_data *drvdata)
 			drvdata->state = NORMAL_STATE;
 			break;
 		case ALC_MODE:
+			/* LGE_CHANGE
+			 * Remove ALC mode
+			 * 2010-07-26. minjong.gong@lge.com
+			 */
+			//aat28xx_set_table(drvdata, drvdata->cmds.alc);
+			//drvdata->state = NORMAL_STATE;
+			//break;
 		default:
 			eprintk("Invalid Mode\n");
 			break;
@@ -524,7 +581,6 @@ static void aat28xx_poweron(struct aat28xx_driver_data *drvdata)
 	}
 }
 
-#if 0
 static void aat28xx_poweroff(struct aat28xx_driver_data *drvdata)
 {
 	if (!drvdata || drvdata->state == POWEROFF_STATE)
@@ -544,15 +600,10 @@ static void aat28xx_poweroff(struct aat28xx_driver_data *drvdata)
 	mdelay(6);
 	drvdata->state = POWEROFF_STATE;
 }
-#endif
 
 /* This function provide sleep enter routine for power management. */
 static void aat28xx_sleep(struct aat28xx_driver_data *drvdata)
 {
-#if defined(CONFIG_MACH_MSM7X27_THUNDERC)
-	int cam_status;
-#endif
-
 	if (!drvdata || drvdata->state == SLEEP_STATE)
 		return;
 
@@ -565,17 +616,19 @@ static void aat28xx_sleep(struct aat28xx_driver_data *drvdata)
 			break;
 
 		case ALC_MODE:
+			/* LGE_CHANGE
+			 * Remove ALC mode
+			 * 2010-07-26. minjong.gong@lge.com
+			 */
+			//drvdata->state = SLEEP_STATE;
+			//aat28xx_set_table(drvdata, drvdata->cmds.sleep);
+			//udelay(500);
+			//break;
 
 		default:
 			eprintk("Invalid Mode\n");
 			break;
 	}
-#if defined(CONFIG_MACH_MSM7X27_THUNDERC)
-	cam_status = camera_status();
-	if (cam_status == CAMERA_POWER_OFF){
-	}
-#endif
-	
 }
 
 static void aat28xx_wakeup(struct aat28xx_driver_data *drvdata)
@@ -592,6 +645,10 @@ static void aat28xx_wakeup(struct aat28xx_driver_data *drvdata)
 		aat28xx_go_opmode(drvdata);
 		if (drvdata->mode == NORMAL_MODE) {
 			if(drvdata->version == 2862) {
+				/* LGE_CHANGE
+				  * Using 'Fade in' function supported by AAT2862 when wakeup.
+				  * 2010-08-21, minjong.gong@lge.com
+				 */
 				aat28xx_write(drvdata->client, drvdata->reg_addrs.fade, 0x00);	/* Floor current : 0.48mA */
 				aat28xx_intensity = (~(drvdata->intensity)& 0x1F);	/* Invert BL control bits and Clear upper 3bits */
 				aat28xx_intensity |= 0xA0;							/* MEQS(7)=1, Disable Fade(6)=0, LCD_ON(5)=1*/
@@ -606,6 +663,10 @@ static void aat28xx_wakeup(struct aat28xx_driver_data *drvdata)
 	} else if (drvdata->state == SLEEP_STATE) {
 		if (drvdata->mode == NORMAL_MODE) {
 			if(drvdata->version == 2862) {
+				/* LGE_CHANGE
+				  * Using 'Fade in' function supported by AAT2862 when wakeup.
+				  * 2010-08-21, minjong.gong@lge.com
+				 */
 				aat28xx_write(drvdata->client, drvdata->reg_addrs.fade, 0x00);	/* Floor current : 0.48mA */
 				aat28xx_intensity = (~(drvdata->intensity)& 0x1F);	/* Invert BL control bits and Clear upper 3bits */
 				aat28xx_intensity |= 0xA0;							/* MEQS(7)=1, Disable Fade(6)=0, LCD_ON(5)=1*/
@@ -617,6 +678,12 @@ static void aat28xx_wakeup(struct aat28xx_driver_data *drvdata)
 			}
 			drvdata->state = NORMAL_STATE;
 		} else if (drvdata->mode == ALC_MODE) {
+			/* LGE_CHANGE
+			 * Remove ALC mode
+			 * 2010-07-26. minjong.gong@lge.com
+			 */
+			//aat28xx_set_table(drvdata, drvdata->cmds.alc);
+			//drvdata->state = NORMAL_STATE;
 		}
 	}
 }
@@ -634,6 +701,10 @@ static int aat28xx_send_intensity(struct aat28xx_driver_data *drvdata, int next)
 
 		if (drvdata->state == NORMAL_STATE && drvdata->intensity != next)
 		{
+			/* LGE_CHANGE
+			  * [To support two BL driver ICs(AAT2870 and AAT2862)]
+			  * 2010-04-20, minjong.gong@lge.com
+			*/
 			if(drvdata->version == 2862)
 			{
 				if(next != 0)
@@ -686,6 +757,7 @@ static void aat28xx_late_resume(struct early_suspend * h)
 						    early_suspend);
 
 	dprintk("start\n");
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-07-26, HACK: wait for refreshing the FB
 	msleep(30);
 	aat28xx_wakeup(drvdata);
 
@@ -720,6 +792,11 @@ void aat28xx_switch_mode(struct device *dev, int next_mode)
 		return;
 
 	if (next_mode == ALC_MODE) {
+		/* LGE_CHANGE
+		 * Remove ALC mode
+		 * 2010-07-26. minjong.gong@lge.com
+		 */
+		//aat28xx_set_table(drvdata, drvdata->cmds.alc);
 	}
 	else if (next_mode == NORMAL_MODE) {
 		aat28xx_set_table(drvdata, drvdata->cmds.alc);
@@ -757,6 +834,9 @@ ssize_t aat28xx_store_alc(struct device *dev, struct device_attribute *attr, con
 	int alc;
 	int next_mode;
 
+	/* LGE_CHANGE [dojip.kim@lge.com] 2010-05-15, THUNDER SPRINT
+	 * ALC is not supported
+	 */
 #ifdef THUNDER_SPRINT_NO_ALC
 	return -EINVAL;
 #endif
@@ -811,6 +891,7 @@ ssize_t aat28xx_show_drvstat(struct device *dev, struct device_attribute *attr, 
 	return len;
 }
 
+/* LGE_CHANGE_S [james.jang@lge.com] 2010-06-22, backlight on/off */
 ssize_t aat28xx_lcd_backlight_onoff(struct device *dev, struct device_attribute *attr, const char * buf, size_t count)
 {
 	int onoff;
@@ -830,10 +911,12 @@ ssize_t aat28xx_lcd_backlight_onoff(struct device *dev, struct device_attribute 
 
 	return count;	
 }
+/* LGE_CHANGE_E [james.jang@lge.com] 2010-06-22 */
 
 DEVICE_ATTR(alc, 0664, aat28xx_show_alc, aat28xx_store_alc);
 DEVICE_ATTR(reg, 0444, aat28xx_show_reg, NULL);
 DEVICE_ATTR(drvstat, 0444, aat28xx_show_drvstat, NULL);
+/* LGE_CHANGE [james.jang@lge.com] 2010-06-22, backlight on/off */
 DEVICE_ATTR(bl_onoff, 0666, NULL, aat28xx_lcd_backlight_onoff);
 
 static int aat28xx_set_brightness(struct backlight_device *bd)
@@ -868,6 +951,7 @@ static void leds_brightness_set(struct led_classdev *led_cdev, enum led_brightne
 
 	brightness = aat28xx_get_intensity(drvdata);
 
+  /* LGE_CHANGE [james.jang@lge.com] 2010-06-09, the interpolation of B/L value  */
 	next = bl_value[value * drvdata->max_intensity / LED_FULL];
 	dprintk("input brightness value=%d]\n", next);
 
@@ -926,6 +1010,8 @@ static int __init aat28xx_probe(struct i2c_client *i2c_dev, const struct i2c_dev
 		return -ENODEV;
 	}
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-07-12, 
+	// set the en as the high
 	if (drvdata->gpio)
 		gpio_direction_output(drvdata->gpio, 1);
 
@@ -949,6 +1035,7 @@ static int __init aat28xx_probe(struct i2c_client *i2c_dev, const struct i2c_dev
 		err = device_create_file(drvdata->led->dev, &dev_attr_alc);
 		err = device_create_file(drvdata->led->dev, &dev_attr_reg);
 		err = device_create_file(drvdata->led->dev, &dev_attr_drvstat);
+		/* LGE_CHANGE [james.jang@lge.com] 2010-06-22, backlight on/off */
 		err = device_create_file(drvdata->led->dev, &dev_attr_bl_onoff);
 	}
 #endif
@@ -1021,5 +1108,5 @@ module_init(aat28xx_init);
 module_exit(aat28xx_exit);
 
 MODULE_DESCRIPTION("Backlight driver for ANALOGIC TECH AAT28XX");
-MODULE_AUTHOR("Bongkyu Kim");
+MODULE_AUTHOR("Bongkyu Kim <bongkyu.kim@lge.com>");
 MODULE_LICENSE("GPL");

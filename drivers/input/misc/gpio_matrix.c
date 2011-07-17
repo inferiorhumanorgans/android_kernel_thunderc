@@ -21,6 +21,15 @@
 #include <linux/wakelock.h>
 #include <mach/gpio.h>
 
+
+//20100724 yongman.kwon@lge.com MS690 : for key test in TESTMODE [START]
+#if defined(CONFIG_LGE_DIAGTEST)
+/* LGE_CHANGES_S [woonghee@lge.com] 2010-01-23, [VS740] for key test */
+extern uint8_t if_condition_is_on_key_buffering;
+extern uint8_t lgf_factor_key_test_rsp(char);
+#endif
+//20100724 yongman.kwon@lge.com MS690 : for key test in TESTMODE [END]
+
 struct gpio_kp {
 	struct gpio_event_input_devs *input_devs;
 	struct gpio_event_matrix_info *keypad_info;
@@ -33,14 +42,6 @@ struct gpio_kp {
 	unsigned int some_keys_pressed:2;
 	unsigned long keys_pressed[0];
 };
-
-#if defined(CONFIG_LGE_DIAGTEST)
-/* for SLATE */
-extern void mtc_send_key_log_packet(unsigned long keycode, unsigned long state);
-
-/* fot MTC */
-extern void ats_eta_mtc_key_logging(int scancode, unsigned char keystate);
-#endif
 
 static void clear_phantom_key(struct gpio_kp *kp, int out, int in)
 {
@@ -132,12 +133,25 @@ static void report_key(struct gpio_kp *kp, int key_index, int out, int in)
 					"changed to %d\n", keycode,
 					out, in, mi->output_gpios[out],
 					mi->input_gpios[in], pressed);
-			input_report_key(kp->input_devs->dev[dev], keycode, pressed);
-
+//20100724 yongman.kwon@lge.com MS690 : for key test in TESTMODE [START]
 #if defined(CONFIG_LGE_DIAGTEST)
-			mtc_send_key_log_packet((unsigned long)keycode, (unsigned long)!pressed);
-			ats_eta_mtc_key_logging((int)keycode, (char)pressed);
+			if(if_condition_is_on_key_buffering == 1/*HS_TRUE*/ && pressed == 1/*press*/)
+					lgf_factor_key_test_rsp((uint8_t)keycode);				
 #endif
+//20100724 yongman.kwon@lge.com MS690 : for key test in TESTMODE [END]			
+			input_report_key(kp->input_devs->dev[dev], keycode, pressed);
+			/* TODO temporary code for DEBUG
+			 * 2010-04-19 younchan.kim@lge.com
+			 */
+//20100916 yongman.kwon@lge.com [MS690] block keypad log [START]
+#if 0			 
+			printk("gpiomatrix: key %x, %d-%d (%d-%d) "
+					"changed to %d\n", keycode,
+					out, in, mi->output_gpios[out],
+					mi->input_gpios[in], pressed);
+#endif
+//20100916 yongman.kwon@lge.com [MS690] block keypad log [END]
+
 		}
 	}
 }

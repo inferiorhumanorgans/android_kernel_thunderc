@@ -79,6 +79,10 @@ static int mddi_hitachi_pmic_backlight(int level)
 }
 
 #if 1//def CONFIG_MACH_MSM7X27_ALOHAG
+		/* LGE_CHANGE
+		  * Define new structure named 'msm_panel_hitachi_pdata' to use LCD initialization Flag (.initialized).
+		  * 2010-04-21, minjong.gong@lge.com
+		  */
 	static struct msm_panel_hitachi_pdata mddi_hitachi_panel_data = {
 		.gpio = 102,				/* lcd reset_n */
 		.pmic_backlight = mddi_hitachi_pmic_backlight,
@@ -141,6 +145,10 @@ static struct aat28xx_platform_data aat2870bl_data[] = {
 		.version = 2862,
 	},
 	[LGE_REV_10] = {
+		.gpio = 82,
+		.version = 2862,
+	},
+	[LGE_REV_11] = {
 		.gpio = 82,
 		.version = 2862,
 	}

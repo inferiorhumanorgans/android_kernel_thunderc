@@ -44,10 +44,6 @@ static void mcs6000_early_suspend(struct early_suspend *h);
 static void mcs6000_late_resume(struct early_suspend *h);
 #endif
 
-#if defined (CONFIG_LGE_DIAGTEST)
-extern void ats_eta_mtc_touch_logging (int pendown, int x, int y);
-#endif
-
 #define LG_FW_MULTI_TOUCH
 #define LG_FW_TOUCH_SOFT_KEY 1
 #define TOUCH_SEARCH    247
@@ -97,7 +93,9 @@ struct mcs6000_ts_device {
 	int sda_gpio;
 	bool pendown;
 	int (*power)(unsigned char onoff);
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-12
 	unsigned int count;
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-22, fix the freezing (from VS660)
 	struct workqueue_struct *ts_wq;
 };
 
@@ -123,6 +121,8 @@ enum{
 	MAX_KEY_TOUCH
 };
 
+/* LGE_CHANGE_S [kyuhyung.lee@lge.com] 2010.02.23 : to support touch event from UTS*/
+/* [FIXME temporary code] copy form VS740 by younchan.kim 2010-06-11 */
 void Send_Touch( unsigned int x, unsigned int y)
 {
 #ifdef LG_FW_MULTI_TOUCH
@@ -146,6 +146,8 @@ void Send_Touch( unsigned int x, unsigned int y)
 #endif
 }
 EXPORT_SYMBOL(Send_Touch);
+/* LGE_CHANGE_E [kyuhyung.lee@lge.com] 2010.02.23 */
+/* copy form VS740 by younchan.kim 2010-06-11 */
 
 static __inline void mcs6000_key_event_touch(int touch_reg,  int value,  struct mcs6000_ts_device *dev)
 {
@@ -241,6 +243,7 @@ static __inline void mcs6000_single_ts_event_release(struct mcs6000_ts_device *d
 
 #define to_delayed_work(_work)  container_of(_work, struct delayed_work, work)
 
+// LGE_CHANGE [dojip.kim@lge.com] 2010-08-12, save the previous count
 static unsigned int saved_count = -1;
 
 static void mcs6000_work(struct work_struct *work)
@@ -252,8 +255,11 @@ static void mcs6000_work(struct work_struct *work)
 	static unsigned int s_input_type = NON_TOUCHED_STATE;
 #endif
 	unsigned int input_type;
+	// LGE_CHANGE [dojip.kim@lgecom] 2010-08-12, not used
+	//unsigned int key_touch;	
 	unsigned char read_buf[READ_NUM];
 
+	// LGE_CHANGE [dojip.kim@lgecom] 2010-08-12, not used
 	//static int key_pressed = 0;
 	static int touch_pressed = 0;
 
@@ -262,7 +268,15 @@ static void mcs6000_work(struct work_struct *work)
 
 	dev->pendown = !gpio_get_value(dev->intr_gpio);
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-12, new event
 	if (dev->pendown && (saved_count != dev->count)) {
+		// LGE_CHANGE [dojip.kim@lgecom] 2010-08-12, not used
+		/*
+		if(key_pressed) {
+			mcs6000_key_event_touch(key_pressed, RELEASED, dev);
+			key_pressed = 0;
+		}
+		*/
 
 		if (touch_pressed) {
 #ifdef LG_FW_MULTI_TOUCH
@@ -298,6 +312,16 @@ static void mcs6000_work(struct work_struct *work)
 	}
 
 	input_type = read_buf[0] & 0x0f;
+	// LGE_CHANGE [dojip.kim@lgecom] 2010-08-12, not used
+	//key_touch = (read_buf[0] & 0xf0) >> 4;
+
+	// LGE_CHANGE [dojip.kim@lgecom] 2010-08-12, not used
+	/*
+	x1 = y1 =0;
+#ifdef LG_FW_MULTI_TOUCH
+	x2 = y2 = 0;
+#endif
+	*/
 
 	x1 = (read_buf[1] & 0xf0) << 4;
 	y1 = (read_buf[1] & 0x0f) << 8;
@@ -316,12 +340,26 @@ static void mcs6000_work(struct work_struct *work)
 #endif
 
 	if (dev->pendown) { /* touch pressed case */
+		// LGE_CHANGE [dojip.kim@lgecom] 2010-08-12, not used
+		/*
+		if(key_touch) {
+			mcs6000_key_event_touch(key_touch, PRESSED, dev);
+			key_pressed = key_touch;
+		}
+		*/
 
 		if(input_type) {
 			touch_pressed = 1;
 
 			/* exceptional routine for the touch case moving from key area to touch area of touch screen */
 
+			// LGE_CHANGE [dojip.kim@lgecom] 2010-08-12, not used
+			/*
+			if(key_pressed) {
+				mcs6000_key_event_touch(key_pressed, RELEASED, dev);
+				key_pressed = 0;
+			}
+			*/
 #ifdef LG_FW_MULTI_TOUCH
 			if(input_type == MULTI_POINT_TOUCH) {
 				mcs6000_multi_ts_event_touch(x1, y1, x2, y2, PRESSED, dev);
@@ -333,12 +371,14 @@ static void mcs6000_work(struct work_struct *work)
 			else if(input_type == SINGLE_POINT_TOUCH) {
 				mcs6000_multi_ts_event_touch(x1, y1, -1, -1, PRESSED, dev);
 				s_input_type = SINGLE_POINT_TOUCH;				
+				// LGE_CHANGE [dojip.kim@lge.com] 2010-08-12
 				pre_x1 = x1;
 				pre_y1 = y1;
 			}
 #else
 			if(input_type == SINGLE_POINT_TOUCH) {
 				mcs6000_single_ts_event_touch(x1, y1, PRESSED, dev);
+				// LGE_CHANGE [dojip.kim@lge.com] 2010-08-12
 				pre_x1 = x1;
 				pre_y1 = y1;
 			}
@@ -346,6 +386,13 @@ static void mcs6000_work(struct work_struct *work)
 		}
 	} 
 	else { /* touch released case */
+		// LGE_CHANGE [dojip.kim@lgecom] 2010-08-12, not used
+		/*
+		if(key_pressed) {
+			mcs6000_key_event_touch(key_pressed, RELEASED, dev);
+			key_pressed = 0;
+		}
+		*/
 
 		if(touch_pressed) {
 #ifdef LG_FW_MULTI_TOUCH
@@ -358,6 +405,7 @@ static void mcs6000_work(struct work_struct *work)
 				DMSG("%s: single touch release... %d, %d\n", __FUNCTION__, x1, y1);
 				mcs6000_multi_ts_event_touch(x1, y1, -1, -1, RELEASED, dev);
 			}
+			// LGE_CHANGE [dojip.kim@lge.com] 2010-08-12
 			touch_pressed = 0;
 #else
 			DMSG("%s: single release... %d, %d\n", __FUNCTION__, x1, y1);
@@ -367,19 +415,22 @@ static void mcs6000_work(struct work_struct *work)
 		}
 	}
 
-#if defined (CONFIG_LGE_DIAGTEST)
-	ats_eta_mtc_touch_logging(dev->pendown, x1, y1);
-	if(input_type == MULTI_POINT_TOUCH)
-		ats_eta_mtc_touch_logging(dev->pendown, x2, y2);
-#endif
 /* -----------------------------------------------------------------------*/
 
 touch_retry:
 	if (dev->pendown) {
+		// LGE_CHANGE [dojip.kim@lge.com] 2010-08-22, fix the freezing (from VS660)
 		//schedule_delayed_work(&dev->work, msecs_to_jiffies(TS_POLLING_TIME));	
 		queue_delayed_work(dev->ts_wq, 
 				&dev->work,msecs_to_jiffies(TS_POLLING_TIME));
 	} 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-12
+	/*
+	else {
+		enable_irq(dev->num_irq);
+		DMSG("%s: irq enable\n", __FUNCTION__);
+	}
+	*/
 }
 
 static irqreturn_t mcs6000_ts_irq_handler(int irq, void *handle)
@@ -387,8 +438,15 @@ static irqreturn_t mcs6000_ts_irq_handler(int irq, void *handle)
 	struct mcs6000_ts_device *dev = handle;
 
 	if (gpio_get_value(dev->intr_gpio) == 0) {
+		// LGE_CHANGE [dojip.kim@lge.com] 2010-08-12, no block the irq
+		//disable_irq_nosync(dev->num_irq);
+		//DMSG("%s: irq disable\n", __FUNCTION__);
+		// LGE_CHANGE [dojip.kim@lge.com] 2010-08-12, queueing the event  
 		dev->count++;
 		if (!dev->pendown) {
+			// LGE_CHANGE [dojip.kim@lge.com] 2010-08-22, 
+			// fix the freezing (from VS660)
+			//schedule_delayed_work(&dev->work, 0);
 			queue_delayed_work(dev->ts_wq, 
 					&dev->work,msecs_to_jiffies(TS_POLLING_TIME));
 		}
@@ -422,6 +480,8 @@ void mcs6000_firmware_info(void)
 	dev = &mcs6000_ts_dev;
 	int try_cnt = 0;
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-19, 
+	// for avoiding the read fail from mcs6000 IC (from VS660)
 	do {
 		data = i2c_smbus_read_byte_data(dev->client, MCS6000_TS_FW_VERSION);
 		msleep(10);
@@ -613,6 +673,9 @@ static int mcs6000_ts_ioctl(struct inode *inode, struct file *flip,
 					mcs6000_firmware_info();
 					err = mcs6000_ts_dev.input_dev->id.version;
 					break;
+				/* LGE_CHANGE [dojip.kim@lge.com] 2010-06-21,
+				 * add HW_VER
+				 */
 				case MCS6000_TS_IOCTL_HW_VER:
 					mcs6000_firmware_info();
 					err = mcs6000_ts_dev.input_dev->id.product;
@@ -710,6 +773,14 @@ static int mcs6000_ts_probe(struct i2c_client *client, const struct i2c_device_i
 		return err;
 	}
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-07-20, use request_irq for quick response
+	/* TODO: You have try to change this driver's architecture using request_threaded_irq()
+	 * So, I will change this to request_threaded_irq()
+	 */
+	/*
+	err = request_threaded_irq(dev->num_irq, NULL, mcs6000_ts_irq_handler,
+			IRQF_TRIGGER_LOW | IRQF_ONESHOT, "mcs6000_ts", dev);
+	*/
 	err = request_irq(dev->num_irq, mcs6000_ts_irq_handler,
 			IRQF_TRIGGER_FALLING, "mcs6000_ts", dev);
 
@@ -796,6 +867,8 @@ static void mcs6000_late_resume(struct early_suspend * h)
 
 	if(is_downloading == 0) {
 		DMSG(KERN_INFO"%s: start! \n", __FUNCTION__);
+	       // LGE_CHANGE [dojip.kim@lge.com] 2010-07-26, HACK: 
+	       // early wakeup touch for performance, touch power on in mddi_novatek_hvga.c
 #ifdef CONFIG_MACH_MSM7X27_THUNDERC_SPRINT
 		enable_irq(dev->num_irq);
 #else
@@ -831,6 +904,7 @@ static struct i2c_driver mcs6000_i2c_ts_driver = {
 static int __devinit mcs6000_ts_init(void)
 {
 	int err = 0;
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-22, fix the freezing (from VS660)
 	struct mcs6000_ts_device *dev = &mcs6000_ts_dev;
 
 	memset(&mcs6000_ts_dev, 0, sizeof(struct mcs6000_ts_device));
@@ -846,16 +920,27 @@ static int __devinit mcs6000_ts_init(void)
 	mcs6000_ts_input->name = "touch_mcs6000";
 
 	set_bit(EV_SYN, 	 mcs6000_ts_input->evbit);
-	//set_bit(EV_KEY, 	 mcs6000_ts_input->evbit);
+	set_bit(EV_KEY, 	 mcs6000_ts_input->evbit);
 	set_bit(EV_ABS, 	 mcs6000_ts_input->evbit);
 #ifdef LG_FW_MULTI_TOUCH
 	set_bit(ABS_MT_TOUCH_MAJOR, mcs6000_ts_input->absbit);
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-09-23, android multi touch
 	set_bit(ABS_MT_POSITION_X, mcs6000_ts_input->absbit);
 	set_bit(ABS_MT_POSITION_Y, mcs6000_ts_input->absbit);
 #else
 	set_bit(EV_KEY, 	 mcs6000_ts_input->evbit);
 	set_bit(BTN_TOUCH, mcs6000_ts_input->keybit);
 #endif
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-09-23, don't use it
+	/*
+#if defined(LG_FW_TOUCH_SOFT_KEY) || defined(LG_FW_AUDIO_HAPTIC_TOUCH_SOFT_KEY)
+	set_bit(TOUCH_BACK, mcs6000_ts_input->keybit);
+	set_bit(TOUCH_SEARCH, mcs6000_ts_input->keybit);
+#else
+	set_bit(KEY_BACK, mcs6000_ts_input->keybit);
+	set_bit(KEY_SEARCH, mcs6000_ts_input->keybit);
+#endif
+	*/
 
 	err = input_register_device(mcs6000_ts_input);
 	if (err < 0) {
@@ -875,6 +960,7 @@ static int __devinit mcs6000_ts_init(void)
 		goto err_misc_register;
 	}
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-22, fix the freezing (from VS660)
 	dev->ts_wq = create_singlethread_workqueue("ts_wq");
 	if (!dev->ts_wq) {
 		err = -ENOMEM;
@@ -898,12 +984,14 @@ err_input_allocate:
 
 static void __exit mcs6000_ts_exit(void)
 {
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-22, fix the freezing (from VS660)
 	struct mcs6000_ts_device *dev = &mcs6000_ts_dev;
 
 	i2c_del_driver(&mcs6000_i2c_ts_driver);
 	input_unregister_device(mcs6000_ts_input);
 	input_free_device(mcs6000_ts_input);
 
+	// LGE_CHANGE [dojip.kim@lge.com] 2010-08-22, fix the freezing (from VS660)
 	if (dev->ts_wq)
 		destroy_workqueue(dev->ts_wq);
 

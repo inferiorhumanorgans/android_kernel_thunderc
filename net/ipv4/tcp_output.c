@@ -493,7 +493,9 @@ static unsigned tcp_syn_options(struct sock *sk, struct sk_buff *skb,
 		opts->tsecr = tp->rx_opt.ts_recent;
 		size += TCPOLEN_TSTAMP_ALIGNED;
 	}
-	if (likely(sysctl_tcp_window_scaling)) {
+
+//	if (likely(sysctl_tcp_window_scaling)) {
+       if(0){		// LG_DATA_USC_WINDOWS_SCALE_0
 		opts->ws = tp->rx_opt.rcv_wscale;
 		opts->options |= OPTION_WSCALE;
 		size += TCPOLEN_WSCALE_ALIGNED;
@@ -2323,9 +2325,6 @@ static void tcp_connect_init(struct sock *sk)
 #endif
 
 	/* If user gave his TCP_MAXSEG, record it to clamp */
-#ifdef CONFIG_LGE_TCP_MTU_1472
-	tp->rx_opt.user_mss = 1432; //adjust_mss=1432[MTU=1472]
-#endif
 	if (tp->rx_opt.user_mss)
 		tp->rx_opt.mss_clamp = tp->rx_opt.user_mss;
 	tp->max_window = 0;

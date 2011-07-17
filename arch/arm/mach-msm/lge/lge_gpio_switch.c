@@ -150,6 +150,8 @@ static int lge_gpio_switch_probe(struct platform_device *pdev)
 	switch_data->sdev.print_state = switch_gpio_print_state;
 	switch_data->irqs = kzalloc(sizeof(int) * pdata->num_gpios, GFP_KERNEL);
 
+	list_add_tail(&switch_data->list, &switchs);
+
     ret = switch_dev_register(&switch_data->sdev);
 	if (ret < 0)
 		goto err_switch_dev_register;
@@ -195,8 +197,6 @@ static int lge_gpio_switch_probe(struct platform_device *pdev)
 		}
 	}
 
-	list_add_tail(&switch_data->list, &switchs);
-
 	/* additional init for each board */
 	if (pdata->additional_init)
 		pdata->additional_init();
@@ -209,8 +209,6 @@ static int lge_gpio_switch_probe(struct platform_device *pdev)
 err_request_gpio:
     switch_dev_unregister(&switch_data->sdev);
 err_switch_dev_register:
-	if(switch_data->irqs)
-		kfree(switch_data->irqs);
 	kfree(switch_data);
 
 	return ret;

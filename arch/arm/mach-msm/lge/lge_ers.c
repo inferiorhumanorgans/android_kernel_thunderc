@@ -2,7 +2,7 @@
  * arch/arm/mach-msm/lge/ers-lge.c
  *
  * Copyright (C) 2009 LGE, Inc
- * Author: Jun-Yeong Han 
+ * Author: Jun-Yeong Han <j.y.han@lge.com>
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -245,6 +245,8 @@ static DEVICE_ATTR(ers, S_IRUGO | S_IWUSR, ers_show, ers_store);
 static ssize_t ers_panic_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
 	BUG();
+
+	return size;
 }
 
 static DEVICE_ATTR(ers_panic, S_IRUGO | S_IWUSR, 0, ers_panic_store);
@@ -304,5 +306,5 @@ static void __exit ers_exit(void)
 module_exit(ers_exit);
 
 MODULE_DESCRIPTION("Exception Reporting System Driver");
-MODULE_AUTHOR("Jun-Yeong Han");
+MODULE_AUTHOR("Jun-Yeong Han <junyeong.han@lge.com>");
 MODULE_LICENSE("GPL");

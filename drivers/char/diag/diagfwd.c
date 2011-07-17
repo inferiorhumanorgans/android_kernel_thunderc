@@ -94,8 +94,10 @@ int diag_device_write(void *buf, int proc_num)
 			driver->usb_write_ptr_svc = (struct diag_request *)
 			(diagmem_alloc(driver, sizeof(struct diag_request),
 				 POOL_TYPE_USB_STRUCT));
-        	if(!driver->usb_write_ptr_svc)
-				return -1;
+
+			if (!driver->usb_write_ptr_svc)
+				return -ENOMEM;
+			
 			driver->usb_write_ptr_svc->length = driver->used;
 			driver->usb_write_ptr_svc->buf = buf;
 			err = diag_write(driver->usb_write_ptr_svc);
@@ -392,7 +394,7 @@ static int diag_process_apps_pkt(unsigned char *buf, int len)
 		subsys_cmd_code = *(uint16_t *)temp;
 		temp += 2;
 
-		for (i = 0; i < REG_TABLE_SIZE; i++) {
+		for (i = 0; i < diag_max_registration; i++) {
 			if (driver->table[i].process_id != 0) {
 				if (driver->table[i].cmd_code ==
 				     cmd_code && driver->table[i].subsys_id ==
@@ -438,7 +440,7 @@ static int diag_process_apps_pkt(unsigned char *buf, int len)
 					}
 				} /* end of else-if */
 			} /* if(driver->table[i].process_id != 0) */
-		}  /* for (i = 0; i < REG_TABLE_SIZE; i++) */
+		}  /* for (i = 0; i < diag_max_registration; i++) */
 	} /* else */
 		return packet_type;
 }
@@ -447,10 +449,6 @@ void diag_process_hdlc(void *data, unsigned len)
 {
 	struct diag_hdlc_decode_type hdlc;
 	int ret, type = 0;
-/* LG_FW : 2009.02.05 khlee - bug fix */
-#if defined (CONFIG_LGE_DIAGTEST)
-    unsigned int nTempLen = 0;  
-#endif    
 #ifdef DIAG_DEBUG
 	int i;
 	printk(KERN_INFO "\n HDLC decode function, len of data  %d\n", len);
@@ -463,48 +461,6 @@ void diag_process_hdlc(void *data, unsigned len)
 	hdlc.dest_idx = 0;
 	hdlc.escaping = 0;
 
-/* - In the Radio test process, APP will send packet with double 0x7E tail.  */
-#if defined (CONFIG_LGE_DIAGTEST)
-
-   if( len > 2 )
-  {
-    if( hdlc.src_ptr[len -1] == 0x7E && hdlc.src_ptr[len -2] == 0x7E){
-      len--;
-      hdlc.src_size--;
-    }
-  }
-  
-/* LG_FW : 2009.02.05 khlee - bug fix */
-/* - If packet is started with 0x7E( LG Factory packet), we can not received all of thing.  */
-    do
-    {
-      ret = diag_hdlc_decode(&hdlc);
-
-      nTempLen = hdlc.dest_idx;
-
-      if(ret)
-      {
-        hdlc.dest_idx = 0;    /* Initialize for the next packet */
-      }
-
-      if( hdlc.src_idx >=  hdlc.src_size){
-//        ret = 1;
-        break;
-      }
-      else
-        ret = 0;
-      
-    }while ( ret == 0 );
-    
-  	if (ret)
-		type = diag_process_apps_pkt(driver->hdlc_buf,
-					      nTempLen - 3);
-
-	/* ignore 2 bytes for CRC, one for 7E and send */
-	if ((driver->ch) && (ret) && (type) && (nTempLen > 3))
-		smd_write(driver->ch, driver->hdlc_buf, nTempLen - 3);
-
-#else  /* org source */
 	ret = diag_hdlc_decode(&hdlc);
 
 	if (ret)
@@ -535,7 +491,6 @@ void diag_process_hdlc(void *data, unsigned len)
 			       1, DUMP_PREFIX_ADDRESS, data, len, 1);
 #endif
 	}
-#endif
 
 }
 
@@ -565,6 +520,7 @@ int diagfwd_connect(void)
 
 int diagfwd_disconnect(void)
 {
+	printk(KERN_DEBUG "diag: USB disconnected\n");
 	driver->usb_connected = 0;
 	driver->in_busy = 1;
 	driver->in_busy_qdsp = 1;
@@ -733,11 +689,11 @@ void diagfwd_init(void)
 	if (driver->buf_tbl == NULL)
 		goto err;
 	if (driver->data_ready == NULL &&
-			(driver->data_ready = kzalloc(driver->num_clients * 4,
+	     (driver->data_ready = kzalloc(driver->num_clients * 4,
 					    GFP_KERNEL)) == NULL)
 		goto err;
 	if (driver->table == NULL &&
-	     (driver->table = kzalloc(REG_TABLE_SIZE*
+	     (driver->table = kzalloc(diag_max_registration*
 				      sizeof(struct diag_master_table),
 				       GFP_KERNEL)) == NULL)
 		goto err;

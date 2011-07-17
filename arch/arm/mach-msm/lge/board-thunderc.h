@@ -1,6 +1,6 @@
 /* arch/arm/mach-msm/include/mach/board_thunderc.h
  * Copyright (C) 2009 LGE, Inc.
- * Author: SungEun Kim
+ * Author: SungEun Kim <cleaneye@lge.com>
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -50,37 +50,81 @@
 #define GPIO_CAM_PWDN		 		1		/* GPIO_1 */
 #define GPIO_CAM_MCLK				15		/* GPIO_15 */
 
-#define CAMERA_POWER_ON				0
-#define CAMERA_POWER_OFF			1
-
+#define CAM_POWER_OFF				0
+#define CAM_POWER_ON				1
 //int aat2870_camera_power_ctrl(int on_off);
 #define LDO_CAM_AVDD_NO		2	/* 2.7V */
 #define LDO_CAM_DVDD_NO		3	/* 1.2V */
 #define LDO_CAM_IOVDD_NO	4	/* 2.6V */
 
+//LGE_CHANGE_S [myeonggyu.son@lge.com] 2010-07-28 US670 PROXI : gp2ap [START]
+#if 0
+#define PROXI_GPIO_I2C_SCL	40
+#define PROXI_GPIO_I2C_SDA 	30
+#define PROXI_GPIO_DOUT		26
+#define PROXI_I2C_ADDRESS	0x44 /*slave address 7bit*/
+#define PROXI_LDO_NO_VCC	1
+#else
 /* proximity sensor */
 #define PROXI_GPIO_I2C_SCL	107
 #define PROXI_GPIO_I2C_SDA 	108
 #define PROXI_GPIO_DOUT		109
 #define PROXI_I2C_ADDRESS	0x44 /*slave address 7bit*/
 #define PROXI_LDO_NO_VCC	1
+#endif
+//LGE_CHANGE_S [myeonggyu.son@lge.com] 2010-07-28 US670 PROXI : gp2ap [START]
 
+//LGE_CHANGE_S [myeonggyu.son@lge.com] 2010-07-28 US670 PROXI : gp2ap [START]
+#if 0
+#define ACCEL_GPIO_INT	 		39
+#define ACCEL_GPIO_I2C_SCL  	47	//27
+#define ACCEL_GPIO_I2C_SDA  	48	//17
+#define ACCEL_I2C_ADDRESS		0x09 /*kr3dm slave address 7bit*/
+#define ACCEL_I2C_ADDRESS_H		0x19 /*kr3dh slave address 7bit*/
+#else
 /* accelerometer */
 #define ACCEL_GPIO_INT	 		39
 #define ACCEL_GPIO_I2C_SCL  	2
 #define ACCEL_GPIO_I2C_SDA  	3
-#define ACCEL_I2C_ADDRESS		0x09 /*kr3dm slave address 7bit*/
+#define ACCEL_I2C_ADDRESS		0x09 /*slave address 7bit*/
 #define ACCEL_I2C_ADDRESS_H		0x19 /*kr3dh slave address 7bit*/
+#endif
+//LGE_CHANGE_S [myeonggyu.son@lge.com] 2010-07-28 US670 PROXI : gp2ap [START]
 
+//LGE_CHANGE_S [myeonggyu.son@lge.com] 2010-07-28 US670 PROXI : gp2ap [START]
+#if 0
+#define ECOM_GPIO_I2C_SCL		40
+#define ECOM_GPIO_I2C_SDA		30
+#define ECOM_GPIO_RST
+#define ECOM_GPIO_INT			31
+#define ECOM_I2C_ADDRESS		0x0F /* slave address 7bit */
+#else
 /*Ecompass*/
 #define ECOM_GPIO_I2C_SCL		107
 #define ECOM_GPIO_I2C_SDA		108
 #define ECOM_GPIO_RST
 #define ECOM_GPIO_INT		31
 #define ECOM_I2C_ADDRESS		0x0F /* slave address 7bit */
+#endif
+//LGE_CHANGE_S [myeonggyu.son@lge.com] 2010-07-28 US670 PROXI : gp2ap [START]
 
 /* ear sense driver macros */
 #define GPIO_EAR_SENSE		29
+
+//20100720 hyeongwoo.seo@lge.com [MS690] Not Used
+#if 0
+#define GPIO_HS_MIC_BIAS_EN	26
+#endif
+/* lcd & backlight */
+#define GPIO_LCD_BL_EN		82
+#define GPIO_BL_I2C_SCL		88
+#define GPIO_BL_I2C_SDA		89
+#define GPIO_LCD_VSYNC_O	97
+#define GPIO_LCD_MAKER_LOW	101
+#define GPIO_LCD_RESET_N	102
+
+#define BL_POWER_SUSPEND	0
+#define BL_POWER_RESUME		1
 
 /* bluetooth gpio pin */
 enum {
@@ -102,9 +146,15 @@ extern struct platform_device msm_device_snd;
 extern struct platform_device msm_device_adspdec;
 extern struct i2c_board_info i2c_devices[1];
 
+extern int camera_power_state;
+extern int lcd_bl_power_state;
+
 /* interface functions */
 void config_camera_on_gpios(void);
 void config_camera_off_gpios(void);
+void camera_power_mutex_lock(void);
+void camera_power_mutex_unlock(void);
+
 struct device* thunderc_backlight_dev(void);
-int camera_status(void);
+void thunderc_pwrsink_resume(void);
 #endif

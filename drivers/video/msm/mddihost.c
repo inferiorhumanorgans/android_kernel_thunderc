@@ -587,9 +587,13 @@ void mddi_host_register_cmds_write32(unsigned reg_addr, unsigned count, unsigned
 	if (wait) {
 		mddi_linked_list_notify_type *llist_notify_ptr;
 		llist_notify_ptr = &llist_extern_notify[host][curr_llist_idx];
+#if 0	// time out - 10 sec
+		wait_for_completion_interruptible_timeout(&(llist_notify_ptr->done_comp),10*HZ);
+#else
 		wait_for_completion_interruptible(&
 						  (llist_notify_ptr->
 						   done_comp));
+#endif
 	}
 
 } /* mddi_host_register_cmds_write32 */

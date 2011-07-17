@@ -234,19 +234,14 @@ int diag_open(int num_req)
 	struct diag_req_entry *write_entry;
 	struct diag_req_entry *read_entry;
 	int i = 0;
-	unsigned long flags;
 
 	for (i = 0; i < num_req; i++) {
 		write_entry = diag_alloc_req_entry(ctxt->epin, 0, GFP_KERNEL);
 		if (write_entry) {
-			// shoud use the lock in using list
-			spin_lock_irqsave(&ctxt->dev_lock, flags);
 			write_entry->usb_req->complete = diag_write_complete;
 			write_entry->usb_req->device = (void *)ctxt;
 			list_add(&write_entry->re_entry,
 					&ctxt->dev_write_req_list);
-			// shoud use the lock in using list
-			spin_unlock_irqrestore(&ctxt->dev_lock, flags);
 		} else
 			goto write_error;
 	}
@@ -254,12 +249,10 @@ int diag_open(int num_req)
 	for (i = 0; i < num_req ; i++) {
 		read_entry = diag_alloc_req_entry(ctxt->epout, 0 , GFP_KERNEL);
 		if (read_entry) {
-			spin_lock_irqsave(&ctxt->dev_lock, flags);
 			read_entry->usb_req->complete = diag_read_complete;
 			read_entry->usb_req->device = (void *)ctxt;
 			list_add(&read_entry->re_entry ,
 					&ctxt->dev_read_req_list);
-			spin_unlock_irqrestore(&ctxt->dev_lock, flags);
 		} else
 			goto read_error;
 		}
@@ -268,21 +261,17 @@ int diag_open(int num_req)
 read_error:
 	printk(KERN_ERR "%s:read requests allocation failure\n", __func__);
 	while (!list_empty(&ctxt->dev_read_req_list)) {
-		spin_lock_irqsave(&ctxt->dev_lock, flags);
 		read_entry = list_entry(ctxt->dev_read_req_list.next,
 				struct diag_req_entry, re_entry);
 		list_del(&read_entry->re_entry);
-		spin_unlock_irqrestore(&ctxt->dev_lock, flags);
 		diag_free_req_entry(ctxt->epout, read_entry);
 	}
 write_error:
 	printk(KERN_ERR "%s: write requests allocation failure\n", __func__);
 	while (!list_empty(&ctxt->dev_write_req_list)) {
-		spin_lock_irqsave(&ctxt->dev_lock, flags);
 		write_entry = list_entry(ctxt->dev_write_req_list.next,
 				struct diag_req_entry, re_entry);
 		list_del(&write_entry->re_entry);
-		spin_unlock_irqrestore(&ctxt->dev_lock, flags);
 		diag_free_req_entry(ctxt->epin, write_entry);
 	}
 	ctxt->diag_opened = 0;
@@ -294,26 +283,20 @@ void diag_close(void)
 {
 	struct diag_context *ctxt = &_context;
 	struct diag_req_entry *req_entry;
-	unsigned long flags;
-
 	/* free write requests */
 
 	while (!list_empty(&ctxt->dev_write_req_list)) {
-		spin_lock_irqsave(&ctxt->dev_lock, flags);
 		req_entry = list_entry(ctxt->dev_write_req_list.next,
 				struct diag_req_entry, re_entry);
 		list_del(&req_entry->re_entry);
-		spin_unlock_irqrestore(&ctxt->dev_lock, flags);
 		diag_free_req_entry(ctxt->epin, req_entry);
 	}
 
 	/* free read requests */
 	while (!list_empty(&ctxt->dev_read_req_list)) {
-		spin_lock_irqsave(&ctxt->dev_lock, flags);
 		req_entry = list_entry(ctxt->dev_read_req_list.next,
 				struct diag_req_entry, re_entry);
 		list_del(&req_entry->re_entry);
-		spin_unlock_irqrestore(&ctxt->dev_lock, flags);
 		diag_free_req_entry(ctxt->epout, req_entry);
 	}
 	return;

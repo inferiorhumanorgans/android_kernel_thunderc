@@ -38,8 +38,6 @@ typedef struct {
   char user_data[SMS_MAX_USER_DATA_LEN+1];
 }PACKED udm_mode_sms_req_struct_type;
 
-
-
 typedef  struct 
 {
 	char address[SMS_UTS_MAX_ADDR_LEN];

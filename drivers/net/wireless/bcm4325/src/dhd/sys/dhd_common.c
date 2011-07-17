@@ -41,9 +41,11 @@
 int dhd_msg_level;
 char fw_path[MOD_PARAM_PATHLEN];
 char nv_path[MOD_PARAM_PATHLEN];
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-04-03, configs */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
 char config_path[MOD_PARAM_PATHLEN] = "";
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-04-03, configs */
 
 /* Last connection success/failure status */
 uint32 dhd_conn_event;
@@ -103,9 +105,11 @@ dhd_common_init(void)
 	 * first time that the driver is initialized vs subsequent initializations.
 	 */
 	dhd_msg_level = DHD_ERROR_VAL;
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-09-03, don't init */
 #if !defined(CONFIG_LGE_BCM432X_PATCH)
 	fw_path[0] = '\0';
 	nv_path[0] = '\0';
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-09-03, don't init */
 #endif /* CONFIG_LGE_BCM432X_PATCH */
 }
 

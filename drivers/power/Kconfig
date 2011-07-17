@@ -136,4 +136,11 @@ config BATTERY_MSM_FAKE
 	help
 	  Say Y to bypass actual battery queries.
 
+config LGE_CHARGER_LOGO_MODE_NOTI
+	bool "Charger Logo Mode Noti"
+	default n
+	depends on LGE_PROC_COMM
+	help
+	  LGE Charger Logo Mode
+	  
 endif # POWER_SUPPLY

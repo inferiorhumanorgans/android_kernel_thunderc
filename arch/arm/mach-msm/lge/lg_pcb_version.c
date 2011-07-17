@@ -1,6 +1,6 @@
 /* arch/arm/mach-msm/include/mach/lg_pcb_version.h
  *
- * Copyright (C) 2009, 2010 LGE, Inc.
+ * Copyright (C) 2009 LGE, Inc.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -12,8 +12,9 @@
  * GNU General Public License for more details.
  *
  */
-
 #include <linux/string.h>
+#include <linux/kernel.h>
+
 #include <mach/lg_pcb_version.h>
 
 #ifdef CONFIG_LGE_PCB_VERSION  /* LG_FW_PCB_VERSION */
@@ -22,13 +23,15 @@ extern int lg_get_hw_version(void);
 
 int lg_get_board_pcb_version(void)
 {
-	static int pcb_version = HW_PCB_UNKNOWN;
+    static int pcb_version = HW_PCB_UNKNOWN;
+    
+    if(pcb_version == HW_PCB_UNKNOWN)
+    {
+        pcb_version = lg_get_hw_version();
+    }
+	printk(KERN_INFO "lg_get_board_pcb_version - pcd version=%d\n",pcb_version);
 
-	if(pcb_version == HW_PCB_UNKNOWN) {
-		pcb_version = lg_get_hw_version();
-	}
-
-	return pcb_version;
+    return pcb_version;
 }
 
 void lg_set_hw_version_string(char *pcb_version)
@@ -37,13 +40,14 @@ void lg_set_hw_version_string(char *pcb_version)
 
 	hw_version=lg_get_board_pcb_version();
 	
-	switch(hw_version) {
+	switch(hw_version)			
+	{
 		case HW_PCB_REV_A: 				
 			strcpy(pcb_version, "A");
 			break;
 		case HW_PCB_REV_B: 
 			strcpy(pcb_version, "B");
-			break;
+		    break;
 		case HW_PCB_REV_C: 	
 			strcpy(pcb_version, "C");
 			 break;

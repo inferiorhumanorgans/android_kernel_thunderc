@@ -38,34 +38,35 @@
 
 typedef enum
 {
-  MTC_INFO_REQ_CMD			= 0x00, /* Screen Info Request Cmd */
+  MTC_INFO_REQ_CMD				= 0x00, /* Screen Info Request Cmd */
   MTC_CAPTURE_REQ_CMD 			= 0x01, /* Screen Capture Request Cmd */
   MTC_KEY_EVENT_REQ_CMD			= 0x03, /* Key Event Request Cmd */
-  MTC_TOUCH_REQ_CMD			= 0x04,
+  MTC_TOUCH_REQ_CMD				= 0x04,
 // LG_FW : 2010.01.06 hoonylove004 -------------------------------------------
-#if defined (CONFIG_MACH_MSM7X27_ALOHAV) || defined (CONFIG_MACH_MSM7X27_THUNDERC) \
-  || defined (LG_FW_ATS_ETA_MTC_KEY_LOGGING)
+#if defined (CONFIG_MACH_MSM7X27_THUNDERC) || defined (LG_FW_ATS_ETA_MTC_KEY_LOGGING)
   MTC_LOGGING_MASK_REQ_CMD		= 0x07,
-  MTC_LOG_REQ_CMD 			= 0x08,
+  MTC_LOG_REQ_CMD 					= 0x08,
 #endif /*LG_FW_ATS_ETA_MTC_KEY_LOGGING*/
 // ---------------------------------------------------------------------------
+  MTC_SERIALIZED_DATA_REQ_CMD       = 0x0A,
+  MTC_SERIALIZED_CAPTURE_REQ_CMD = 0x0B,
   MTC_PHONE_RESTART_REQ_CMD		= 0x10, /* Phone ReStart Cmd */
-  MTC_FACTORY_RESET			= 0x11,
-  MTC_PHONE_REPORT			= 0x20,
-  MTC_PHONE_STATE 			= 0x21,
-  MTC_CAPTURE_PROP			= 0x22,
+  MTC_FACTORY_RESET				= 0x11,
+  MTC_PHONE_REPORT				= 0x20,
+  MTC_PHONE_STATE 					= 0x21,
+  MTC_CAPTURE_PROP				= 0x22,
   MTC_NOTIFICATION_REQUEST		= 0x30,
   MTC_CUR_PROC_NAME_REQ_CMD		= 0x32, 
   MTC_KEY_EVENT_UNIV_REQ_CMD		= 0x33, 
-  MTC_MEMORY_DUMP 			= 0x40,
-  MTC_BATTERY_POWER			= 0x41,
-  MTC_BACKLIGHT_INFO			= 0x42,
-  MTC_FLASH_MODE			= 0x60,
-  MTC_MODEM_MODE			= 0x61,
+  MTC_MEMORY_DUMP 				= 0x40,
+  MTC_BATTERY_POWER				= 0x41,
+  MTC_BACKLIGHT_INFO				= 0x42,
+  MTC_FLASH_MODE					= 0x60,
+  MTC_MODEM_MODE					= 0x61,
   MTC_CELL_INFORMATION			= 0x80, 
-  MTC_HANDOVER				= 0x81,
-  MTC_ERROR_CMD				= 0x7F,
-  MTC_MAX_CMD				= 0xFF,
+  MTC_HANDOVER						= 0x81,
+  MTC_ERROR_CMD					= 0x7F,
+  MTC_MAX_CMD						= 0xFF,
 } mtc_sub_cmd_type;
 
 /*********************** BEGIN PACK() Definition ***************************/
@@ -149,8 +150,7 @@ typedef struct
   unsigned short y;
 } PACKED mtc_touch_req_type;
 
-#if defined (CONFIG_MACH_MSM7X27_ALOHAV) || defined (CONFIG_MACH_MSM7X27_THUNDERC) \
-  || defined (LG_FW_ATS_ETA_MTC_KEY_LOGGING)
+#if defined (CONFIG_MACH_MSM7X27_THUNDERC) || defined (LG_FW_ATS_ETA_MTC_KEY_LOGGING)
 typedef struct
 {
   mtc_req_hdr_type hdr;
@@ -158,16 +158,33 @@ typedef struct
 } PACKED mtc_log_req_type;
 #endif /*LG_FW_ATS_ETA_MTC_KEY_LOGGING*/
 
+typedef struct
+{
+  mtc_req_hdr_type hdr;
+  unsigned short seqeunce;
+} PACKED mtc_serialized_data_req_type;
+
+typedef struct
+{
+  mtc_req_hdr_type hdr;
+  mtc_scrn_id_type screen_id;
+  unsigned short left;      /* Upper left X-Coord */
+  unsigned short top;       /* Upper left Y-Coord */
+  unsigned short width;     /* Width of capture screen */
+  unsigned short height;    /* Height of capture screen */
+} PACKED mtc_serialized_capture_req_type;
+
 typedef union
 {
   mtc_info_req_type info;
   mtc_capture_req_type capture;
   mtc_key_req_type key;	
   mtc_touch_req_type touch;
-#if defined (CONFIG_MACH_MSM7X27_ALOHAV) || defined (CONFIG_MACH_MSM7X27_THUNDERC) \
-  || defined (LG_FW_ATS_ETA_MTC_KEY_LOGGING)
+#if defined (CONFIG_MACH_MSM7X27_THUNDERC) || defined (LG_FW_ATS_ETA_MTC_KEY_LOGGING)
   mtc_log_req_type log;
 #endif /*LG_FW_ATS_ETA_MTC_KEY_LOGGING*/
+  mtc_serialized_data_req_type serial_data;
+  mtc_serialized_capture_req_type serial_capture;
 } PACKED mtc_req_type;
 
 typedef union{
@@ -177,8 +194,7 @@ typedef union{
 
 
 #define MTC_SCRN_BUF_SIZE_MAX (320*480*(sizeof(unsigned short))) // mtc_pixel_16_type, 2bytes
-//#define MTC_SCRN_BUF_SIZE_MAX 1024
-//#define SCREEN_SHOT_PACK_LEN  1024 * 2
+#define MTC_SCRN_BUF_SIZE (1024*2)
 
 typedef enum
 {
@@ -218,11 +234,10 @@ typedef struct
   unsigned short bmp_height;
   mtc_bits_pixel_type bits_pixel;
   mtc_mask_type mask;
-  unsigned char bmp_data[0];
+  unsigned char bmp_data[MTC_SCRN_BUF_SIZE_MAX];
 } PACKED mtc_capture_rsp_type;
 
-#if defined (CONFIG_MACH_MSM7X27_ALOHAV) || defined (CONFIG_MACH_MSM7X27_THUNDERC) \
-  || defined (LG_FW_ATS_ETA_MTC_KEY_LOGGING)
+#if defined (CONFIG_MACH_MSM7X27_THUNDERC) || defined (LG_FW_ATS_ETA_MTC_KEY_LOGGING)
 typedef struct
 {
   unsigned long long time; /*timestamp in milliseconds*/
@@ -256,16 +271,36 @@ typedef struct
 
 #endif /*LG_FW_ATS_ETA_MTC_KEY_LOGGING*/
 
+typedef struct
+{
+  mtc_req_hdr_type hdr;
+  unsigned short seqeunce;
+  unsigned long length;
+  unsigned char bmp_data[MTC_SCRN_BUF_SIZE];
+} PACKED mtc_serialized_data_rsp_type;
+
+typedef struct
+{
+  mtc_req_hdr_type hdr;
+  mtc_scrn_id_type screen_id;
+  unsigned long bmp_size;
+  unsigned short bmp_width;
+  unsigned short bmp_height;
+  mtc_bits_pixel_type bits_pixel;
+  mtc_mask_type mask;
+} PACKED mtc_serialized_capture_rsp_type;
+
 typedef union
 {
   mtc_info_rsp_type info;
   mtc_capture_rsp_type capture;
   mtc_key_req_type key;
   mtc_touch_req_type touch;
-#if defined (CONFIG_MACH_MSM7X27_ALOHAV) || defined (CONFIG_MACH_MSM7X27_THUNDERC) \
-  || defined (LG_FW_ATS_ETA_MTC_KEY_LOGGING)
+#if defined (CONFIG_MACH_MSM7X27_THUNDERC) || defined (LG_FW_ATS_ETA_MTC_KEY_LOGGING)
   mtc_log_req_type log;
   mtc_log_data_rsp_type log_data;
+  mtc_serialized_data_rsp_type serial_data;
+  mtc_serialized_capture_rsp_type serial_capture;
 #endif /*LG_FW_ATS_ETA_MTC_KEY_LOGGING*/
 } PACKED mtc_rsp_type;
 
@@ -307,24 +342,8 @@ typedef struct
   unsigned char which_procesor;             // to choose which processor will do act.
 }mtc_user_table_entry_type;
 
-#if 1 //LG_FW_MTC_GISELE
-typedef struct ext_message{
-	byte cmd_code ;
-	byte ts_type;
-	byte num_args;
-	byte drop_cnt;
-	dword time[2];
-	word line_number;
-	word ss_id;
-	//word ss_mask;
-	dword ss_mask;
-	dword args[2];
-	char code[13];
-	char file_name[13];
-} PACKED ext_msg_type;
-#endif //LG_FW_MTC_GISELE
-
-#if defined (CONFIG_MACH_MSM7X27_ALOHAV) || defined (CONFIG_MACH_MSM7X27_THUNDERC) || defined (LG_FW_ATS_ETA_MTC_KEY_LOGGING)
+/* LGE_CHANGE_S [jihoon.lee@lge.com] 2010-02-03, LG_FW_ATS_ETA_MTC_KEY_LOGGING */
+#if defined (CONFIG_MACH_MSM7X27_THUNDERC) || defined (LG_FW_ATS_ETA_MTC_KEY_LOGGING)
 struct ats_mtc_key_log_type{
 	unsigned char log_id;
 	unsigned short log_len;
@@ -339,9 +358,12 @@ enum ats_mtc_key_log_id_type{
 	ATS_MTC_KEY_LOG_ID_MAX,
 };
 #endif /*LG_FW_ATS_ETA_MTC_KEY_LOGGING*/
+/* LGE_CHANGE_E [jihoon.lee@lge.com] 2010-02-03, LG_FW_ATS_ETA_MTC_KEY_LOGGING */
 
 /*===========================================================================
+
                       INTERNAL FUNCTION DEFINITIONS
+
 ===========================================================================*/
-extern void mtc_send_key_log_data(struct ats_mtc_key_log_type *p_ats_mtc_key_log);
+
 #endif /* DIAGMTC_H */

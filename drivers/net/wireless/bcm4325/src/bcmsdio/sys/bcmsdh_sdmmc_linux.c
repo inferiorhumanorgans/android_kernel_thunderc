@@ -64,6 +64,7 @@
 #include <linux/irq.h>
 #endif	/* #if defined(CONFIG_BRCM_GPIO_INTR) && defined(CONFIG_HAS_EARLYSUSPEND) */
 
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-11-19, Support Host Wakeup */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
 #include <linux/mmc/host.h>
 #include <linux/wakelock.h>
@@ -87,6 +88,7 @@ extern void register_mmc_card_pm(struct early_suspend *);
 extern void unregister_mmc_card_pm(void);
 
 #endif /* CONFIG_BRCM_LGE_WL_HOSTWAKEUP */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-11-19, Support Host Wakeup */
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)) && defined(CONFIG_PM_SLEEP)
 extern volatile bool dhd_mmc_suspend;
@@ -125,6 +127,7 @@ extern void *dhd_es_get_dhd_pub(void);
 extern void *dhd_es_get_dhd_bus_sdh(void);
 static int dhd_register_early_suspend(void);
 static void dhd_unregister_early_suspend(void);
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-11-19, Support Host Wakeup */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
 
 void dhd_early_suspend(struct early_suspend *h);
@@ -135,8 +138,10 @@ static struct early_suspend early_suspend_data = {
 	.resume = dhd_late_resume
 };
 #endif /* CONFIG_BRCM_LGE_WL_HOSTWAKEUP */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-11-19, Support Host Wakeup */
 DECLARE_WAIT_QUEUE_HEAD(bussleep_wake);
 typedef struct dhd_early_suspend {
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-11-19, Support Host Wakeup */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)	
 	int wait_driver_load; /* waiting for driver loaded */
 	bool skip;
@@ -145,6 +150,7 @@ typedef struct dhd_early_suspend {
 	bool drv_loaded;
 	struct dhd_bus_t *bus;
 } dhd_early_suspend_t;
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-11-19, Support Host Wakeup */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
 dhd_early_suspend_t dhd_early_suspend_ctrl = { 0, 0, 0, 0, 0};
 #else /* CONFIG_BRCM_LGE_WL_HOSTWAKEUP */
@@ -261,28 +267,39 @@ dhd_es_get_dhd_bus(void)
 	return dhd_early_suspend_ctrl.bus;
 }
 
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-11-19, Support Host Wakeup */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
 static int
 dhd_es_lock_dhd_bus(void)
 {
+/* BEGIN: 0005533 mingi.sung@lge.com 2010-03-27 */
+/* MOD 0005533: [WLAN] Fixing WBT issues on Wi-Fi driver */
+/* WBT Fix TD# 248350 */
 	void *bus;
 	bus = dhd_es_get_dhd_pub();
 	if( bus )
 		dhd_os_proto_block(bus);
+/* END: 0005533 mingi.sung@lge.com 2010-03-27 */
+
 	return 0;
 }
 
 static int
 dhd_es_unlock_dhd_bus(void)
 {
+/* BEGIN: 0005533 mingi.sung@lge.com 2010-03-27 */
+/* MOD 0005533: [WLAN] Fixing WBT issues on Wi-Fi driver */
+/* WBT Fix TD# 248351 */
 	void *bus;
 	bus = dhd_es_get_dhd_pub();
 	if( bus )
 		dhd_os_proto_unblock(bus);
+/* END: 0005533 mingi.sung@lge.com 2010-03-27 */
 
 	return 0;
 }
 #endif /* defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP) */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-11-19, Support Host Wakeup */
 
 bool
 dhd_early_suspend_state(void)
@@ -290,9 +307,12 @@ dhd_early_suspend_state(void)
 	return dhd_early_suspend_ctrl.state;
 }
 
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-11-19, Support Host Wakeup */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
 static void dhd_enable_sdio_irq(int enable)
 {
+/* BEGIN: 0004825 mingi.sung@lge.com 2010-03-09 */
+/* MOD 0004825: [WLAN] Prevent insmod failed */
 	struct mmc_card *card;
 	struct mmc_host *host;
 
@@ -303,6 +323,7 @@ static void dhd_enable_sdio_irq(int enable)
 	
 	card = gInstance->func[0]->card;
 	host = card->host;
+/* END: 0004825 mingi.sung@lge.com 2010-03-09 */
 
 	if (enable == TRUE )
 		host->ops->enable_sdio_irq(host, 1); 
@@ -369,6 +390,9 @@ static int dhd_resume(void)
 {
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
 	int gpio = 0;
+/* BEGIN: 0003780 mingi.sung@lge.com 2010-02-02 */
+/* DEL 0003780: [WLAN] Reduce the time to resume when using host-wakeup */
+/* END: 0003780 mingi.sung@lge.com 2010-02-02 */
 
 	dhd_enable_sdio_irq(FALSE);
 	dhd_suspend_context = FALSE;
@@ -379,17 +403,21 @@ static int dhd_resume(void)
 	if (NULL != dhd_early_suspend_ctrl.bus) {
 		dhd_early_suspend_ctrl.state = FALSE;
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
+/* LGE_CHANGE_S, [hyuksang], due to power consumption, the below line is discarded to reduce 2s delay */
 /* Instead of wake_lock_timeout(), use wake_lock */
 //		wake_lock_timeout(&wlan_host_wakelock_resume, 2*HZ);
 		wake_lock(&wlan_host_wakelock_resume);
+/* LGE_CHANGE_E, [hyuksang], due to power consumption, the below line is discarded to reduce 2s delay */
 #endif /* CONFIG_BRCM_LGE_WL_HOSTWAKEUP */
 		dhdsdio_dpc(dhd_early_suspend_ctrl.bus);
 		dhd_es_unlock_dhd_bus();
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)		
 		gpio = gpio_get_value(GPIO_WLAN_HOST_WAKE);
 		DHD_TRACE(("%s: RESUME Done gpio->%d\n", __FUNCTION__, gpio));
+/* LGE_CHANGE_S, [hyuksang], due to power consumption, the below line is discarded to reduce 2s delay */
 /* Instead of wake_lock_timeout(), use wake_lock */		
 		wake_unlock(&wlan_host_wakelock_resume);
+/* LGE_CHANGE_E, [hyuksang], due to power consumption, the below line is discarded to reduce 2s delay */
 #else /* CONFIG_BRCM_LGE_WL_HOSTWAKEUP */
 		DHD_TRACE(("%s: RESUME Done\n", __FUNCTION__));
 #endif /* CONFIG_BRCM_LGE_WL_HOSTWAKEUP */
@@ -399,6 +427,7 @@ static int dhd_resume(void)
 	return 0;
 }
 #endif /* defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP) */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-11-19, Support Host Wakeup */
 #endif /* #if defined(CONFIG_HAS_EARLYSUSPEND) */
 
 /* Interrupt enable/disable */
@@ -493,13 +522,19 @@ void sdio_function_cleanup(void)
 	sd_trace(("%s Enter\n", __FUNCTION__));
 
 #if defined(CONFIG_HAS_EARLYSUSPEND)
+/* BEGIN: 0004486 mingi.sung@lge.com 2010-02-28 */
+/* ADD 0004486: [WLAN] Fix a bug - Reset when Wi-Fi turn on/off */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
 	dhd_enable_sdio_irq(FALSE);
 #endif
+/* END: 0004486 mingi.sung@lge.com 2010-02-28 */
 	dhd_unregister_early_suspend();
+/* BEGIN: 0004486 mingi.sung@lge.com 2010-02-28 */
+/* ADD 0004486: [WLAN] Fix a bug - Reset when Wi-Fi turn on/off */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
 	dhd_suspend_context = TRUE; 
 #endif
+/* END: 0004486 mingi.sung@lge.com 2010-02-28 */
 #endif	/* defined(CONFIG_HAS_EARLYSUSPEND) */
 
 	sdio_unregister_driver(&bcmsdh_sdmmc_driver);
@@ -507,16 +542,25 @@ void sdio_function_cleanup(void)
 	if (gInstance)
 		kfree(gInstance);
 }
+/* LGE_CHANGE_S, [yoohoo@lge.com], 2010-1-13, <ARP offload> */
 #if defined(CONFIG_BRCM_LGE_WL_ARPOFFLOAD)
 extern int dhd_config_arp_offload(void *bus, bool flag);
 #endif	/* CONFIG_BRCM_LGE_WL_ARPOFFLOAD */
-
+/* LGE_CHANGE_E, [yoohoo@lge.com], 2010-1-13, <ARP offload> */
+/* LGE_CHANGE_s, [jisung.yang@lge.com], 2010-08-24, <Set listen interval and dtim listen> */
+#if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP) && defined(CONFIG_BRCM_LGE_WL_ARPOFFLOAD)
+extern int dhdsdio_set_dtim(void *bus, int enalbe);
+#endif
+/* LGE_CHANGE_E, [jisung.yang@lge.com], 2010-08-24, <Set listen interval and dtim listen> */
+/* LGE_CHANGE_S, [yoohoo@lge.com], 2010-1-13, <Packet filter> */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP) && defined(CONFIG_BRCM_LGE_WL_PKTFILTER)
 extern int dhdsdio_enable_filters(void *bus);
 extern int dhdsdio_disable_filters(void *bus);
 #endif	/* defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP) && defined(CONFIG_BRCM_LGE_WL_PKTFILTER) */
+/* LGE_CHANGE_E, [yoohoo@lge.com], 2010-1-13, <Packet filter> */
 
 #if defined(CONFIG_HAS_EARLYSUSPEND)
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-11-19, Support Host Wakeup */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
 void dhd_early_suspend(struct early_suspend *h)
 {
@@ -531,15 +575,23 @@ void dhd_early_suspend(struct early_suspend *h)
 	
 	/* If chip active is done, do put the device to suspend */
 	del_wl_timers();
-	
+/* LGE_CHANGE_s, [jisung.yang@lge.com], 2010-08-24, <Set listen interval and dtim listen> */
+#if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP) && defined(CONFIG_BRCM_LGE_WL_ARPOFFLOAD)
+	dhdsdio_set_dtim(dhd_early_suspend_ctrl.bus, TRUE);
+#endif
+/* LGE_CHANGE_E, [jisung.yang@lge.com], 2010-08-24, <Set listen interval and dtim listen> */
+/* LGE_CHANGE_S, [yoohoo@lge.com], 2010-1-13, <ARP offload> */
 #if defined(CONFIG_BRCM_LGE_WL_ARPOFFLOAD)
 	/*Enable ARP Offloading*/
 	dhd_config_arp_offload(dhd_early_suspend_ctrl.bus , TRUE);
 #endif	/* CONFIG_BRCM_LGE_WL_ARPOFFLOAD */
+/* LGE_CHANGE_E, [yoohoo@lge.com], 2010-1-13, <ARP offload> */
 	
+/* LGE_CHANGE_S, [yoohoo@lge.com], 2010-1-13, <Packet filter> */
 #if defined(CONFIG_BRCM_LGE_WL_PKTFILTER)
 	dhdsdio_enable_filters(dhd_early_suspend_ctrl.bus);
 #endif	/* CONFIG_BRCM_LGE_WL_PKTFILTER */
+/* LGE_CHANGE_E, [yoohoo@lge.com], 2010-1-13, <Packet filter> */
 	
 	if(dhd_suspend() < 0) {
 		dhd_enable_sdio_irq(TRUE); /* make sure one more for testing, later */
@@ -573,23 +625,35 @@ void dhd_late_resume(struct early_suspend *h)
 	}else 
 		printk("%s: Do not dhd_suspend mode setting.\n",__FUNCTION__);
 
+/* LGE_CHANGE_s, [jisung.yang@lge.com], 2010-08-24, <Set listen interval and dtim listen> */
+#if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP) && defined(CONFIG_BRCM_LGE_WL_ARPOFFLOAD)
+	dhdsdio_set_dtim(dhd_early_suspend_ctrl.bus, FALSE);
+#endif
+/* LGE_CHANGE_E, [jisung.yang@lge.com], 2010-08-24, <Set listen interval and dtim listen> */
+/* LGE_CHANGE_S, [yoohoo@lge.com], 2010-1-13, <ARP offload> */
 #if defined(CONFIG_BRCM_LGE_WL_ARPOFFLOAD)
 	/*DiSable ARP Offloading*/
 	dhd_config_arp_offload(dhd_early_suspend_ctrl.bus, FALSE);
 #endif	/* CONFIG_BRCM_LGE_WL_ARPOFFLOAD */
+/* LGE_CHANGE_E, [yoohoo@lge.com], 2010-1-13, <ARP offload> */
 
+/* LGE_CHANGE_S, [yoohoo@lge.com], 2010-1-13, <Packet filter> */
 #if defined (CONFIG_BRCM_LGE_WL_PKTFILTER)
 	dhdsdio_disable_filters(dhd_early_suspend_ctrl.bus);
 #endif /* CONFIG_BRCM_LGE_WL_PKTFILTER */
+/* LGE_CHANGE_E, [yoohoo@lge.com], 2010-1-13, <Packet filter> */
+//	printk(KERN_ERR "[dongp.kim] %s: exit\n", __FUNCTION__);
 
 	return;
 }
 EXPORT_SYMBOL(dhd_early_suspend);
 EXPORT_SYMBOL(dhd_late_resume);
 #endif /* CONFIG_BRCM_LGE_WL_HOSTWAKEUP */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-11-19, Support Host Wakeup */
 
 #if defined(CONFIG_BRCM_GPIO_INTR)
 
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-11-06, Support Host Wakeup */
 #if !defined(CONFIG_LGE_BCM432X_PATCH)
 #define GPIO_WLAN_HOST_WAKE 0
 
@@ -600,6 +664,7 @@ struct dhd_wifisleep_info {
 
 static struct dhd_wifisleep_info *dhd_wifi_sleep;
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-11-06, Support Host Wakeup */
 
 /**
  * Supposed that Early Suspend/Resume is disable
@@ -648,9 +713,11 @@ dhd_hostwakeup_isr(int irq, void *dev_id)
 	printk(KERN_ERR "[%s] HostWakeup Get GPIO %d: %d\n", 
 		__func__, GPIO_WLAN_HOST_WAKE, gpio);
 	gpio_set_value(GPIO_WLAN_HOST_WAKE, 0);
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-11-06, Support Host Wakeup */
 #if !defined(CONFIG_LGE_BCM432X_PATCH)
 	set_irq_type(dhd_wifi_sleep->host_wake_irq, gpio ? IRQF_TRIGGER_LOW : IRQF_TRIGGER_HIGH);
 #endif /* CONFIG_LGE_BCM432X_PATCH */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-11-06, Support Host Wakeup */
 	if (!gpio) {
 		DHD_INFO(("[WiFi] complete on host-wakeup \n"));
 
@@ -680,11 +747,13 @@ dhd_register_hwakeup(void)
 
 	printk(KERN_ERR "[yoohoo] dhd_register_hwakeup : start \n");
 
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-11-19, Init wakelock */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
 	/* wake lock initialize */
    	wake_lock_init(&wlan_host_wakelock, WAKE_LOCK_SUSPEND, "WLAN_HOST_WAKE");
    	wake_lock_init(&wlan_host_wakelock_resume, WAKE_LOCK_SUSPEND, "WLAN_HOST_WAKE_RESUME");	
 #endif /* CONFIG_BRCM_LGE_WL_HOSTWAKEUP */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-11-19, Init wakelock */
 
 	ret = gpio_request(dhd_wifi_sleep->host_wake, "wifi_hostwakeup");
 	if (ret < 0) {
@@ -693,6 +762,7 @@ dhd_register_hwakeup(void)
 		return 0;
 	}
 
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-11-19, Set gpio init value to zero */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
 	/* Set gpio init value to zero */
 	ret = gpio_direction_output(dhd_wifi_sleep->host_wake, 0);
@@ -701,6 +771,7 @@ dhd_register_hwakeup(void)
 	}
 	//gpio_set_value(dhd_wifi_sleep->host_wake, 0);
 #endif /* CONFIG_BRCM_LGE_WL_HOSTWAKEUP */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-11-19, Init wakelock */
 
 	ret = gpio_direction_input(dhd_wifi_sleep->host_wake);
 	if (ret < 0) {
@@ -715,14 +786,16 @@ dhd_register_hwakeup(void)
 		return 0;
 	}
 
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-11-06, Support Host Wakeup */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
 	ret = request_irq(dhd_wifi_sleep->host_wake_irq, dhd_hostwakeup_isr,
-		//IRQF_DISABLED | IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING , "wifi_hostwakeup", NULL);
-		IRQF_DISABLED | IRQF_TRIGGER_RISING , "wifi_hostwakeup", NULL); 
+//		IRQF_DISABLED | IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING , "wifi_hostwakeup", NULL);
+		IRQF_DISABLED | IRQF_TRIGGER_RISING , "wifi_hostwakeup", NULL); //jisung.yang@lge.com
 #else /* CONFIG_BRCM_LGE_WL_HOSTWAKEUP */
 	ret = request_irq(dhd_wifi_sleep->host_wake_irq, dhd_hostwakeup_isr,
 		IRQF_DISABLED | IRQF_TRIGGER_HIGH, "wifi_hostwakeup", NULL);
 #endif /* CONFIG_BRCM_LGE_WL_HOSTWAKEUP */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-11-06, Support Host Wakeup */
 	if (ret) {
 		DHD_ERROR(("[WiFi] Failed to get HostWakeUp IRQ \n"));
 		free_irq(dhd_wifi_sleep->host_wake_irq, 0);
@@ -734,13 +807,15 @@ dhd_register_hwakeup(void)
 		printk (KERN_ERR "[yoohoo] dhd_register_hwakeup : OK\n");
 	}
 
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-11-19, set_irq_type and disable_irq */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
-	//set_irq_type(dhd_wifi_sleep->host_wake_irq, IRQ_TYPE_EDGE_BOTH);
-	set_irq_type(dhd_wifi_sleep->host_wake_irq, IRQ_TYPE_EDGE_RISING); 
+//	set_irq_type(dhd_wifi_sleep->host_wake_irq, IRQ_TYPE_EDGE_BOTH);
+	set_irq_type(dhd_wifi_sleep->host_wake_irq, IRQ_TYPE_EDGE_RISING);
 #if	defined(CONFIG_BRCM_GPIO_INTR)
 	disable_irq(dhd_wifi_sleep->host_wake_irq);
 #endif /* CONFIG_BRCM_GPIO_INTR */
 #endif /* CONFIG_BRCM_LGE_WL_HOSTWAKEUP */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2009-11-19, set_irq_type and disable_irq */
 	return ret;
 }
 
@@ -758,6 +833,7 @@ dhd_unregister_hwakeup(void)
 static int
 dhd_register_early_suspend(void)
 {
+	/* LGE_CHANGE_S [yoohoo@lge.com] 2009-01-14, Support Host Wakeup */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
 	dhd_early_suspend_ctrl.drv_loaded = TRUE;
 
@@ -776,11 +852,13 @@ dhd_register_early_suspend(void)
 #else	/* CONFIG_BRCM_LGE_WL_HOSTWAKEUP */
 	return 0;
 #endif	/* CONFIG_BRCM_LGE_WL_HOSTWAKEUP */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2010-01-14, Support Host Wakeup */
 }
 
 static void
 dhd_unregister_early_suspend(void)
 {
+/* LGE_CHANGE_S [yoohoo@lge.com] 2009-01-14, Support Host Wakeup */
 #if defined(CONFIG_BRCM_LGE_WL_HOSTWAKEUP)
 	if (dhd_early_suspend_ctrl.drv_loaded == FALSE)
 		return;
@@ -798,5 +876,6 @@ dhd_unregister_early_suspend(void)
 #else	/* CONFIG_BRCM_LGE_WL_HOSTWAKEUP */
 	return;
 #endif /*  CONFIG_BRCM_LGE_WL_HOSTWAKEUP */
+/* LGE_CHANGE_E [yoohoo@lge.com] 2010-01-14, Support Host Wakeup */
 }
 #endif	/* #if defined(CONFIG_HAS_EARLYSUSPEND) */

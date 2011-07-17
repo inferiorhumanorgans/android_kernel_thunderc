@@ -2,7 +2,7 @@
  *
  * Copyright (C) 2008 Google, Inc.
  * Copyright (C) 2009 LGE.
- * Author: SungEun Kim
+ * Author: SungEun Kim <cleaneye.kim@lge.com>
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -26,6 +26,7 @@
 #include <mach/msm_hsusb.h>
 #include <mach/rpc_hsusb.h>
 #ifdef CONFIG_USB_FUNCTION
+#include <linux/usb/mass_storage_function.h>
 #include <linux/usb/android_composite.h>
 #endif
 #ifdef CONFIG_USB_ANDROID
@@ -41,33 +42,12 @@
 #endif
 #include "../devices.h"
 #include "../pm.h"
-
+//20100727 myeonggyu.son@lge.com [MS690] pcd revision [START]
 #include <mach/lg_pcb_version.h>
 
 /* setting board revision information */
 int lge_bd_rev;
 
-#if 0
-static char *rev_str[LGE_REV_TOT_NUM] =
-{ "evb", "rev_a", "rev_b", "rev_c", "rev_d", "rev_e", "rev_10"};
-
-static int __init board_revno_setup(char *rev_info)
-{
-	int i;
-
-	lge_bd_rev = LGE_REV_TOT_NUM;
-	
-	for (i = 0; i < LGE_REV_TOT_NUM; i++) 
-		if (!strncmp(rev_info, rev_str[i], 5)) {
-			lge_bd_rev = i;
-			break;
-		}
-
-	printk(KERN_INFO"BOARD: LGE %s\n", rev_str[lge_bd_rev]);
-
-	return 1;
-}
-#else
 /*
     PCB_REVISION_UNKOWN = 0,
     PCB_REVISION_A = 1,
@@ -139,10 +119,11 @@ static int __init board_revno_setup(char *rev_info)
 			strcpy(pcb_version, "Unknown");
 			 break;
 	}
-	printk(KERN_INFO"BOARD: H/W revision = %s\n", pcb_version);
-  return 1;
+	printk(KERN_INFO"BOARD: H/W revision = %s(%d)\n", pcb_version, lge_bd_rev);
+	
+    return 1;
 }
-#endif
+//20100727 myeonggyu.son@lge.com [MS690] pcd revision [END]
 
 __setup("lge.rev=", board_revno_setup);
 
@@ -167,8 +148,29 @@ static int __init lge_uart_mode(char *uart_mode)
 }
 
 __setup("uart_console=", lge_uart_mode);
-#if defined(CONFIG_MACH_MSM7X27_THUNDERC)
-#endif
+
+/* To support VS660 Smart factory reset
+ * We dont check flag in kernel if system booting is recovery mode
+ * 2010-06-08, taehung.kim@lge.com
+ */
+static int recovery_mode;
+
+int lge_get_recovery_state(void)
+{
+	return recovery_mode;
+}
+
+static int __init lge_recovery_state(char *s)
+{
+	if(!strcmp(s,"on"))
+		recovery_mode = 1;
+	else
+		recovery_mode = 0;
+	printk("%s: recovery mode = %s\n", __func__, s);
+	
+	return 1;
+}
+__setup("recovery=",lge_recovery_state);
 
 #ifdef CONFIG_ANDROID_RAM_CONSOLE
 static struct resource ram_console_resource[] = {
@@ -417,10 +419,6 @@ static void __init fb_size_setup(char **p)
 }
 __early_param("pmem_fb_size=", fb_size_setup);
 
-#ifdef CONFIG_MACH_MSM7X27_THUNDERC
-extern void *lge_mtd_direct_access_addr;
-#endif
-
 void __init msm_msm7x2x_allocate_memory_regions(void)
 {
 	void *addr;
@@ -445,7 +443,7 @@ void __init msm_msm7x2x_allocate_memory_regions(void)
 	}
 
 	size = MSM_PMEM_AUDIO_SIZE;
-	android_pmem_audio_pdata.start = MSM_PMEM_AUDIO_START_ADDR;
+	android_pmem_audio_pdata.start = MSM_PMEM_AUDIO_START_ADDR ;
 	android_pmem_audio_pdata.size = size;
 	pr_info("allocating %lu bytes (at %lx physical) for audio "
 		"pmem arena\n", size , MSM_PMEM_AUDIO_START_ADDR);
@@ -472,11 +470,6 @@ void __init msm_msm7x2x_allocate_memory_regions(void)
 	kgsl_resources[1].end = kgsl_resources[1].start + size - 1;
 	pr_info("allocating %lu bytes at %p (at %lx physical) for KGSL\n",
 			size, addr, __pa(addr));
-#endif
-
-#ifdef CONFIG_MACH_MSM7X27_THUNDERC
-	// PAGE_NUM_PER_BLK*PAGE_SIZE_BYTE
-	lge_mtd_direct_access_addr = alloc_bootmem(64*2048);
 #endif
 }
 
@@ -542,12 +535,13 @@ static void __init msm7x2x_init_host(void)
 #ifdef CONFIG_USB_FUNCTION
 __WEAK struct usb_mass_storage_platform_data usb_mass_storage_pdata = {
 	.nluns          = 0x02,
+	/* .buf_size       = 16384, */  /* LGE_CHANGE, 6013 merge */
 	.vendor         = "GOOGLE",
 	.product        = "Mass storage",
 	.release        = 0xffff,
 };
 
-static struct platform_device mass_storage_device = {
+__WEAK struct platform_device mass_storage_device = {
 	.name           = "usb_mass_storage",
 	.id             = -1,
 	.dev            = {
@@ -634,19 +628,22 @@ __WEAK struct usb_composition usb_func_composition[] = {
 	},
 #endif
 };
-__WEAK static struct usb_mass_storage_platform_data mass_storage_pdata = {
-	.nluns          = 1,
-	.vendor         = "GOOGLE",
-	.product        = "Mass Storage",
-	.release        = 0xFFFF,
+
+__WEAK struct usb_mass_storage_platform_data mass_storage_pdata = {
+	.nluns		= 1,
+	.vendor		= "GOOGLE",
+	.product	= "Mass Storage",
+	.release	= 0xFFFF,
 };
-__WEAK static struct platform_device mass_storage_device = {
+
+__WEAK struct platform_device mass_storage_device = {
 	.name           = "usb_mass_storage",
 	.id             = -1,
 	.dev            = {
 		.platform_data          = &mass_storage_pdata,
 	},
 };
+
 __WEAK struct android_usb_platform_data android_usb_pdata = {
 	.vendor_id	= 0x05C6,
 	.version	= 0x0100,
@@ -666,7 +663,7 @@ static struct platform_device android_usb_device = {
 #endif
 
 #ifdef CONFIG_USB_FUNCTION
-static struct usb_function_map usb_functions_map[] = {
+__WEAK static struct usb_function_map usb_functions_map[] = {
 	{"diag", 0},
 	{"adb", 1},
 	{"modem", 2},
@@ -677,7 +674,7 @@ static struct usb_function_map usb_functions_map[] = {
 };
 
 /* dynamic composition */
-static struct usb_composition usb_func_composition[] = {
+__WEAK static struct usb_composition usb_func_composition[] = {
 	{
 		.product_id         = 0x9012,
 		.functions	    = 0x5, /* 0101 */
@@ -757,15 +754,24 @@ static int hsusb_rpc_connect(int connect)
 }
 #endif
 
+#if defined(CONFIG_USB_MSM_OTG_72K) || defined(CONFIG_USB_EHCI_MSM)
+static int msm_hsusb_rpc_phy_reset(void __iomem *addr)
+{
+		return msm_hsusb_phy_reset();
+}
+#endif
+
 #ifdef CONFIG_USB_MSM_OTG_72K
 static struct msm_otg_platform_data msm_otg_pdata = {
-	.rpc_connect	= hsusb_rpc_connect,
+	.rpc_connect			 = hsusb_rpc_connect,
+	.phy_reset				 = msm_hsusb_rpc_phy_reset, 
 	.pmic_notif_init         = msm_pm_app_rpc_init,
 	.pmic_notif_deinit       = msm_pm_app_rpc_deinit,
 	.pmic_register_vbus_sn   = msm_pm_app_register_vbus_sn,
 	.pmic_unregister_vbus_sn = msm_pm_app_unregister_vbus_sn,
 	.pmic_enable_ldo         = msm_pm_app_enable_usb_ldo,
 	.pclk_required_during_lpm = 1,
+
 };
 
 #ifdef CONFIG_USB_GADGET
@@ -949,5 +955,9 @@ __WEAK void __init lge_add_mmc_devices(void)
 }
 
 __WEAK void __init lge_add_misc_devices(void)
+{
+}
+
+__WEAK void __init lge_add_pm_devices(void)
 {
 }

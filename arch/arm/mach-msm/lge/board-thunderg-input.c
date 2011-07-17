@@ -27,6 +27,7 @@
 #include "board-thunderg.h"
 static int prox_power_set(unsigned char onoff);
 
+/* LGE_S [ynj.kim@lge.com] 2010-05-15 : atcmd virtual device */
 static unsigned short atcmd_virtual_keycode[ATCMD_VIRTUAL_KEYPAD_ROW][ATCMD_VIRTUAL_KEYPAD_COL] = {
 	{KEY_1, 		KEY_8, 				KEY_Q,  	 KEY_I,          KEY_D,      	KEY_HOME,	KEY_B,          KEY_UP},
 	{KEY_2, 		KEY_9, 		  		KEY_W,		 KEY_O,       	 KEY_F,		 	KEY_RIGHTSHIFT, 	KEY_N,			KEY_DOWN},
@@ -36,7 +37,7 @@ static unsigned short atcmd_virtual_keycode[ATCMD_VIRTUAL_KEYPAD_ROW][ATCMD_VIRT
 	{KEY_6, 		KEY_ENTER,  		KEY_Y,  	 KEY_A,		     KEY_K,			KEY_V,  	    KEY_RIGHT,     	KEY_CAMERAFOCUS},
 	{KEY_7, 		KEY_MENU,	KEY_U,  	 KEY_S,    		 KEY_L, 	    KEY_SPACE,      KEY_LEFT,     	KEY_SEND},
 	{KEY_UNKNOWN, 	KEY_UNKNOWN,  		KEY_UNKNOWN, KEY_UNKNOWN, 	 KEY_UNKNOWN,	KEY_UNKNOWN,    KEY_FOLDER_MENU,      	KEY_FOLDER_HOME},
-		
+
 };
 
 static struct atcmd_virtual_platform_data atcmd_virtual_pdata = {
@@ -52,6 +53,7 @@ static struct platform_device atcmd_virtual_device = {
 		.platform_data = &atcmd_virtual_pdata,
 	},
 };
+/* LGE_E [ynj.kim@lge.com] 2010-05-15 : atcmd virtual device */
 
 /* head set device */
 static struct msm_handset_platform_data hs_platform_data = {
@@ -75,7 +77,7 @@ static unsigned int keypad_col_gpios[] = {37, 38};
 
 #define KEYMAP_INDEX(row, col) ((row)*ARRAY_SIZE(keypad_col_gpios) + (col))
 
-static const unsigned short keypad_keymap_thunder[][6] = {
+static const unsigned short keypad_keymap_thunder[][8] = {
 	[LGE_REV_B] = {
 		[KEYMAP_INDEX(0, 0)] = KEY_MENU,
 		[KEYMAP_INDEX(0, 1)] = KEY_SEARCH,
@@ -124,6 +126,14 @@ static const unsigned short keypad_keymap_thunder[][6] = {
 		[KEYMAP_INDEX(2, 0)] = KEY_VOLUMEDOWN,
 		[KEYMAP_INDEX(2, 1)] = KEY_VOLUMEUP,
 	},
+	[LGE_REV_11] = {
+		[KEYMAP_INDEX(0, 0)] = KEY_HOME,
+		[KEYMAP_INDEX(0, 1)] = KEY_SEARCH,
+		[KEYMAP_INDEX(1, 0)] = KEY_BACK,
+		[KEYMAP_INDEX(1, 1)] = KEY_MENU,
+		[KEYMAP_INDEX(2, 0)] = KEY_VOLUMEDOWN,
+		[KEYMAP_INDEX(2, 1)] = KEY_VOLUMEUP,
+	},
 };
 
 int thunderg_matrix_info_wrapper(struct input_dev *input_dev,struct gpio_event_info *info, void **data, int func)
@@ -135,7 +145,7 @@ int thunderg_matrix_info_wrapper(struct input_dev *input_dev,struct gpio_event_i
 			gpio_tlmm_config(GPIO_CFG(keypad_col_gpios[1], 0,
 						GPIO_INPUT, GPIO_PULL_UP,GPIO_2MA), GPIO_ENABLE);
 		}
-        
+
 		ret = gpio_event_matrix_func(input_dev,info, data,func);
         return ret ;
 }
@@ -143,6 +153,12 @@ int thunderg_matrix_info_wrapper(struct input_dev *input_dev,struct gpio_event_i
 static int thunderg_gpio_matrix_power(
                 const struct gpio_event_platform_data *pdata, bool on)
 {
+	/* this is dummy function to make gpio_event driver register suspend function
+	 * 2010-01-29, cleaneye.kim@lge.com
+	 * copy from ALOHA code
+	 * 2010-04-22 younchan.kim@lge.com
+	 */
+
 	return 0;
 }
 
@@ -193,9 +209,9 @@ static int thunderg_reset_keys_up[] = {
 static struct keyreset_platform_data thunderg_reset_keys_pdata = {
 	.keys_up = thunderg_reset_keys_up,
 	.keys_down = {
-		KEY_BACK,
+		//KEY_BACK,
 		KEY_VOLUMEDOWN,
-		KEY_MENU,
+		KEY_SEARCH,
 		0
 	},
 };
@@ -209,7 +225,7 @@ struct platform_device thunderg_reset_keys_device = {
 static struct platform_device *thunderg_input_devices[] __initdata = {
 	&hs_device,
 	&keypad_device_thunder,
-	&thunderg_reset_keys_device,
+	//&thunderg_reset_keys_device,
 	&atcmd_virtual_device,
 };
 
@@ -312,14 +328,29 @@ static void kr_exit(void)
 {
 }
 
-static int power_on(void)
+static int accel_power_on(void)
 {
-	return 0;
+	int ret = 0;
+	struct vreg *gp3_vreg = vreg_get(0, "gp3");
+
+	printk("[Accelerometer] %s() : Power On\n",__FUNCTION__);
+
+	vreg_set_level(gp3_vreg, 3000);
+	vreg_enable(gp3_vreg);
+
+	return ret;
 }
 
-static int power_off(void)
+static int accel_power_off(void)
 {
-	return 0;
+	int ret = 0;
+	struct vreg *gp3_vreg = vreg_get(0, "gp3");
+
+	printk("[Accelerometer] %s() : Power Off\n",__FUNCTION__);
+
+	vreg_disable(gp3_vreg);
+
+	return ret;
 }
 
 struct kr3dh_platform_data kr3dh_data = {
@@ -334,8 +365,8 @@ struct kr3dh_platform_data kr3dh_data = {
 	.negate_y = 0,
 	.negate_z = 0,
 
-	.power_on = power_on,
-	.power_off = power_off,
+	.power_on = accel_power_on,
+	.power_off = accel_power_off,
 	.kr_init = kr_init,
 	.kr_exit = kr_exit,
 	.gpio_config = kr3dh_config_gpio,
@@ -362,11 +393,16 @@ static struct platform_device accel_i2c_device = {
 };
 
 static struct i2c_board_info accel_i2c_bdinfo[] = {
-	[0] = {
-		I2C_BOARD_INFO("KR3DH", ACCEL_I2C_ADDRESS),
+	[1] = {
+		I2C_BOARD_INFO("KR3DH", ACCEL_I2C_ADDRESS_H),
 		.type = "KR3DH",
 		.platform_data = &kr3dh_data,
-	}
+	},
+	[0] = {
+		I2C_BOARD_INFO("KR3DM", ACCEL_I2C_ADDRESS),
+		.type = "KR3DM",
+		.platform_data = &kr3dh_data,
+	},
 };
 
 static void __init thunderg_init_i2c_acceleration(int bus_num)
@@ -375,7 +411,11 @@ static void __init thunderg_init_i2c_acceleration(int bus_num)
 
 	init_gpio_i2c_pin(&accel_i2c_pdata, accel_i2c_pin[0], &accel_i2c_bdinfo[0]);
 
-	i2c_register_board_info(bus_num, &accel_i2c_bdinfo[0], 1);
+	if(lge_bd_rev >= LGE_REV_11)
+		i2c_register_board_info(bus_num, &accel_i2c_bdinfo[1], 1);	/* KR3DH */
+	else
+		i2c_register_board_info(bus_num, &accel_i2c_bdinfo[0], 1);	/* KR3DM */
+
 	platform_device_register(&accel_i2c_device);
 }
 
@@ -384,18 +424,22 @@ static int ecom_power_set(unsigned char onoff)
 {
 	int ret = 0;
 	struct vreg *gp3_vreg = vreg_get(0, "gp3");
+	struct vreg *gp6_vreg = vreg_get(0, "gp6");
 
-	printk("[Ecompass] %s() onoff:%d\n",__FUNCTION__, onoff);
+	printk("[Ecompass] %s() : Power %s\n",__FUNCTION__, onoff ? "On" : "Off");
 
 	if (onoff) {
 		vreg_set_level(gp3_vreg, 3000);
 		vreg_enable(gp3_vreg);
+
 		/* proximity power on , when we turn off I2C line be set to low caues sensor H/W characteristic */
-		prox_power_set(1);
+		vreg_set_level(gp6_vreg, 2800);
+		vreg_enable(gp6_vreg);
 	} else {
-		vreg_set_level(gp3_vreg, 0);
 		vreg_disable(gp3_vreg);
-		prox_power_set(0);
+
+		/* proximity power off */
+		vreg_disable(gp6_vreg);
 	}
 
 	return ret;
@@ -412,13 +456,12 @@ static int prox_power_set(unsigned char onoff)
 	int ret = 0;
 	struct vreg *gp6_vreg = vreg_get(0, "gp6");
 
-	printk("[Proxi] %s() onoff:%d\n",__FUNCTION__, onoff);
+	printk("[Proximity] %s() : Power %s\n",__FUNCTION__, onoff ? "On" : "Off");
 
 	if (onoff) {
 		vreg_set_level(gp6_vreg, 2800);
 		vreg_enable(gp6_vreg);
 	} else {
-		vreg_set_level(gp6_vreg, 0);
 		vreg_disable(gp6_vreg);
 	}
 

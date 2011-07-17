@@ -36,7 +36,9 @@
  */
 
 #if !defined(CONFIG_VMSPLIT_2G) && defined (CONFIG_LGE_4G_DDR)
-#define MSM_VIC_BASE          IOMEM(0xF8000000)
+/* 2010-06-29 [junyeong.han@lge.com] Support 512MB SDRAM */
+/* To support 512MB SDRAM in VMSPLIT_3G */
+#define MSM_VIC_BASE          IOMEM(0xF0000000)
 #else	/* origin */
 #define MSM_VIC_BASE          IOMEM(0xE0000000)
 #endif
@@ -44,7 +46,9 @@
 #define MSM_VIC_SIZE          SZ_4K
 
 #if !defined(CONFIG_VMSPLIT_2G) && defined (CONFIG_LGE_4G_DDR)
-#define MSM_CSR_BASE          IOMEM(0xF8001000)
+/* 2010-06-29 [junyeong.han@lge.com] Support 512MB SDRAM */
+/* To support 512MB SDRAM in VMSPLIT_3G */
+#define MSM_CSR_BASE          IOMEM(0xF0001000)
 #else	/* origin */
 #define MSM_CSR_BASE          IOMEM(0xE0001000)
 #endif
@@ -56,7 +60,9 @@
 #define MSM_TMR_SIZE          SZ_4K
 
 #if !defined(CONFIG_VMSPLIT_2G) && defined (CONFIG_LGE_4G_DDR)
-#define MSM_DMOV_BASE         IOMEM(0xF8002000)
+/* 2010-06-29 [junyeong.han@lge.com] Support 512MB SDRAM */
+/* To support 512MB SDRAM in VMSPLIT_3G */
+#define MSM_DMOV_BASE         IOMEM(0xF0002000)
 #else	/* origin */
 #define MSM_DMOV_BASE         IOMEM(0xE0002000)
 #endif
@@ -64,7 +70,9 @@
 #define MSM_DMOV_SIZE         SZ_4K
 
 #if !defined(CONFIG_VMSPLIT_2G) && defined (CONFIG_LGE_4G_DDR)
-#define MSM_GPIO1_BASE        IOMEM(0xF8003000)
+/* 2010-06-29 [junyeong.han@lge.com] Support 512MB SDRAM */
+/* To support 512MB SDRAM in VMSPLIT_3G */
+#define MSM_GPIO1_BASE        IOMEM(0xF0003000)
 #else	/* origin */
 #define MSM_GPIO1_BASE        IOMEM(0xE0003000)
 #endif
@@ -72,7 +80,9 @@
 #define MSM_GPIO1_SIZE        SZ_4K
 
 #if !defined(CONFIG_VMSPLIT_2G) && defined (CONFIG_LGE_4G_DDR)
-#define MSM_GPIO2_BASE        IOMEM(0xF8004000)
+/* 2010-06-29 [junyeong.han@lge.com] Support 512MB SDRAM */
+/* To support 512MB SDRAM in VMSPLIT_3G */
+#define MSM_GPIO2_BASE        IOMEM(0xF0004000)
 #else	/* origin */
 #define MSM_GPIO2_BASE        IOMEM(0xE0004000)
 #endif
@@ -80,7 +90,9 @@
 #define MSM_GPIO2_SIZE        SZ_4K
 
 #if !defined(CONFIG_VMSPLIT_2G) && defined (CONFIG_LGE_4G_DDR)
-#define MSM_CLK_CTL_BASE      IOMEM(0xF8005000)
+/* 2010-06-29 [junyeong.han@lge.com] Support 512MB SDRAM */
+/* To support 512MB SDRAM in VMSPLIT_3G */
+#define MSM_CLK_CTL_BASE      IOMEM(0xF0005000)
 #else	/* origin */
 #define MSM_CLK_CTL_BASE      IOMEM(0xE0005000)
 #endif
@@ -88,7 +100,9 @@
 #define MSM_CLK_CTL_SIZE      SZ_4K
 
 #if !defined(CONFIG_VMSPLIT_2G) && defined (CONFIG_LGE_4G_DDR)
-#define MSM_L2CC_BASE         IOMEM(0xF8006000)
+/* 2010-06-29 [junyeong.han@lge.com] Support 512MB SDRAM */
+/* To support 512MB SDRAM in VMSPLIT_3G */
+#define MSM_L2CC_BASE         IOMEM(0xF0006000)
 #else	/* origin */
 #define MSM_L2CC_BASE         IOMEM(0xE0006000)
 #endif
@@ -96,7 +110,9 @@
 #define MSM_L2CC_SIZE         SZ_4K
 
 #if !defined(CONFIG_VMSPLIT_2G) && defined (CONFIG_LGE_4G_DDR)
-#define MSM_SHARED_RAM_BASE   IOMEM(0xF8100000)
+/* 2010-06-29 [junyeong.han@lge.com] Support 512MB SDRAM */
+/* To support 512MB SDRAM in VMSPLIT_3G */
+#define MSM_SHARED_RAM_BASE   IOMEM(0xF0100000)
 #else	/* origin */
 #define MSM_SHARED_RAM_BASE   IOMEM(0xE0100000)
 #endif
@@ -113,7 +129,9 @@
 
 #ifdef CONFIG_MSM_DEBUG_UART
 #if !defined(CONFIG_VMSPLIT_2G) && defined (CONFIG_LGE_4G_DDR)
-#define MSM_DEBUG_UART_BASE   0xF9000000
+/* 2010-06-29 [junyeong.han@lge.com] Support 512MB SDRAM */
+/* To support 512MB SDRAM in VMSPLIT_3G */
+#define MSM_DEBUG_UART_BASE   0xF1000000
 #else
 #define MSM_DEBUG_UART_BASE   0xE1000000
 #endif
@@ -128,7 +146,9 @@
 #endif
 
 #if !defined(CONFIG_VMSPLIT_2G) && defined (CONFIG_LGE_4G_DDR)
-#define MSM_MDC_BASE	      IOMEM(0xF8200000)
+/* 2010-06-29 [junyeong.han@lge.com] Support 512MB SDRAM */
+/* To support 512MB SDRAM in VMSPLIT_3G */
+#define MSM_MDC_BASE	      IOMEM(0xF0200000)
 #else	/* origin */
 #define MSM_MDC_BASE	      IOMEM(0xE0200000)
 #endif
@@ -136,7 +156,9 @@
 #define MSM_MDC_SIZE	      SZ_1M
 
 #if !defined(CONFIG_VMSPLIT_2G) && defined (CONFIG_LGE_4G_DDR)
-#define MSM_AD5_BASE          IOMEM(0xF8300000)
+/* 2010-06-29 [junyeong.han@lge.com] Support 512MB SDRAM */
+/* To support 512MB SDRAM in VMSPLIT_3G */
+#define MSM_AD5_BASE          IOMEM(0xF0300000)
 #else	/* origin */
 #define MSM_AD5_BASE          IOMEM(0xE0300000)
 #endif
@@ -146,7 +168,9 @@
 #if defined(CONFIG_MACH_LGE)
 /* vibrator for MN Register */
 #if !defined(CONFIG_VMSPLIT_2G) && defined (CONFIG_LGE_4G_DDR)
-#define MSM_WEB_BASE          IOMEM(0xF900C000)
+/* 2010-06-29 [junyeong.han@lge.com] Support 512MB SDRAM */
+/* To support 512MB SDRAM in VMSPLIT_3G */
+#define MSM_WEB_BASE          IOMEM(0xF100C000)
 #else	/* origin */
 #define MSM_WEB_BASE          IOMEM(0xE100C000)
 #endif
