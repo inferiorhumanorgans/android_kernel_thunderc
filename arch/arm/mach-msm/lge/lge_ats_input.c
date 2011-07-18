@@ -47,11 +47,12 @@ static int  __init ats_input_probe(struct platform_device *pdev)
 
 	for(i=0; i<EV_CNT; i++)
 		set_bit(i, ats_input_dev->evbit);
-	for(i=0; i<KEY_CNT; i++)
-		set_bit(i, ats_input_dev->keybit);
 	set_bit(ABS_MT_TOUCH_MAJOR, ats_input_dev->absbit);
 	clear_bit(EV_REP, ats_input_dev->evbit);
 	clear_bit(EV_SW, ats_input_dev->evbit);
+
+	/* We are not a QWERTY keyboard */
+	clear_bit(EV_KEY, ats_input_dev->evbit);
 
 	rc = input_register_device(ats_input_dev);
 	if (rc)
