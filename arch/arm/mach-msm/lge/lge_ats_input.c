@@ -51,6 +51,7 @@ static int  __init ats_input_probe(struct platform_device *pdev)
 		set_bit(i, ats_input_dev->keybit);
 	set_bit(ABS_MT_TOUCH_MAJOR, ats_input_dev->absbit);
 	clear_bit(EV_REP, ats_input_dev->evbit);
+	clear_bit(EV_SW, ats_input_dev->evbit);
 
 	rc = input_register_device(ats_input_dev);
 	if (rc)

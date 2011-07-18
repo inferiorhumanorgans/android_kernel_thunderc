@@ -82,6 +82,17 @@
 /* ear sense driver macros */
 #define GPIO_EAR_SENSE		29
 
+/* lcd & backlight */
+#define GPIO_LCD_BL_EN         82
+#define GPIO_BL_I2C_SCL                88
+#define GPIO_BL_I2C_SDA                89
+#define GPIO_LCD_VSYNC_O       97
+#define GPIO_LCD_MAKER_LOW     101
+#define GPIO_LCD_RESET_N       102
+
+#define BL_POWER_SUSPEND       0
+#define BL_POWER_RESUME        1
+
 /* bluetooth gpio pin */
 enum {
 	BT_WAKE         = 42,
@@ -102,9 +113,16 @@ extern struct platform_device msm_device_snd;
 extern struct platform_device msm_device_adspdec;
 extern struct i2c_board_info i2c_devices[1];
 
+extern int camera_power_state;
+extern int lcd_bl_power_state;
+
 /* interface functions */
 void config_camera_on_gpios(void);
 void config_camera_off_gpios(void);
+void camera_power_mutex_lock(void);
+void camera_power_mutex_unlock(void);
+
 struct device* thunderc_backlight_dev(void);
+void thunderc_pwrsink_resume(void);
 int camera_status(void);
 #endif
