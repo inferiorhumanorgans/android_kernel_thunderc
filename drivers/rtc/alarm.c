@@ -35,7 +35,7 @@
 #define ANDROID_ALARM_PRINT_ADD (1U << 7)
 
 static int debug_mask = ANDROID_ALARM_PRINT_ERROR | \
-			ANDROID_ALARM_PRINT_ADD | \
+			/*ANDROID_ALARM_PRINT_ADD | \ */
 			ANDROID_ALARM_PRINT_INIT_STATUS;
 module_param_named(debug_mask, debug_mask, int, S_IRUGO | S_IWUSR | S_IWGRP);
 
