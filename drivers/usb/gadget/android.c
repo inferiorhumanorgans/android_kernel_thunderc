@@ -415,7 +415,7 @@ static int is_iad_enabled(void)
 #endif
 #ifdef CONFIG_USB_ANDROID_CDC_ECM
 			case ANDROID_CDC_ECM:
-				return 3;
+				return 2;
 #endif
 #ifdef CONFIG_USB_ANDROID_RMNET
 			case ANDROID_RMNET:
@@ -647,12 +647,10 @@ static int  android_bind(struct usb_composite_dev *cdev)
 			device_desc.bDeviceSubClass      = 0x00;
 			device_desc.bDeviceProtocol      = 0x00;
 			break;
-		case 2 : /* RNDIS Class --> USB_CLASS_COMM */
-			device_desc.bDeviceClass         = USB_CLASS_COMM;
-			device_desc.bDeviceSubClass      = 0x02;
-			device_desc.bDeviceProtocol      = 0xff;
-			break;
-		case 3 : /* ECM Class --> USB_CLASS_COMM */
+		case 2 : /* ECM Class --> USB_CLASS_COMM, Windows will ignore this
+			  * in favor of the first interface, which we've ensured will
+			  * be the RNDIS one.  LAME.
+			  */
 			device_desc.bDeviceClass         = USB_CLASS_COMM;
 			device_desc.bDeviceSubClass      = 0x06;
 			device_desc.bDeviceProtocol      = 0x00;

@@ -120,7 +120,7 @@ struct usb_composition usb_func_composition[] = {
 		.product_id         = 0x61A2,
 		.functions          = 0x27384,
 		.adb_product_id     = 0x61A1,
-		.adb_functions	    = 0x127384,
+		.adb_functions	    = 0x128A,
 	},
 #endif
 /* LGE_CHANGE_S : For Autorun */

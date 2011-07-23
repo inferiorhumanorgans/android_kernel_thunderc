@@ -135,7 +135,12 @@ static int do_detect_factory_cable(void)
  */
 int lge_detect_factory_cable(void)
 {
-	return do_detect_factory_cable();
+	/* We can't call this because it will try to
+	   schedule stuff with a lock held. :(
+	   unsure if this is an LG bug or one of my
+	   doing -- IHO */
+	/* return do_detect_factory_cable(); */
+	return 0;
 }
 EXPORT_SYMBOL(lge_detect_factory_cable);
 
