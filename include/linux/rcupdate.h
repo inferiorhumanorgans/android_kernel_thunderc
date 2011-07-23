@@ -525,7 +525,7 @@ extern int rcu_my_thread_group_empty(void);
  * rcu_dereference() - fetch RCU-protected pointer for dereferencing
  * @p: The pointer to read, prior to dereferencing
  *
- * This is a simple wrapper around rcu_dereference_check().
+ * Makes rcu_dereference_check() do the dirty work.
  */
 #define rcu_dereference(p) rcu_dereference_check(p, 0)
 
@@ -687,22 +687,6 @@ static inline notrace void rcu_read_unlock_sched_notrace(void)
 	__release(RCU_SCHED);
 	preempt_enable_notrace();
 }
-
-/**
- * rcu_dereference_bh - fetch an RCU-protected pointer, checking for RCU-bh
- *
- * Makes rcu_dereference_check() do the dirty work.
- */
-#define rcu_dereference_bh(p) \
-		rcu_dereference_check(p, rcu_read_lock_bh_held())
-
-/**
- * rcu_dereference_sched - fetch RCU-protected pointer, checking for RCU-sched
- *
- * Makes rcu_dereference_check() do the dirty work.
- */
-#define rcu_dereference_sched(p) \
-		rcu_dereference_check(p, rcu_read_lock_sched_held())
 
 /**
  * rcu_assign_pointer - assign (publicize) a pointer to a newly
