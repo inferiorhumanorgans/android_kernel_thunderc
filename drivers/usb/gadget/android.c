@@ -157,6 +157,10 @@ static const char longname[] = "Gadget Android";
 static u8 hostaddr[ETH_ALEN];
 #endif
 
+#if defined(CONFIG_USB_SUPPORT_LGE_SERIAL_FROM_ARM9_MEID)
+void msm_get_MEID_type(char *sMeid);
+#endif
+
 /* Default vendor ID, overridden by platform data */
 #define VENDOR_ID		0x18D1
 
@@ -533,7 +537,43 @@ static int  android_bind(struct usb_composite_dev *cdev)
 	struct usb_composition *func;
 #endif
 
+#if defined(CONFIG_USB_ANDROID_CDC_ECM) || defined(CONFIG_USB_ANDROID_RNDIS)
+#if defined(CONFIG_USB_SUPPORT_LGE_SERIAL_FROM_ARM9_MEID)
+        char meid[15];
+#endif
+#endif
+
 	pr_debug("android_bind\n");
+
+#if defined(CONFIG_USB_SUPPORT_LGE_SERIAL_FROM_ARM9_MEID)
+	//hostaddr;
+        memset(meid, 0, 15);
+        msm_get_MEID_type(meid);
+	printk("MEID IZZZZ: %s\n", meid);
+
+	// LGE OUI
+	hostaddr[0] = 0x00;
+	hostaddr[1] = 0x1c;
+	hostaddr[2] = 0x62;
+
+
+	char temp_buf[3];
+	unsigned long tmp_int;
+	temp_buf[2] = 0;
+
+	memcpy(temp_buf, meid+8, 2);
+	tmp_int = simple_strtoul(temp_buf, NULL, 16);
+	hostaddr[3] = tmp_int;
+
+	memcpy(temp_buf, meid+10, 2);
+	tmp_int = simple_strtoul(temp_buf, NULL, 16);
+	hostaddr[4] = tmp_int;
+
+	memcpy(temp_buf, meid+12, 2);
+	tmp_int = simple_strtoul(temp_buf, NULL, 16);
+	hostaddr[5] = tmp_int;
+
+#endif
 
 	/* Allocate string descriptor numbers ... note that string
 	 * contents can be overridden by the composite_dev glue.

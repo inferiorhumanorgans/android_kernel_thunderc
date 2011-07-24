@@ -750,7 +750,9 @@ static const struct net_device_ops eth_netdev_ops = {
  * gether_setup - initialize one ethernet-over-usb link
  * @g: gadget to associated with these links
  * @ethaddr: NULL, or a buffer in which the ethernet address of the
- *	host side of the link is recorded
+ *	host side of the link is recorded.  This works the other way
+ *	around if CONFIG_USB_SUPPORT_LGE_SERIAL_FROM_ARM9_MEID is
+ *	defined.
  * Context: may sleep
  *
  * This sets up the single network link that may be exported by a
@@ -785,6 +787,11 @@ int gether_setup(struct usb_gadget *g, u8 ethaddr[ETH_ALEN])
 	dev->net = net;
 	strcpy(net->name, "usb%d");
 
+#if defined(CONFIG_USB_SUPPORT_LGE_SERIAL_FROM_ARM9_MEID)
+	if (ethaddr)
+		memcpy(dev->host_mac, ethaddr, ETH_ALEN);
+#endif
+
 	if (get_ether_addr(dev_addr, net->dev_addr))
 		dev_warn(&g->dev,
 			"using random %s ethernet address\n", "self");
@@ -793,7 +800,11 @@ int gether_setup(struct usb_gadget *g, u8 ethaddr[ETH_ALEN])
 			"using random %s ethernet address\n", "host");
 
 	if (ethaddr)
+#if defined(CONFIG_USB_SUPPORT_LGE_SERIAL_FROM_ARM9_MEID)
+		memcpy(dev->host_mac, ethaddr, ETH_ALEN);
+#else
 		memcpy(ethaddr, dev->host_mac, ETH_ALEN);
+#endif
 
 	net->netdev_ops = &eth_netdev_ops;
 
