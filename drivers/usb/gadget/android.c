@@ -539,7 +539,9 @@ static int  android_bind(struct usb_composite_dev *cdev)
 
 #if defined(CONFIG_USB_ANDROID_CDC_ECM) || defined(CONFIG_USB_ANDROID_RNDIS)
 #if defined(CONFIG_USB_SUPPORT_LGE_SERIAL_FROM_ARM9_MEID)
-        char meid[15];
+	char meid[15];
+	char temp_buf[3];
+	unsigned long tmp_int;
 #endif
 #endif
 
@@ -547,18 +549,14 @@ static int  android_bind(struct usb_composite_dev *cdev)
 
 #if defined(CONFIG_USB_SUPPORT_LGE_SERIAL_FROM_ARM9_MEID)
 	//hostaddr;
-        memset(meid, 0, 15);
-        msm_get_MEID_type(meid);
-	printk("MEID IZZZZ: %s\n", meid);
+	memset(meid, 0, 15);
+	msm_get_MEID_type(meid);
 
 	// LGE OUI
 	hostaddr[0] = 0x00;
 	hostaddr[1] = 0x1c;
 	hostaddr[2] = 0x62;
 
-
-	char temp_buf[3];
-	unsigned long tmp_int;
 	temp_buf[2] = 0;
 
 	memcpy(temp_buf, meid+8, 2);
