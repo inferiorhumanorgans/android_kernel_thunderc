@@ -169,7 +169,7 @@ static int vibrator_get_time(struct timed_output_dev *dev)
 
 	if (hrtimer_active(&data->timer)) {
 		ktime_t r = hrtimer_get_remaining(&data->timer);
-		return r.tv.sec * 1000 + r.tv.nsec / 1000000;
+		return r.tv64;
 	} else
 		return 0;
 }

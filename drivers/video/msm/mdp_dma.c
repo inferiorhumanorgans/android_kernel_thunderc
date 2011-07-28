@@ -376,9 +376,7 @@ enum hrtimer_restart mdp_dma2_vsync_hrtimer_handler(struct hrtimer *ht)
 
 		t = ktime_get_real();
 
-		actual_wait =
-		    (t.tv.sec - vt.tv.sec) * 1000000 + (t.tv.nsec -
-							vt.tv.nsec) / 1000;
+		actual_wait = t.tv64 - vt.tv64;
 		usec_diff = actual_wait - mdp_expected_usec_wait;
 
 		if ((mdp_usec_diff_threshold < usec_diff) || (usec_diff < 0))
@@ -498,8 +496,7 @@ static void mdp_dma_schedule(struct msm_fb_data_type *mfd, uint32 term)
 	} else {
 		ktime_t wait_time;
 
-		wait_time.tv.sec = 0;
-		wait_time.tv.nsec = usec_wait_time * 1000;
+		wait_time.tv64 = usec_wait_time * 1000;
 
 		if (msm_fb_debug_enabled) {
 			vt = ktime_get_real();

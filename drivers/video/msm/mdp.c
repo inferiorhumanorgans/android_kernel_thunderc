@@ -653,10 +653,8 @@ irqreturn_t mdp_isr(int irq, void *ptr)
 			ktime_t now_k;
 
 			now_k = ktime_get_real();
-			mdp_dma2_last_update_time.tv.sec =
-			    now_k.tv.sec - mdp_dma2_last_update_time.tv.sec;
-			mdp_dma2_last_update_time.tv.nsec =
-			    now_k.tv.nsec - mdp_dma2_last_update_time.tv.nsec;
+			mdp_dma2_last_update_time.tv64 =
+			    now_k.tv64 - mdp_dma2_last_update_time.tv64;
 
 			if (mdp_debug[MDP_DMA2_BLOCK]) {
 				jiffies_to_timeval(jiffies, &now);

@@ -74,8 +74,8 @@ static ssize_t ev_log_read(struct file *file, char __user *buf,
 			else
 				str = "UNKNOWN";
 			size += scnprintf(ev_buf + size, 4096 - size,
-					  "%8d.%03d %08x %s\n",
-					  t.tv.sec, t.tv.nsec / 1000000,
+					  "%16lld %08x %s\n",
+					  t.tv64,
 					  entry[n].arg, str);
 		}
 		n = (n - 1) & (max - 1);

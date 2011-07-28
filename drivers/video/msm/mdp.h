@@ -90,7 +90,11 @@ typedef struct mdpImg_ {
 } MDPIMG;
 
 #define MDP_OUTP(addr, data) outpdw((addr), (data))
+#ifdef CONFIG_KTIME_SCALAR
+#define MDP_KTIME2USEC(kt) (kt.tv64)
+#else
 #define MDP_KTIME2USEC(kt) (kt.tv.sec*1000000 + kt.tv.nsec/1000)
+#endif
 
 #define MDP_BASE msm_mdp_base
 
