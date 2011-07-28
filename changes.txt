@@ -1,3 +1,10 @@
+39:
+	Extremely aggressive process scheduler tweaks.  Let's see how
+	stability and battery life go.
+41:
+	Default clock speed is now 245-600MHz. Overclocking is still
+	available for those who want to live on the edge.
+
 49: (839ea0ea8a83b82d23635e05b51741a3)
 	enable fair_sleepers again 
 50:    
@@ -15,3 +22,6 @@ r1:
 	  - Now we request 500mA, not 2mA on proper USB devices
 	  - We 'request' 10mA on wall adapters masquerading as USB devices
 	Use MEID for the USB HOST MAC address
+r2:
+        Pulled in assorted changes/fixes from CAF.
+        Pulled in new jhash implementation.
