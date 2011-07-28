@@ -24,4 +24,8 @@ r1:
 	Use MEID for the USB HOST MAC address
 r2:
         Pulled in assorted changes/fixes from CAF.
+        Pulled in assorted changes/fixes from 2.6.35.
+        Pulled in assorted changes/fixes from 2.6.38.
         Pulled in new jhash implementation.
+	https://patchwork.kernel.org/patch/148421/ / http://www.gossamer-threads.com/lists/linux/kernel/1273183
+	https://patchwork.kernel.org/patch/148411/ / http://www.gossamer-threads.com/lists/linux/kernel/1270185
