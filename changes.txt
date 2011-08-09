@@ -15,3 +15,9 @@ r1:
 	  - Now we request 500mA, not 2mA on proper USB devices
 	  - We 'request' 10mA on wall adapters masquerading as USB devices
 	Use MEID for the USB HOST MAC address
+r1.1:
+	Fix exposure compensation in the camera
+	Remove MEID debugging output
+r1.2:
+	Tweak WiFi power saving settings a la Mik9
+	Back off on the process scheduler settings a bit
