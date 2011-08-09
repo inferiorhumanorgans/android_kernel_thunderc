@@ -4703,11 +4703,11 @@ wl_iw_set_powermode(
 	if (sscanf(extra, "%*s %d", &mode) != 1)
 		return -EINVAL;
 
-	switch (mode) {
-	case 0: mode = 2; break; /* Fast PS mode */
-	case 1: mode = 0; break; /* No PS mode */
-	default: return -EINVAL;
-	}
+
+	/* inspired by mik_os [kiril.mik.os@gmail.com]:
+	   force to use powersave mode  -- IHO */
+	mode = 2; /* 2 = Fast PS mode, 0 = No PS mode */
+
 	error = dev_wlc_ioctl(dev, WLC_SET_PM, &mode, sizeof(mode));
 	p += snprintf(p, MAX_WX_STRING, error < 0 ? "FAIL\n" : "OK\n");
 	wrqu->data.length = p - extra + 1;
