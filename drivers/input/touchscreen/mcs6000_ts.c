@@ -129,19 +129,24 @@ void Send_Touch( unsigned int x, unsigned int y)
 	input_report_abs(mcs6000_ts_dev.input_dev, ABS_MT_TOUCH_MAJOR, 1);
 	input_report_abs(mcs6000_ts_dev.input_dev, ABS_MT_POSITION_X, x);
 	input_report_abs(mcs6000_ts_dev.input_dev, ABS_MT_POSITION_Y, y);
+	input_report_abs(mcs6000_ts_dev.input_dev, ABS_MT_PRESSURE, 255);
+	input_report_key(mcs6000_ts_dev.input_dev, BTN_TOUCH, 1);
 	input_mt_sync(mcs6000_ts_dev.input_dev);
 	input_sync(mcs6000_ts_dev.input_dev);
 	
 	input_report_abs(mcs6000_ts_dev.input_dev, ABS_MT_TOUCH_MAJOR, 0);
 	input_report_abs(mcs6000_ts_dev.input_dev, ABS_MT_POSITION_X, x);
 	input_report_abs(mcs6000_ts_dev.input_dev, ABS_MT_POSITION_Y, y);
+	input_report_abs(mcs6000_ts_dev.input_dev, ABS_MT_PRESSURE, 255);
+	input_report_key(mcs6000_ts_dev.input_dev, BTN_TOUCH, 1);
 	input_mt_sync(mcs6000_ts_dev.input_dev);
 	input_sync(mcs6000_ts_dev.input_dev);
 #else
 	mcs6000_ts_event_touch( x, y , &mcs6000_ts_dev) ;
 	input_report_abs(mcs6000_ts_dev.input_dev, ABS_X, x);
 	input_report_abs(mcs6000_ts_dev.input_dev, ABS_Y, y);
-	input_report_key(mcs6000_ts_dev.input_dev, BTN_TOUCH, 0);
+	input_report_abs(mcs6000_ts_dev.input_dev, ABS_PRESSURE, 255);
+	input_report_key(mcs6000_ts_dev.input_dev, BTN_TOUCH, 1);
 	input_sync(mcs6000_ts_dev.input_dev);
 #endif
 }
@@ -187,6 +192,8 @@ static __inline void mcs6000_multi_ts_event_touch(int x1, int y1, int x2, int y2
 		input_report_abs(dev->input_dev, ABS_MT_TOUCH_MAJOR, value);
 		input_report_abs(dev->input_dev, ABS_MT_POSITION_X, x1);
 		input_report_abs(dev->input_dev, ABS_MT_POSITION_Y, y1);
+		input_report_abs(dev->input_dev, ABS_MT_PRESSURE, 255);
+		input_report_key(dev->input_dev, BTN_TOUCH, 1);
 		input_mt_sync(dev->input_dev);
 		report = 1;
 	}
@@ -195,6 +202,8 @@ static __inline void mcs6000_multi_ts_event_touch(int x1, int y1, int x2, int y2
 		input_report_abs(dev->input_dev, ABS_MT_TOUCH_MAJOR, value);
 		input_report_abs(dev->input_dev, ABS_MT_POSITION_X, x2);
 		input_report_abs(dev->input_dev, ABS_MT_POSITION_Y, y2);
+		input_report_abs(dev->input_dev, ABS_MT_PRESSURE, 255);
+		input_report_key(dev->input_dev, BTN_TOUCH, 1);
 		input_mt_sync(dev->input_dev);
 		report = 1;
 	}
@@ -217,11 +226,12 @@ static __inline void mcs6000_single_ts_event_touch(unsigned int x, unsigned int 
 	if ((x >= 0) && (y >= 0)) {
 		input_report_abs(dev->input_dev, ABS_X, x);
 		input_report_abs(dev->input_dev, ABS_Y, y);
-		reprot = 1;
+		report = 1;
 	}
 
 	if (report != 0) {
-		input_report_key(dev->input_dev, BTN_TOUCH, value);
+		input_report_abs(dev->input_dev, ABS_PRESSURE, 255);
+		input_report_key(dev->input_dev, BTN_TOUCH, 1);
 		input_sync(dev->input_dev);
 	} else {
 		DMSG(KERN_WARNING "%s: Not Available touch data x=%d, y=%d\n", __FUNCTION__, x, y); 
@@ -675,11 +685,14 @@ static int mcs6000_ts_probe(struct i2c_client *client, const struct i2c_device_i
 	ts_pdata = client->dev.platform_data;
 
 #ifdef LG_FW_MULTI_TOUCH
+	input_set_abs_params(mcs6000_ts_input, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
 	input_set_abs_params(mcs6000_ts_input, ABS_MT_POSITION_X, ts_pdata->ts_x_min, ts_pdata->ts_x_max, 0, 0);
 	input_set_abs_params(mcs6000_ts_input, ABS_MT_POSITION_Y, ts_pdata->ts_y_min, ts_pdata->ts_y_max, 0, 0);
+	input_set_abs_params(mcs6000_ts_input, ABS_MT_PRESSURE, 0, 255, 0, 0);
 #else	
 	input_set_abs_params(mcs6000_ts_input, ABS_X, ts_pdata->ts_x_min, ts_pdata->ts_x_max, 0, 0);
 	input_set_abs_params(mcs6000_ts_input, ABS_Y, ts_pdata->ts_y_min, ts_pdata->ts_y_max, 0, 0);
+	input_set_abs_params(mcs6000_ts_input, ABS_PRESSURE, 0, 255, 0, 0);
 #endif
 
 	dev = &mcs6000_ts_dev;
@@ -846,16 +859,10 @@ static int __devinit mcs6000_ts_init(void)
 	mcs6000_ts_input->name = "touch_mcs6000";
 
 	set_bit(EV_SYN, 	 mcs6000_ts_input->evbit);
-	//set_bit(EV_KEY, 	 mcs6000_ts_input->evbit);
-	set_bit(EV_ABS, 	 mcs6000_ts_input->evbit);
-#ifdef LG_FW_MULTI_TOUCH
-	set_bit(ABS_MT_TOUCH_MAJOR, mcs6000_ts_input->absbit);
-	set_bit(ABS_MT_POSITION_X, mcs6000_ts_input->absbit);
-	set_bit(ABS_MT_POSITION_Y, mcs6000_ts_input->absbit);
-#else
 	set_bit(EV_KEY, 	 mcs6000_ts_input->evbit);
-	set_bit(BTN_TOUCH, mcs6000_ts_input->keybit);
-#endif
+	set_bit(EV_ABS, 	 mcs6000_ts_input->evbit);
+	set_bit(EV_SYN, 	 mcs6000_ts_input->evbit);
+	set_bit(BTN_TOUCH, 	 mcs6000_ts_input->keybit);
 
 	err = input_register_device(mcs6000_ts_input);
 	if (err < 0) {
